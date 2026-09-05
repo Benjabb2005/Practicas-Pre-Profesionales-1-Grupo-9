@@ -1,0 +1,15 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno / secretos
+.env
+
+# Logs
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Vite
+dist/
