@@ -25,7 +25,7 @@ db.connect((error) => {
 });
 
 app.get("/", (req, res) => {
-    res.send("Backend de MandáTodo funcionando");
+    res.send("Backend de MandáTodo funcionando con docker uwu");
 });
 
 app.listen(PORT, () => {
