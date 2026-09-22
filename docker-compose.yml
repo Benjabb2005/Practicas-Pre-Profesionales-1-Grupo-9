@@ -7,8 +7,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
     ports:
       - "3306:3306"
@@ -22,7 +20,6 @@ services:
       timeout: 5s
       retries: 10
 
-
   backend:
     build:
       context: ./backend
@@ -32,8 +29,8 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       PORT: 3000
 
@@ -47,7 +44,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-
 
   frontend:
     build:
@@ -64,7 +60,6 @@ services:
 
     depends_on:
       - backend
-
 
 volumes:
   mysql_data:
