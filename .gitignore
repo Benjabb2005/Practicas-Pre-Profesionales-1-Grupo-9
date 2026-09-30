@@ -16,3 +16,14 @@ dist/
 
 #Idea
 .idea/
+
+# Copias generadas; la fuente de skills está en .agents/skills
+.claude/skills/
+CLAUDE.local.md
+.claude/settings.local.json
+coverage/
+
+# Material temporal: enunciados, Excel, ZIP de contexto, capturas.
+# La carpeta se versiona (vacía, vía .gitkeep) pero su contenido no.
+temp/*
+!temp/.gitkeep

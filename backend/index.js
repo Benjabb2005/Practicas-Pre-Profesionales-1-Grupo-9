@@ -1,9 +1,8 @@
 require("dotenv").config();
 
-const express = require("express");
 const mysql = require("mysql2");
 
-const app = express();
+const app = require("./app");
 const PORT = process.env.PORT || 3000;
 
 const db = mysql.createConnection({
@@ -22,10 +21,6 @@ db.connect((error) => {
     }
 
     console.log("Conexión a MySQL exitosa");
-});
-
-app.get("/", (req, res) => {
-    res.send("Backend de MandáTodo funcionando con docker uwu");
 });
 
 app.listen(PORT, () => {

@@ -1,0 +1,13 @@
+{
+  "name": "ppp1-grupo-9-herramientas",
+  "private": true,
+  "scripts": {
+    "check": "npm run context:check && npm --prefix backend run check && npm --prefix backend test && npm --prefix frontend run lint && npm --prefix frontend run build",
+    "context:check": "node scripts/check-context.mjs",
+    "skills:sync": "node scripts/sync-skills.mjs",
+    "skills:check": "node scripts/sync-skills.mjs --check"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

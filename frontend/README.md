@@ -1,14 +1,7 @@
-# MandáTodo · pantalla de acceso
+# Frontend MandáTodo
 
-Esta entrega reemplaza `frontend/index.html` y los archivos `frontend/src/App.jsx`, `frontend/src/App.css` y `frontend/src/index.css` del proyecto. No requiere dependencias adicionales: usa React y Vite ya presentes.
+React/Vite, JavaScript/JSX. Ver [arranque](../README.md), [pantallas](../docs/pantallas.md) e [instrucciones](AGENTS.md).
 
-## Acceso de demostración
+Implementación actual: maqueta de login local, tablero vacío y carga sin guardado. No autentica con servidor ni genera JWT; el acceso de chofer se rechaza y la identidad visible queda como operador. Los accesos de demo preexistentes en el código deben sustituirse al implementar autenticación; no copiarlos a documentación ni usarlos en un entorno real.
 
-- `admin@mandatodo.com` — Administrador
-- `operador@mandatodo.com` — Operador
-- `chofer@mandatodo.com` — Chofer
-- Contraseña para todas: `demo1234`
-
-El formulario valida estas credenciales localmente y muestra el rol ingresado. Es una interacción de demostración; no autentica usuarios ni genera JWT. El botón para mostrar/ocultar contraseña y los mensajes de error/éxito también funcionan sin backend.
-
-La fuente DM Sans se carga desde Google Fonts; si no hay conexión, se usa una fuente de sistema.
+Desde esta carpeta: `npm ci`, `npm run dev`, `npm run lint`, `npm run build`. DM Sans se carga desde Google Fonts con alternativa de sistema. No hay pruebas de interacción frontend todavía; lint y build no acreditan funcionamiento completo.
