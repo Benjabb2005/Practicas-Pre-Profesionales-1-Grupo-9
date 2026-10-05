@@ -15,6 +15,7 @@ Esta vista es una demostración frontend con datos fijos y estado en memoria. La
 - En la etapa 1, abrir el diálogo desde «ENTREGADO» y poder cerrarlo con «Cancelar» sin cambiar el estado.
 - En la etapa 2, confirmar el cobro actualiza solo el estado local: la parada pasa a completada/pagada y se actualizan el avance y la próxima parada pendiente.
 - «Ver en Mapa» aparece como control visual, sin navegación ni servicio conectado.
+- Permitir que la cuenta demo de rol Chofer ingrese desde el login existente y mostrar esta vista según el rol. Los roles Administrador y Operador no cambian. Este cambio mínimo en `App.jsx` es parte del alcance.
 
 ## Fuera de alcance
 
@@ -155,4 +156,4 @@ No hay estados de carga o error de red porque no se realizan llamadas externas. 
 - **Cuenta Chofer:** es una cuenta de demostración para acceder a la vista, no autenticación real.
 - **Disponibilidad y datos:** «En línea», el chofer y los pedidos/direcciones son valores fijos de demostración.
 - **Mapa:** «Ver en Mapa» no tiene acción hasta definir el servicio de mapas y su comportamiento.
-- Permitir que la cuenta demo de rol Chofer ingrese desde el login existente y mostrar esta vista según el rol. Los roles Administrador y Operador no cambian. Este cambio mínimo en `App.jsx` es parte del alcance.
+
