@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import DriverApp from './DriverApp.jsx'
 
 const DEMO_ACCOUNTS = {
   'admin@mandatodo.com': 'Administrador',
@@ -42,10 +43,6 @@ function Login({ onLogin }) {
       setError('Usuario o contraseña incorrectos. Revisá los datos e intentá nuevamente.')
       return
     }
-    if (!['Operador', 'Administrador'].includes(role)) {
-      setError('Esta cuenta no tiene acceso a las pantallas de operador.')
-    return
-}
     setError('')
     onLogin(role)
   }
@@ -185,7 +182,9 @@ function OperatorApp({ role, onLogout }) {
 
 function App() {
   const [role, setRole] = useState(null)
-  return role ? <OperatorApp role={role} onLogout={() => setRole(null)}/> : <Login onLogin={setRole}/>
+  if (!role) return <Login onLogin={setRole}/>
+  if (role === 'Chofer') return <DriverApp onLogout={() => setRole(null)}/>
+  return <OperatorApp role={role} onLogout={() => setRole(null)}/>
 }
 
 export default App
