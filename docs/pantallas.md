@@ -1,5 +1,9 @@
 # Referencia de pantallas — relevamiento recibido y revisión local 30/09/2026
 
+Corrección posterior 13/10: carga con un solo botón Confirmar ubicación y guardar pedido; Enter no guarda fuera de ese flujo. Dirección original opcional. Sin controles de coordenadas; el punto se mueve por clic/arrastre y eso desmarca la revisión. Tablero muestra mapa de ubicación confirmada de lectura, sin consulta/confirmación repetida; Editar abre nueva revisión con observación e historial, Cancelar conserva la ubicación guardada. Códigos visibles PED-id, históricos internos preservados. Esta versión prevalece sobre la descripción de controles del primer corte.
+
+T05 local 13/10: detalle del tablero agrega Leaflet/OSM, consulta de candidatos Georef, corrección por clic/coordenadas y revisión humana con observación. No reemplaza pantallas existentes ni habilita despacho. Confirmación admin/operador vinculada a revisión de dirección, pendiente de activar migración 003 en base local. Componente QA sin datos humanos verificado a 320 y 1280 px; cartografía visible. Georef real falló HTTP 500. [Contrato](mapa-ubicacion.md).
+
 Tipografía ajustada posteriormente: Cargar Pedido y formularios compartidos con etiquetas/ayuda 13 px, entradas y nombres de lista 14 px, detalles 12 px y títulos 16/22 px. Se mantienen campos compactos de 30 px escritorio/36 móvil. Verificado en escritorio y 320 px, sin desborde horizontal.
 
 Filtro en vivo de frecuentes: al escribir parte del DNI/email/teléfono aparece lista con nombre y datos de identificación/contacto, se acota al completar y muestra sin coincidencias. Sin botón Buscar; 250 ms de espera y consultas viejas canceladas. Seleccionar autocompleta cliente y cierra lista. Verificado con datos sintéticos en escritorio y móvil; regla de no duplicar personas conservada.
@@ -82,3 +86,10 @@ frontend/src/App.jsx reproduce login, tablero vacío y formulario. La navegació
 ## Revisión pendiente por decisión del usuario
 
 El 30/09/2026 el usuario indicó dejar pendiente el acceso de prueba. No había sesión autenticada disponible y no se recibió repositorio del prototipo. No se probaron pedidos poblados, validación exitosa, entregas ni pagos. Para retomar T08, habilitar sesión de prueba desde el navegador o aportar código autorizado, capturas/exportación sin credenciales ni datos personales. Nunca pedir contraseñas por chat. Registrar por flujo: rol, datos sintéticos, estado inicial, acción, resultado visible y evidencia; distinguir interfaz de persistencia y autorización real.
+
+
+## Revisión autenticada y mapa durante carga · 13/10/2026
+
+Usuario autorizó demo referenciada en temp, cuentas de prueba y dirección. Recorridos admin/operador/chofer: carga con mapa automático, confirmación/guardado, estado inicial stock/preparación, filtros estado/chofer, detalle al pulsar fila, dirección repetida con Cancelar y revisar / Continuar de todos modos, mapa chofer, entrega/cobro simulado efectivo y transferencia (ambos PAGADO). Rutas/Clientes próximos; agrupamiento de envíos cercanos sin cambio observable; frecuentes solo sin coincidencia. Sin prueba de banco/remito, permisos API o persistencia remota. No registrar aquí credenciales ni dirección privada.
+
+Carga de demo: formulario izquierda y Validación Geográfica derecha; Corregir Datos enfoca calle. DNI/contactos opcionales allí; MandáTodo conserva D08 y provincia obligatoria. Implementación local: mapa automático tras 500 ms, candidato único visible sin confirmación automática, múltiples seleccionables, error/vacío permite corrección manual con observación. Cambiar dirección descarta revisión y aborta consulta. Confirmar ubicación y guardar pedido persiste todo en una transacción. Despacho operativo/chofer/pagos siguen pendientes. Georef v1 real y mapa verificados; 003 aplicada. 1280×900 1265/1265 y 320×740 305/305. Capturas ignoradas en temp/qa/mapa-en-carga.png y mapa-en-carga-mobile.png. Esta actualización supera los pendientes del primer corte T05.

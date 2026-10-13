@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
 import './Orders.css'
+import { LocationReview, DraftLocationReview } from './LocationReview.jsx'
 
 const labels = { pendiente_validacion: 'Pendiente de validación', requiere_revision: 'Requiere revisión', direccion_validada: 'Dirección validada', listo_despacho: 'Listo para despacho', en_camino: 'En camino', entregado: 'Entregado', fallido: 'Fallido', cancelado: 'Cancelado' }
 const customerFields = [['nombre', 'Nombre', 'text', 100], ['apellido', 'Apellido', 'text', 100], ['dni', 'DNI sin puntos', 'text', 20], ['telefono', 'Teléfono', 'tel', 50], ['email', 'Email', 'email', 150]]
@@ -16,6 +17,7 @@ function Input({ field, value, onChange, onBlur, error, disabled }) {
 }
 
 export function OrderForm({ setPage }) {
+  const formRef = useRef(null)
   const [cliente, setCliente] = useState(Object.fromEntries(customerFields.map(([key]) => [key, ''])))
   const [direccion, setDireccion] = useState({ direccionOriginal: '', ...Object.fromEntries(addressFields.map(([key]) => [key, ''])) })
   const [observaciones, setObservaciones] = useState('')
@@ -80,23 +82,24 @@ export function OrderForm({ setPage }) {
     } catch (failure) { if (revision === customerRevision.current) setError(failure.message) }
   }
 
-  async function save(event) {
-    event.preventDefault()
+  async function save(event, ubicacion) {
+    event?.preventDefault()
+    if (!formRef.current?.reportValidity()) { setError('Completá o corregí el campo señalado del formulario antes de guardar.'); return }
     if (pending || conflict) return
     setPending(true); setFields({}); setError('')
     try {
       const pedido = await api('/pedidos', { method: 'POST', headers: { 'Idempotency-Key': key }, body: {
-        cliente, direccion, observaciones, ...(clienteId ? { clienteId } : {}),
+        cliente, direccion, observaciones, ...(clienteId ? { clienteId } : {}), ...(ubicacion ? { ubicacion } : {}),
       } })
       setSaved(pedido)
-    } catch (failure) { setFields(failure.fields); setError(failure.message) }
+    } catch (failure) { setFields(failure.fields || {}); setError(failure.message) }
     finally { setPending(false) }
   }
 
-  if (saved) return <main className="main-content"><Header title="Pedido guardado" subtitle={`${saved.codigo} · ${labels[saved.estado]}`} action="Ver tablero" onAction={() => setPage('board')}/><section className="panel persisted-panel" role="status"><h2>El pedido ya está en la base de datos.</h2><p>{saved.calle} {saved.altura}, {saved.localidad}, {saved.provincia}</p><p>La ubicación todavía requiere revisión y confirmación. No está habilitado para despacho.</p></section></main>
+  if (saved) return <main className="main-content"><Header title="Pedido guardado" subtitle={`${saved.codigo} · ${labels[saved.estado]}`} action="Ver tablero" onAction={() => setPage('board')}/><section className="panel persisted-panel" role="status"><h2>El pedido ya está en la base de datos.</h2><p>{saved.calle} {saved.altura}, {saved.localidad}, {saved.provincia}</p><p>{saved.confirmation ? 'Ubicación confirmada y guardada para esta dirección.' : 'La ubicación todavía requiere revisión y confirmación.'} El despacho operativo todavía no está habilitado.</p></section></main>
 
-  return <main className="main-content form-page"><Header title="Carga Manual de Pedido" subtitle="Completá los datos obligatorios. El guardado no habilita despacho." action="Ver tablero" onAction={() => setPage('board')}/><div className="order-layout"><form onSubmit={save} className="panel order-panel persisted-form">
-    <h2>Cliente y envío</h2><p>Todos los campos son obligatorios salvo Piso/Depto y notas.</p>
+  return <main className="main-content form-page"><Header title="Carga Manual de Pedido" subtitle="Completá los datos obligatorios. El guardado no habilita despacho." action="Ver tablero" onAction={() => setPage('board')}/><div className="order-layout"><form ref={formRef} onSubmit={(event) => event.preventDefault()} className="panel order-panel persisted-form">
+    <h2>Cliente y envío</h2><p>Dirección original, Piso/Depto y notas son opcionales.</p>
     <div className="frequent-search"><label htmlFor="frequent-query">Buscar cliente frecuente por DNI, email o teléfono</label><input id="frequent-query" type="search" autoComplete="off" placeholder="Escribí para filtrar clientes…" value={query} maxLength={150} disabled={pending} aria-controls="frequent-results" aria-describedby="frequent-status" onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault() }} onChange={(event) => { setQuery(event.target.value); setSearchResult({ query: '', rows: [], error: '' }) }}/></div>
     <p id="frequent-status" role="status">{searching ? 'Buscando clientes…' : query.trim() && !searchError ? visibleCandidates.length ? `${visibleCandidates.length} ${visibleCandidates.length === 1 ? 'cliente coincidente' : 'clientes coincidentes'}${visibleCandidates.length === 20 ? ' (primeros 20; completá más datos para afinar)' : ''}.` : 'No se encontraron clientes con esos datos.' : 'La lista se actualiza mientras escribís.'}</p>
     {searchError && <p className="login-error" role="alert">{searchError}</p>}
@@ -106,11 +109,11 @@ export function OrderForm({ setPage }) {
     {conflict && error && <p className="login-error" role="alert">{error}</p>}
     <div className="form-divider"><span>Datos del cliente</span></div><div className="fields-grid customer-fields">{customerFields.map((field) => <Input key={field[0]} field={field} value={cliente[field[0]]} disabled={pending} error={fields[field[0]]} onChange={(value) => change('cliente', field[0], value)} onBlur={() => checkIdentity(field[0])}/>)}</div>
     <div className="form-divider"><span>Dirección de entrega</span></div>
-    <label className="form-field" htmlFor="order-original"><span>Dirección original recibida *</span><textarea id="order-original" required maxLength={1000} rows={3} value={direccion.direccionOriginal} disabled={pending} onChange={(event) => change('direccion', 'direccionOriginal', event.target.value)} aria-invalid={Boolean(fields.direccionOriginal)}/>{fields.direccionOriginal && <span className="field-error">{fields.direccionOriginal}</span>}</label>
+    <label className="form-field" htmlFor="order-original"><span>Dirección original recibida (opcional)</span><textarea id="order-original" maxLength={1000} rows={3} value={direccion.direccionOriginal} disabled={pending} onChange={(event) => change('direccion', 'direccionOriginal', event.target.value)} aria-invalid={Boolean(fields.direccionOriginal)}/>{fields.direccionOriginal && <span className="field-error">{fields.direccionOriginal}</span>}</label>
     <div className="fields-grid address-fields">{addressFields.map((field) => <Input key={field[0]} field={field} value={direccion[field[0]]} disabled={pending} error={fields[field[0]]} onChange={(value) => change('direccion', field[0], value)}/>)}</div>
     <label className="form-field" htmlFor="order-notes"><span>Notas / instrucciones (opcional)</span><textarea id="order-notes" rows={3} maxLength={2000} value={observaciones} disabled={pending} onChange={(event) => { setObservaciones(event.target.value); setKey(crypto.randomUUID()) }}/></label>
-    {error && !conflict && <p className="login-error" role="alert">{error}</p>}<button type="submit" className="button button-primary" disabled={pending || conflict}>{pending ? 'Guardando…' : 'Guardar pedido'}</button>
-  </form><aside className="validation-column"><section className="panel geo-panel"><h2>Validación Geográfica</h2><p>El mapa y la confirmación se incorporarán en el próximo corte.</p><p>El pedido se guarda pendiente de validación. No habilita despacho ni asigna chofer.</p><button type="button" className="button confirm-button" disabled>Confirmación pendiente</button></section></aside></div></main>
+    {error && !conflict && <p className="login-error" role="alert">{error}</p>}
+  </form><aside className="validation-column"><DraftLocationReview key={JSON.stringify(direccion)} address={direccion} disabled={pending || conflict} saving={pending} saveError={error} onSave={(ubicacion) => save(null, ubicacion)}/></aside></div></main>
 }
 
 export function Board({ setPage }) {
@@ -139,6 +142,6 @@ export function Board({ setPage }) {
       <div className="filters">{[['fechaDesde', 'Desde'], ['fechaHasta', 'Hasta']].map(([field, label]) => <label key={field} htmlFor={`filter-${field}`}>{label}<input id={`filter-${field}`} type="date" value={dates[field]} onChange={(event) => { setDates((current) => ({ ...current, [field]: event.target.value })); setPageNumber(1); setResult(null) }}/></label>)}</div>
       {error && <p className="login-error" role="alert">{error}</p>}{!result && !error && <p role="status">Cargando pedidos…</p>}
       {result && <><p role="status">{result.pagination.total} pedidos con este filtro.</p>{result.data.length === 0 ? <p>Todavía no hay pedidos para este filtro.</p> : <div className="order-table-wrap"><table className="order-table"><thead><tr><th>Código</th><th>Cliente</th><th>Dirección</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>{result.data.map((p) => <tr key={p.id}><td>{p.codigo}</td><td>{p.nombre} {p.apellido || ''}</td><td>{p.calle || 'Pendiente'} {p.altura || ''}, {p.localidad || 'Localidad pendiente'}</td><td>{labels[p.estado] || p.estado}</td><td><button className="button button-outline" type="button" onClick={() => inspect(p.id)} aria-label={`Ver pedido ${p.codigo}`}>Ver</button></td></tr>)}</tbody></table></div>}<div className="order-pagination"><button type="button" className="button button-outline" disabled={page === 1} onClick={() => { setPageNumber(page - 1); setResult(null) }}>Anterior</button><span>Página {page}</span><button type="button" className="button button-outline" disabled={page * result.pagination.pageSize >= result.pagination.total} onClick={() => { setPageNumber(page + 1); setResult(null) }}>Siguiente</button></div></>}
-    </section>{detailError && <p className="login-error" role="alert">{detailError}</p>}{detail && <section className="panel persisted-panel" aria-label="Detalle del pedido"><h2>{detail.codigo}</h2><p>{detail.nombre} {detail.apellido || ''} · {detail.telefono} · {detail.email}</p><p>Dirección original: {detail.direccionOriginal}</p><p>{detail.calle} {detail.altura} {detail.pisoDepto || ''}, {detail.localidad}, {detail.provincia}, CP {detail.codigoPostal}</p><p>Estado: {labels[detail.estado]}</p><p>{detail.observaciones || 'Sin notas de entrega.'}</p><button type="button" className="button button-outline" onClick={() => setDetail(null)}>Cerrar detalle</button></section>}
+    </section>{detailError && <p className="login-error" role="alert">{detailError}</p>}{detail && <section className="panel persisted-panel" aria-label="Detalle del pedido"><h2>{detail.codigo}</h2><p>{detail.nombre} {detail.apellido || ''} · {detail.telefono} · {detail.email}</p><p>Dirección original: {detail.direccionOriginal}</p><p>{detail.calle} {detail.altura} {detail.pisoDepto || ''}, {detail.localidad}, {detail.provincia}, CP {detail.codigoPostal}</p><p>Estado: {labels[detail.estado]}</p><LocationReview key={detail.id} order={detail} onConfirmed={setDetail}/><p>{detail.observaciones || 'Sin notas de entrega.'}</p><button type="button" className="button button-outline" onClick={() => setDetail(null)}>Cerrar detalle</button></section>}
   </main>
 }

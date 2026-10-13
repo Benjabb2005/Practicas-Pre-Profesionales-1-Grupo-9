@@ -1,3 +1,10 @@
+export async function initialAddressVersion(address) {
+  const fields = ['direccionOriginal', 'calle', 'altura', 'pisoDepto', 'localidad', 'provincia', 'codigoPostal']
+  const values = fields.map((field) => field === 'direccionOriginal' ? address[field] || '' : address[field].trim())
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify([1, ...values])))
+  return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 export async function api(path, { method = 'GET', body, signal, headers = {}, fullResponse = false } = {}) {
   let response
   try {

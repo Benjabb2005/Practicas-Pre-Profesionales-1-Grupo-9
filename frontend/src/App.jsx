@@ -105,7 +105,7 @@ function Sidebar({ page, setPage, role, name, onLogout }) {
 function OperatorApp({ user, onLogout, logoutError }) {
   const [page, setPage] = useState('board')
   const role = user.rol === 'admin' ? 'Administrador' : 'Operador'
-  return <div className="operator-app"><Sidebar page={page} setPage={setPage} role={role} name={user.nombre} onLogout={onLogout}/><div className="workspace"><p className="prototype-notice">Pedidos persistidos · Revisión geográfica y despacho pendientes de integración.</p>{logoutError && <p className="login-error" role="alert">{logoutError}</p>}{page === 'users' && user.rol === 'admin' ? <Users/> : page === 'form' ? <OrderForm setPage={setPage}/> : <Board setPage={setPage}/>}</div></div>
+  return <div className="operator-app"><Sidebar page={page} setPage={setPage} role={role} name={user.nombre} onLogout={onLogout}/><div className="workspace"><p className="prototype-notice">Pedidos persistidos · Confirmá la ubicación antes del despacho.</p>{logoutError && <p className="login-error" role="alert">{logoutError}</p>}{page === 'users' && user.rol === 'admin' ? <Users/> : page === 'form' ? <OrderForm setPage={setPage}/> : <Board setPage={setPage}/>}</div></div>
 }
 
 function App() {

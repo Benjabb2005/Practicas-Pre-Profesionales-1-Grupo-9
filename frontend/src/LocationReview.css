@@ -1,0 +1,13 @@
+.location-review { border-top: 1px solid #cbd5e1; margin-top: 16px; padding-top: 12px; min-width: 0; }
+.location-map { height: 300px; width: 100%; margin: 12px 0; z-index: 0; }
+.location-review label, .draft-location label { display: block; margin: 10px 0; font-size: 13px; }
+.location-review input[type=number], .location-review textarea, .draft-location input[type=number], .draft-location textarea { display: block; width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid #94a3b8; border-radius: 6px; font: inherit; }
+.location-review textarea, .draft-location textarea { min-height: 60px; }
+.draft-location { padding: 16px; min-width: 0; }
+.draft-location > button { margin: 6px 0; width: 100%; white-space: normal; }
+.location-placeholder { background: #f1f5f9; border: 1px dashed #cbd5e1; padding: 24px 12px; border-radius: 8px; font-size: 13px; }
+.location-pin { background: #b42318; border: 3px solid white; border-radius: 50%; box-shadow: 0 1px 5px #0008; }
+.location-candidates { display: grid; gap: 6px; margin-top: 10px; }
+.location-candidates button { white-space: normal; text-align: left; overflow-wrap: anywhere; }
+.location-ack input { margin-right: 8px; }
+@media (max-width: 480px) { .location-map { height: 260px; } }

@@ -5,7 +5,7 @@ const { createDatabase } = require("./database");
 const { loadCliConfig } = require("./cli-config");
 
 const tables = ["clientes", "direcciones", "pedidos", "historial_geolocalizacion", "historial_estados", "usuarios"];
-const files = ["001_sesiones.sql", "002_carga_pedidos.sql"];
+const files = ["001_sesiones.sql", "002_carga_pedidos.sql", "003_revision_direccion.sql"];
 
 function statements(text) {
     return text.replace(/^--.*$/gm, "").split(";").map((s) => s.trim()).filter(Boolean);
@@ -61,6 +61,11 @@ async function migrate(pool, { apply = false } = {}) {
                 if (columns.length) throw new Error("Hay columnas de la migración 002 sin registro; revisar/restaurar antes de aplicar.");
             }
             report.migrations.push({ version: file, status: recorded ? "already-applied" : apply ? "applied" : "pending" });
+            if (!recorded && file === "003_revision_direccion.sql" && (present.length || apply)) {
+                const [columns] = await connection.query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'direcciones' AND COLUMN_NAME = 'revision'");
+                const [triggers] = await connection.query("SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = 'direcciones_revision'");
+                if (columns.length || triggers.length) throw new Error("Hay objetos de la migración 003 sin registro; revisar recuperación antes de aplicar.");
+            }
             if (apply && !recorded) {
                 for (const sql of statements(text)) await connection.query(sql);
                 await connection.execute("INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)", [file, checksum]);
