@@ -30,6 +30,9 @@
 .show-password:hover { background: #f1f5fa; color: #2860ed; }
 .login-submit { display: flex; align-items: center; justify-content: space-between; height: 51px; margin-top: 13px; padding: 0 20px; border: 0; border-radius: 8px; background: #2860ed; box-shadow: 0 5px 12px #2860ed26; color: #fff; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; }
 .login-submit:hover { background: #1f53da; }
+.login-submit:disabled { opacity: .65; cursor: wait; }
+.session-loading { display: grid; min-height: 100vh; place-items: center; color: #10213b; }
+.prototype-notice { margin: 0; padding: 12px 16px; background: #fff4d9; color: #624512; font-size: 12px; line-height: 1.5; }
 .login-submit > span:last-child { font-size: 17px; font-weight: 400; }
 .login-error { margin: 0; padding: 10px 12px; border-radius: 7px; background: #fff2f0; color: #b42318; font-size: 12px; line-height: 1.5; }
 .demo-credentials { display: grid; gap: 5px; margin-top: 20px; color: #91a0b5; font-size: 10px; line-height: 1.55; text-align: center; }
@@ -156,8 +159,13 @@
   .driver-field, .status-field { grid-column: auto; }
 }
 @media (min-width: 1024px) {
-  .operator-app { width: 66.666667%; min-height: 66.666667vh; transform: scale(1.5); transform-origin: top left; }
-  .operator-app .workspace { min-height: 66.666667vh; }
+  .sidebar { width: 190px; }
+  .workspace { margin-left: 190px; }
+  .nav-item { min-height: 34px; font-size: 11px; }
+  .brand b { font-size: 13px; }
+  .brand small { font-size: 9px; }
+  .profile b { font-size: 11px; }
+  .profile small { font-size: 10px; }
   .operator-app .order-layout { grid-template-columns: minmax(0, 1.62fr) minmax(240px, .96fr); }
 }
 @media (max-width: 680px) {
@@ -166,7 +174,7 @@
   .navigation { display: flex; gap: 4px; padding: 0 0 3px; overflow-x: auto; }
   .nav-item { flex: 0 0 auto; width: auto; min-height: 32px; }
   .nav-item small { display: none; }
-  .profile { display: none; }
+  .profile { display: flex; margin-top: 6px; padding-block: 6px; }
   .workspace { margin-left: 0; }
   .main-content { padding: 20px 14px 30px; }
   .page-header { align-items: flex-start; }

@@ -2,7 +2,9 @@
 
 Caso 7: normalización y geolocalización de direcciones de envío. La IA implementa y el equipo define, comprende y valida.
 
-**Estado:** frontend de demostración, backend con respuesta HTTP básica y conexión MySQL, SQL inicial sin migraciones. Todavía no hay flujo de pedidos persistido ni autenticación real. Ver [arquitectura](docs/arquitectura.md).
+**Estado al 13/10/2026:** acceso real admin/operador, carga persistida de pedidos completos, frecuentes y tablero con consulta/filtros/detalle. Migraciones 001/002 y respaldo disponibles. Geolocalización, confirmación, importación histórica y chofer operativo pendientes; chofer conserva demo. Clientes independiente para MVP 2. Ver [acceso y entorno](docs/acceso-y-entorno.md) para preparar cuentas/base y [arquitectura](docs/arquitectura.md) para límites.
+
+**Cuentas de empleados:** administrador → Usuarios → Crear usuario. Para preparar el primer administrador, ejecutar `npm --prefix backend run setup-admin` y responder nombre/email/contraseña; después se crean cuentas desde la aplicación. Sin registro público, credenciales comunes ni variables manuales para el uso normal.
 
 ## Empezar con IA
 
@@ -34,7 +36,7 @@ docker compose logs --tail 100 backend
 
 Frontend: http://localhost:5173 · backend: http://localhost:3000 · MySQL: localhost:3306. Para detener sin eliminar datos: `docker compose stop`. No borrar volúmenes.
 
-**Importante:** Compose no monta database/init.sql; iniciar MySQL no crea esas tablas. El script inicial no es una migración y no debe reaplicarse sobre datos existentes. Resolver T02 antes de habilitar persistencia.
+**Importante:** Compose no migra el esquema automáticamente. Usar runner con dry-run y respaldo según [acceso y entorno](docs/acceso-y-entorno.md), nunca reaplicar init.sql sobre datos existentes. Ejecutar setup-session y recrear backend para cargar configuración local; crear cuenta individual desde consola. No hay credenciales públicas para login real.
 
 ## Ejecución nativa opcional
 
@@ -46,7 +48,7 @@ npm --prefix backend run dev
 npm --prefix frontend run dev
 ```
 
-El backend actual puede responder / aunque MySQL falle. El frontend todavía no llama al backend, y no hay proxy Vite ni configuración CORS de aplicación.
+El backend puede responder / aunque MySQL falle; /health/ready comprueba conectividad. Vite tiene proxy para /api y /health; login y pedidos consultan backend con cookie. Guardar un pedido no habilita despacho: queda pendiente de revisión geográfica.
 
 ## Documentación
 

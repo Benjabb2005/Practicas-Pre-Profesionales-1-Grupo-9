@@ -1,5 +1,19 @@
 # Referencia de pantallas — relevamiento recibido y revisión local 30/09/2026
 
+Tipografía ajustada posteriormente: Cargar Pedido y formularios compartidos con etiquetas/ayuda 13 px, entradas y nombres de lista 14 px, detalles 12 px y títulos 16/22 px. Se mantienen campos compactos de 30 px escritorio/36 móvil. Verificado en escritorio y 320 px, sin desborde horizontal.
+
+Filtro en vivo de frecuentes: al escribir parte del DNI/email/teléfono aparece lista con nombre y datos de identificación/contacto, se acota al completar y muestra sin coincidencias. Sin botón Buscar; 250 ms de espera y consultas viejas canceladas. Seleccionar autocompleta cliente y cierra lista. Verificado con datos sintéticos en escritorio y móvil; regla de no duplicar personas conservada.
+
+D11 posterior: retirada casilla de registrar coincidencia por separado. Al salir de DNI/email/teléfono, una coincidencia exacta normalizada muestra aviso junto a cliente, error en campo y candidatos frecuentes; Guardar bloqueado hasta selección/corrección. Seleccionar limpia aviso y permite otro pedido. Backend impone la misma regla, sin bandera de excepción.
+
+Compactación del 13/10: Cargar Pedido vuelve a controles de 30 px en escritorio, textos y espacios moderados, textarea 52 px y grillas de cliente/dirección. Se retira transform scale(1.5) preexistente para dimensionar directamente; navegación ajustada. Controles de 36 px en móvil y sin desborde a 320 px. Usuarios comparte el estilo compacto de formulario. No hay cambios de permisos/validación/guardado.
+
+Usuarios (solicitud del 13/10, nueva funcionalidad propia, no observación de demo): visible a admin, listado nombre/email/rol/estado y formulario de alta con contraseña/confirmación. Operador no ve acceso y servidor rechaza operación. [Spec Usuarios](../frontend/specs/usuarios.md). Comprobada visualmente en escritorio y 320×740 con cuenta/base sintéticas; sin desborde global.
+
+Segundo corte del 13/10: [carga persistida](../frontend/specs/carga-persistida.md), con obligatorios acordados, Piso/Depto y notas opcionales, búsqueda/selección explícita de frecuentes. Guardado lleva a éxito con código y revisión pendiente. Tablero consulta MySQL, filtros/fechas/paginación y detalle. Se retiraron controles de agrupamiento y chofer simulados de estas pantallas hasta su implementación autorizada. Descripción de maqueta de carga/tablero del primer corte siguiente es histórica; mapa/confirmación siguen pendientes.
+
+Actualización local del 13/10: login conectado a servidor, sin cuentas hardcodeadas; recupera sesión y muestra nombre/rol reales. Acceso explícito al prototipo del chofer con aviso de datos ficticios; no es login real de chofer. Tablero/carga conservan maqueta con aviso de que no guardan. Clientes independiente sigue deshabilitado por corresponder a MVP 2. [Spec del acceso](../frontend/specs/acceso-real.md). La descripción local antigua de rechazo al chofer queda superada por la demo implementada antes de este corte.
+
 ## Procedencia
 Las observaciones de roles y pantallas siguientes provienen del ZIP, de una sesión previa; no son pruebas repetidas por este agente. En esta preparación se abrió la URL en navegador y se verificó únicamente el login público: marca, mensaje, usuario/email, contraseña y botón de ingreso. No se proporcionó una sesión autenticada ni se usaron las cuentas locales contra la demo. El acceso textual web falló; el navegador sí cargó el login. No se probaron pedidos, guardado, mapas, pagos ni viewport móvil remoto.
 

@@ -1,28 +1,43 @@
 require("dotenv").config();
 
-const mysql = require("mysql2");
-
-const app = require("./app");
+const { createApp } = require("./app");
+const { createDatabase } = require("./database");
+const { createAuthStore } = require("./auth-store");
+const { createOrderStore } = require("./orders");
+const { createUserStore } = require("./users");
 const PORT = process.env.PORT || 3000;
-
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+const database = createDatabase();
+const app = createApp({
+    checkDatabase: database.checkDatabase,
+    orders: createOrderStore(database.pool),
+    users: createUserStore(database.pool),
+    auth: {
+        store: createAuthStore(database.pool),
+        secret: process.env.SESSION_SECRET,
+        allowedOrigin: process.env.APP_ORIGIN || "http://localhost:5173",
+        secureCookies: process.env.COOKIE_SECURE === "true",
+    },
 });
-
-db.connect((error) => {
-    if (error) {
-        console.error("Error al conectar con MySQL:");
-        console.error(error.message);
-        return;
-    }
-
-    console.log("Conexión a MySQL exitosa");
-});
-
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Servidor funcionando en http://localhost:${PORT}`);
 });
+
+let stopping = false;
+function shutdown() {
+    if (stopping) return;
+    stopping = true;
+    const deadline = setTimeout(() => process.exit(1), 5000);
+    deadline.unref();
+    server.close(async () => {
+        try {
+            await database.close();
+            clearTimeout(deadline);
+        } catch {
+            console.error("No se pudo cerrar la conexión a la base de datos.");
+            process.exitCode = 1;
+        }
+    });
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

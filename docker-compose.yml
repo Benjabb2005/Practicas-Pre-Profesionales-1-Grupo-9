@@ -36,6 +36,9 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       PORT: 3000
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:5173}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
 
     ports:
       - "3000:3000"
@@ -54,6 +57,10 @@ services:
       context: ./frontend
 
     container_name: mandatodo_frontend
+
+    environment:
+      API_PROXY_TARGET: http://backend:3000
+      VITE_USE_POLLING: 'true'
 
     ports:
       - "5173:5173"

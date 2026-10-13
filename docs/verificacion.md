@@ -1,5 +1,58 @@
 # Verificación y evidencia · 30/09/2026
 
+## Filtro en vivo · 13/10/2026
+
+npm run check completo OK (24 sin DB; integración omitida aquí). test:mysql ejecutado aparte en mandatodo_test_20261013_f4f3c9ce y su copia de recuperación: consultas parciales desde un carácter, reducción por DNI completo, email con mayúsculas, teléfono con separadores/parcial, %/_ literales, vacío 400, sin coincidencias; resto de reglas y recuperación de ocho tablas preservados. Ajuste final prioriza coincidencia exacta antes de límite 20 y bloquea Enter del buscador para no enviar pedido; repetir integración final antes de cerrar.
+
+Navegador QA: sin botón Buscar, lista automática dos→uno por DNI; cambios rápidos email→teléfono con resultado del texto final; vacío sin registros, selección autocompleta y cierra lista. Lista a 320×740 clientWidth=scrollWidth=305. Captura ignorada temp/qa/clientes-filtro-vivo-qa.png. Sin crear/modificar clientes de base actual durante QA; sin migraciones/dependencias.
+
+Repetición final después de priorizar coincidencias exactas y bloquear Enter: npm run check completo OK y test:mysql OK en mandatodo_test_20261013_207db3c4 y su copia restaurada. git diff --check OK. Procesos QA cerrados y contraseña temporal de fixture retirada; servicios principales conservados.
+
+## Clientes sin excepción de duplicados · 13/10/2026
+
+npm run check OK: 24 pruebas, SQL omitida aquí y ejecutada por separado. MySQL aislado en mandatodo_test_20261013_69a80206: rechaza coincidencias independientes de DNI/email/teléfono, normalización de email y formato telefónico, bandera vieja, y dos altas simultáneas de igual DNI (201/409). Conserva idempotencia de pedidos y pedidos múltiples de cliente seleccionado. Rollback real llega a INSERT de pedido después de cliente/dirección y conserva recuentos. Dump/restauración de ocho tablas OK.
+
+Navegador sobre QA: checkbox eliminado; ingresar DNI sintético coincidente y salir del campo muestra aviso/candidato/error y bloquea Guardar; seleccionar limpia aviso. Captura ignorada en temp/qa/cliente-existente-aviso-qa.png. Sin escrituras a clientes/pedidos reales ni migración; pruebas en base aislada. La corrección de históricos incompletos y restricción de escrituras externas quedan para sus tareas.
+
+Repetición final luego de comparación binaria de email: npm run check completo OK, test:mysql OK en mandatodo_test_20261013_1f687dfa y mandatodo_restore_test_20261013_1f687dfa. git diff --check sin errores. Procesos temporales QA cerrados y contraseña de fixture eliminada; aplicación principal conservada.
+
+## Creación de usuarios por admin · 13/10/2026
+
+npm run check completo OK, 24 pruebas y una integración omitida sin configuración. Integración MySQL ampliada ejecutada: anónimo 401, operador GET/POST 403, admin POST 201, email duplicado 409, rol/password inválidos 422, campos extra 400; listado/respuesta sin hashes/contraseñas; empleado creado ingresa y no accede a Usuarios. Primer ensayo falló por recuento antiguo de revocaciones (2 frente a 1); corrección de aserción y repetición OK en mandatodo_test_20261013_1eb227b5 y mandatodo_restore_test_20261013_1eb227b5, con recuperación de ocho tablas.
+
+Navegador con admin/base sintéticos: navegación Usuarios, formulario y lista observados, ancho a 320×740 clientWidth=scrollWidth=305. Captura local temp/qa/usuarios-admin-qa.png. No se crearon credenciales humanas en navegador ni cuentas en la base actual. Bootstrap interactivo implementado, pendiente ejecución por instalador humano. No hay nueva migración ni dependencias. Cuenta/contraseña de fixture solo QA, sin imprimir; se retiran procesos y archivo temporal al terminar.
+
+## Primer corte · 13/10/2026
+
+Segundo corte T04 del mismo día: npm run check pasa con 24 pruebas sin DB y una integración omitida intencionalmente. Integración SQL ejecutada aparte y exitosa: 001/002 repetibles, creación/consulta, rechazo de incompletos, duplicado de cliente, idempotencia incluida concurrencia, fallo forzado tras cliente/dirección con rollback real, límite de fechas Buenos Aires y dump/restauración de ocho tablas. Últimas bases de prueba: mandatodo_test_20261013_6afebc3c y su copia de recuperación; el ensayo final se registra con nombre nuevo al ejecutarse.
+
+Verificación final ejecutada: npm run check completo OK (24 pasan, una SQL omitida aquí); test:mysql separado OK en mandatodo_test_20261013_cfbdbef2 y mandatodo_restore_test_20261013_cfbdbef2, incluido límite de medianoche Buenos Aires. Dry-run actual reconoce 001/002 already-applied. git diff --check y context:check OK. Servicios temporales QA (3001/5175) terminados; aplicación principal 3000/5173 y MySQL permanecen activos.
+
+002 aplicada en base actual luego de aprobación y segundo respaldo; dry-run confirma ambas migraciones registradas. QA en navegador con base aislada y cuenta sintética: login, carga completa sin Piso/Depto, guardado, recarga/sesión/tablero y logout/recarga comprobados. Formulario y tablero a 320×740: ancho de contenido coincide con viewport útil (305), sin desborde global. Capturas en temp/qa/pedidos-persistidos-qa.png y carga-pedidos-mobile-qa.png; no son datos reales ni integración geográfica. Servicios de QA temporales cerrados; contraseña temporal borrada. Base/servicios principales conservados. Las limitaciones de falta de persistencia/éxito UI del primer corte siguiente quedaron superadas para carga/consulta y prueba sintética.
+
+Rama branch-benjamin-1; ejecuciones nuevas, no heredadas. Las secciones del 30/09 siguientes se conservan como históricas.
+
+| Comando/caso | Resultado y alcance |
+| --- | --- |
+| npm run check inicial | OK: contexto, sintaxis, dos smoke tests, lint/build |
+| Docker config --quiet / ps | Sandbox rechazó configuración local; repetidos con acceso autorizado, OK: tres servicios activos, MySQL healthy |
+| Instalar jsonwebtoken@9 | Sandbox rechazó red/cache; repetido autorizado desde registry, OK |
+| npm audit backend | Cinco avisos iniciales; actualización indirecta proxy-addr corrigió crítico; cuatro altos restantes en cadena de desarrollo. Sin fix --force |
+| npm run check con código nuevo | Primer lint falló por process en vite.config; agregado import node:process. Repetición OK: 18 tests pasan, uno SQL aislado se omite sin configuración; lint/build pasan |
+| npm --prefix backend run test:mysql | SQL real OK: migración nueva/repetida, cuenta duplicada rechazada, sesión/recuperación/revocación persistidas |
+| test:mysql con recuperación | OK: mandatodo_test_20261013_0846dcd8 y mandatodo_restore_test_20261013_0846dcd8. Dump/restauración y comparación de ocho tablas; se conservan sin borrar bases |
+| migrate --dry-run actual | baseline existing, 001 pending; sin escrituras |
+| backup actual | SQL local ignorado, SHA-256 en tareas; sin publicar filas/credenciales |
+| migrate --apply actual | Aprobado después de respaldo: 001 applied; no cambió datos/tablas de negocio |
+| setup-session | Secretos locales preparados, sin imprimir ni sobrescribir existentes |
+| Docker build/up backend/frontend | npm ci en imágenes; MySQL conservado. npm ci en backend sincronizó volumen de dependencias anterior; recreado para cargar secreto |
+| Health directo y vía Vite | 200: proceso y SELECT 1; scope=database, no acreditan esquema de pedidos |
+| /api/sesion sin cookie vía Vite | 401 SESSION_REQUIRED |
+| Navegador localhost:5173 | Credenciales sintéticas inválidas: rechazo genérico; demo del chofer separada, regreso al acceso |
+| Login móvil 320×740 | Detectado desborde por body min-width 320 y scrollbar; corregido a 0, verificado clientWidth=scrollWidth=305. Logout no se oculta en CSS móvil |
+
+Capturas locales de escritorio/móvil en temp/qa/, ignoradas. Éxito/recarga/logout en navegador humano pendientes de crear cuenta; SQL/API probados con datos sintéticos. No se probaron pedidos, importación ni geocodificador. Docker informó también dos avisos altos del frontend, sin actualización general fuera del corte. El ensayo SQL inicial también dejó mandatodo_test_20261013_c3bdeaa3 con datos sintéticos.
+
 ## Comandos disponibles
 
 Desde la raíz, después de instalar las dependencias de backend y frontend:

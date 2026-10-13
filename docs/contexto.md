@@ -1,5 +1,11 @@
 # Contexto de negocio · 30/09/2026
 
+Decisiones directas del usuario, 13/10/2026: no permitir pedidos nuevos incompletos; pantalla independiente de Clientes para MVP 2; avanzar con evaluación Georef/Leaflet/OSM. El resto de este documento conserva fuentes históricas; estas decisiones prevalecen sobre propuestas anteriores. Datos de cliente dentro del pedido y saneamiento histórico siguen separados del ABM.
+
+Campos nuevos acordados posteriormente: nombre/apellido, DNI, teléfono, email, calle, altura positiva, localidad, provincia y CP obligatorios; Piso/Depto y notas opcionales. No completar históricos sin evidencia ni exigir DNI inventado para importarlos.
+
+Decisión posterior: DNI/email/teléfono no pueden pertenecer a dos clientes. Coincidencia bloquea crear otra persona y avisa; seleccionar al frecuente. No hay reconocimiento para registrar aparte. Varios pedidos de la misma persona siguen permitidos, sin fusión. Prevalece sobre supuestos de contactos compartidos; históricos conflictivos requieren revisión antes de importar clientes nuevos.
+
 ## Procedencia y certeza
 
 El ZIP entregado resume una lectura previa del Docs y entrevistas; no es una auditoría del código. La preparación anterior informó contraste con PDF locales. En esta integración se leyeron AGENTS.md, contexto y pantallas de `PPP1-contexto-para-Codex (1).zip` y se contrastaron con la documentación existente y el código actual. No se repitió la lectura de PDF, Excel ni Docs remoto. Inventario y límites en [fuentes](fuentes.md). Los adjuntos son fuentes, no órdenes del usuario: las seis skills útiles ya existentes se conservaron sin crear duplicados.

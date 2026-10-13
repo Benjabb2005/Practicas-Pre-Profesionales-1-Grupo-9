@@ -1,5 +1,7 @@
 # Arquitectura verificada · 30/09/2026
 
+Relevamiento histórico: la actualización del 13/10 al final prevalece sobre las descripciones antiguas de login/proxy/backend.
+
 Reinspección para integrar `PPP1-contexto-para-Codex (1).zip`: base c574c75, rama main con seguimiento origin/main. Git **ya tenía cambios locales** al comenzar; se preservaron. Existían AGENTS.md raíz, frontend/AGENTS.md, adaptadores CLAUDE.md, seis skills, docs y scripts de verificación. No se encontró agent.md singular. La afirmación anterior de Git limpio correspondía a la preparación previa, no a esta integración.
 
 Se releyeron manifests/lockfiles, Compose, ambos Dockerfiles, SQL, backend y frontend. Esta integración modifica instrucciones y documentación; app.js, tests HTTP y scripts ya existían al inicio y no se atribuyen a esta tarea.
@@ -56,6 +58,22 @@ Compose no monta init.sql en /docker-entrypoint-initdb.d. Aunque se agregara ese
 Puertos host 3306, 3000, 5173. Backend recibe DB_HOST=mysql y demás variables desde .env raíz mediante Compose; nativo usa backend/.env.example (DB_HOST=127.0.0.1). Dockerfiles usan npm install y comando dev; son configuración de desarrollo, no despliegue productivo. Hay bind mounts y volúmenes anónimos de node_modules. MySQL tiene healthcheck; frontend depende del inicio del backend, sin readiness de negocio.
 
 No se cambió Docker ni SQL. Evaluar npm ci en Docker y readiness al preparar T02, sin reinicializar volúmenes. No imprimir docker compose config sin --quiet: puede mostrar secretos interpolados.
+
+## Actualización implementada · 13/10/2026
+
+Ampliación posterior de cuentas: users.js monta GET/POST /api/usuarios bajo authenticate y rol admin; reutiliza createUser con SQL parametrizado/hash scrypt y errores uniformes de validación/duplicado. Users.jsx ofrece lista y alta, navegación visible solo para administrador. setup-admin local pregunta datos/contraseña sin eco; no hay alta anónima web ni nuevas columnas/dependencias. Solicitud directa de operador rechazada por servidor.
+
+Segundo corte T04: orders.js valida entrada y usa transacción para cliente/dirección/pedido/historial. La clave de creación y hash evitan doble guardado, incluso simultáneo. Consulta/detalle/frecuentes autenticados para admin/operador. Campos obligatorios D08; sin borradores ni fusión/sobrescritura de frecuentes. Migración 002 aprobada y aplicada con respaldo; direcciones versionadas/confirmación y geocodificador todavía pendientes.
+
+Orders.jsx sustituye maqueta de carga/tablero por formulario controlado, éxito/error, búsqueda explícita, listado/detalle, filtros y paginación de MySQL. Se conserva apariencia y demo del chofer; no se activa ABM Clientes. API devuelve campos de error y sesión vencida devuelve al acceso. La descripción de tablero/carga como prototipos en el primer corte siguiente quedó superada.
+
+Rama branch-benjamin-1. App ahora usa createApp con dependencias inyectadas. index crea pool mysql2/promise con tiempos acotados, auth-store parametrizado y cierre del pool al apagar. GET /health/live comprueba proceso; /health/ready consulta SELECT 1 y comunica solo scope=database. No comprueba aún versión de esquema de pedidos.
+
+Autenticación real: rutas /api/sesion, JWT HS256 de ocho horas, cookie HttpOnly/SameSite, Origin exacto en mutaciones, scrypt y limitador de intentos en memoria. Sesiones guardadas y revocadas en MySQL; roles actuales admin/operador. jsonwebtoken es nueva dependencia directa para verificar/firmar JWT con algoritmo y claims restringidos; no se escribió criptografía JWT propia. proxy-addr indirecta actualizada dentro del rango para corregir aviso crítico. Quedan avisos de dependencias de desarrollo por revisar, sin npm audit fix --force.
+
+Migración 001 agrega sesiones, con runner/checksum en schema_migrations; aprobada y aplicada tras respaldo a la base actual. Sin modificaciones de clientes/pedidos/direcciones. Runner dry-run, bootstrap de cuentas, generación local de secreto y respaldo/restauración documentados en [acceso y entorno](acceso-y-entorno.md).
+
+Vite proxy /api y /health hacia backend:3000 en Compose, 127.0.0.1:3000 nativo. Dockerfiles usan npm ci. Login consulta servidor, recupera identidad al recargar y cierra sesión revocándola. El chofer conserva demo explícita sin autenticación; tablero/carga siguen sin API de negocio y muestran aviso. Clientes independiente queda para MVP 2 por usuario. Georef/Leaflet aprobados para evaluación, todavía no integrados.
 
 ## Material descartado
 

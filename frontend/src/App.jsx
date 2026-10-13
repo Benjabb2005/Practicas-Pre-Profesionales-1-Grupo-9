@@ -1,13 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import DriverApp from './DriverApp.jsx'
-
-const DEMO_ACCOUNTS = {
-  'admin@mandatodo.com': 'Administrador',
-  'operador@mandatodo.com': 'Operador',
-  'chofer@mandatodo.com': 'Chofer',
-}
-const DEMO_PASSWORD = 'demo1234'
+import { api } from './api.js'
+import { Board, OrderForm } from './Orders.jsx'
+import Users from './Users.jsx'
 
 function Icon({ name, size = 16 }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
@@ -29,22 +25,27 @@ function Icon({ name, size = 16 }) {
   return <svg {...common}>{paths[name] || null}</svg>
 }
 
-function Login({ onLogin }) {
+function Login({ onLogin, onDemo, initialError }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const normalizedEmail = email.trim().toLowerCase()
-    const role = DEMO_ACCOUNTS[normalizedEmail]
-    if (!role || password !== DEMO_PASSWORD) {
-      setError('Usuario o contraseña incorrectos. Revisá los datos e intentá nuevamente.')
-      return
-    }
+    if (pending) return
+    setPending(true)
     setError('')
-    onLogin(role)
+    try {
+      const session = await api('/sesion', { method: 'POST', body: { email: email.trim(), password } })
+      setPassword('')
+      onLogin(session.usuario)
+    } catch (failure) {
+      setError(failure.message || 'No se pudo conectar. Volvé a intentar.')
+    } finally {
+      setPending(false)
+    }
   }
 
   return <main className="login-shell">
@@ -67,10 +68,10 @@ function Login({ onLogin }) {
           <input id="access-email" type="email" autoComplete="username" placeholder="nombre@empresa.com" value={email} onChange={(event) => { setEmail(event.target.value); setError('') }} required/>
           <label htmlFor="access-password">Contraseña</label>
           <div className="login-password-wrap"><input id="access-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Ingresá tu contraseña" value={password} onChange={(event) => { setPassword(event.target.value); setError('') }} required/><button type="button" className="show-password" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}><Icon name="eye" size={16}/></button></div>
-          <button className="login-submit" type="submit"><span>Iniciar sesión</span><span>→</span></button>
-          {error && <p className="login-error" role="alert">{error}</p>}
+          <button className="login-submit" type="submit" disabled={pending}><span>{pending ? 'Ingresando…' : 'Iniciar sesión'}</span><span>→</span></button>
+          {(error || initialError) && <p className="login-error" role="alert">{error || initialError}</p>}
         </form>
-        <div className="demo-credentials"><b>Accesos de demostración</b><span>admin@mandatodo.com · operador@mandatodo.com · chofer@mandatodo.com</span><span>Contraseña para todas: <strong>demo1234</strong></span></div>
+        <div className="demo-credentials"><b>Prototipo del chofer</b><span>Datos ficticios, sin sesión ni persistencia.</span><button type="button" className="button button-outline" onClick={onDemo}>Ver demostración del chofer</button></div>
         <p className="login-secure">Acceso seguro para personal autorizado</p>
       </div>
     </section>
@@ -82,109 +83,73 @@ const NAV_ITEMS = [
   { id: 'board', label: 'Tablero de Envíos', icon: 'grid' },
   { id: 'routes', label: 'Rutas', icon: 'route', soon: true },
   { id: 'clients', label: 'Clientes', icon: 'users', soon: true },
+  { id: 'users', label: 'Usuarios', icon: 'users', adminOnly: true },
 ]
 
 function Brand() {
   return <div className="brand"><span className="brand-badge"><Icon name="truck" size={20}/></span><span><b>MandáTodo</b><small>Sistema Logístico</small></span></div>
 }
 
-function Sidebar({ page, setPage, role, onLogout }) {
+function Sidebar({ page, setPage, role, name, onLogout }) {
   return <aside className="sidebar">
     <Brand/>
     <nav className="navigation" aria-label="Navegación principal">
-      {NAV_ITEMS.map((item) => <button key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={() => !item.soon && setPage(item.id)} disabled={item.soon}>
+      {NAV_ITEMS.filter((item) => !item.adminOnly || role === 'Administrador').map((item) => <button key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={() => !item.soon && setPage(item.id)} disabled={item.soon}>
         <Icon name={item.icon}/><span>{item.label}</span>{item.soon && <small>PRÓX.</small>}
       </button>)}
     </nav>
-    <div className="profile"><span className="avatar">{role === 'Administrador' ? 'A' : 'O'}</span><span><b>{role === 'Administrador' ? 'Administración' : 'Operaciones'}</b><small>{role}</small></span><button className="logout" onClick={onLogout} title="Cerrar sesión" aria-label="Cerrar sesión"><Icon name="logout" size={14}/></button></div>
+    <div className="profile"><span className="avatar">{role === 'Administrador' ? 'A' : 'O'}</span><span><b>{name}</b><small>{role}</small></span><button className="logout" onClick={onLogout} title="Cerrar sesión" aria-label="Cerrar sesión"><Icon name="logout" size={14}/></button></div>
   </aside>
 }
 
-function PageHeader({ eyebrow, title, subtitle, action, onAction }) {
-  return <header className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="subtitle">{subtitle}</p></div>{action && <button className="button button-primary header-action" onClick={onAction}><Icon name="plus"/> {action}</button>}</header>
-}
-
-function StatCard({ icon, tone, value, label }) {
-  return <article className="stat-card"><span className={`stat-icon ${tone}`}><Icon name={icon} size={19}/></span><div><strong>{value}</strong><small>{label}</small></div></article>
-}
-
-function EmptyState({ onCreate }) {
-  return <div className="empty-state"><span className="empty-icon"><Icon name="box" size={22}/></span><strong>Todavía no hay pedidos cargados</strong><p>Los pedidos que cargues aparecerán en esta tabla.</p><button className="button button-outline" onClick={onCreate}>Cargar primer pedido</button></div>
-}
-
-function Board({ setPage }) {
-  return <main className="main-content board-page">
-    <PageHeader eyebrow="Centro de operaciones" title="Tablero General de Despacho" subtitle="Vista general de la operación de hoy." action="Cargar nuevo pedido" onAction={() => setPage('form')}/>
-    <section className="stats-grid" aria-label="Resumen de envíos">
-      <StatCard icon="box" tone="blue" value="0" label="Pedidos Registrados"/>
-      <StatCard icon="grid" tone="amber" value="0" label="En Preparación"/>
-      <StatCard icon="truck" tone="purple" value="0" label="En Ruta de Envío"/>
-      <StatCard icon="check" tone="green" value="0" label="Entregados y Pagados"/>
-    </section>
-    <section className="shipments-card">
-      <div className="shipments-heading"><div><h2>Envíos del Día</h2><p>Seguimiento de pedidos cargados</p></div><button className="button button-outline group-button"><Icon name="link" size={14}/> Agrupar envíos lejanos automáticamente</button></div>
-      <div className="filters"><label>Estado<select defaultValue="all"><option value="all">Todos los estados</option><option>En stock</option><option>En preparación</option><option>En envío</option><option>Entregado</option><option>Pagado</option></select></label><label>Chofer asignado<select defaultValue="all"><option value="all">Todos los choferes</option><option>Sin asignar</option><option>Chofer 1</option><option>Chofer 2</option></select></label></div>
-      <EmptyState onCreate={() => setPage('form')}/>
-    </section>
-  </main>
-}
-
-function Field({ label, placeholder, required, type = 'text', className = '' }) {
-  const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  return <label className={`form-field ${className}`} htmlFor={id}><span>{label}{required && <b> *</b>}</span><input id={id} type={type} autoComplete="off" placeholder={placeholder}/></label>
-}
-
-function SelectField({ label, children, className = '' }) {
-  const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  return <label className={`form-field ${className}`} htmlFor={id}><span>{label}</span><select id={id}>{children}</select></label>
-}
-
-function OrderForm({ setPage }) {
-  return <main className="main-content form-page">
-    <PageHeader eyebrow="Nuevo envío" title="Carga Manual de Pedido" subtitle="Completá los datos y validá la ubicación antes de despachar." action="Ver tablero" onAction={() => setPage('board')}/>
-    <div className="order-layout">
-      <section className="panel order-panel">
-        <div className="section-heading"><span className="step-number">1</span><div><h2>Datos del cliente y envío</h2><p>Los campos marcados con * son obligatorios.</p></div></div>
-        <div className="customer-search"><label htmlFor="customer-search">Cliente frecuente</label><div className="search-input"><Icon name="search" size={15}/><input id="customer-search" autoComplete="off" placeholder="Buscar por DNI, email o teléfono"/></div></div>
-        <div className="form-divider"><span>Datos del cliente</span></div>
-        <div className="fields-grid customer-fields">
-          <Field label="Nombre" placeholder="Ej. María" required/><Field label="Apellido" placeholder="Ej. González" required/>
-          <Field label="DNI" placeholder="Documento"/><Field label="Teléfono" placeholder="11 0000 0000" type="tel"/>
-          <Field label="Email" placeholder="cliente@email.com" type="email" className="span-2"/>
-        </div>
-        <div className="form-divider address-divider"><span>Dirección de entrega</span></div>
-        <div className="fields-grid address-fields">
-          <Field label="Calle" placeholder="Ej. Av. Corrientes" required className="street-field"/><Field label="Altura" placeholder="1234" required/>
-          <Field label="Piso/Depto" placeholder="Ej. 4° B"/><Field label="Localidad" placeholder="Ej. CABA" required/><Field label="Código Postal" placeholder="Ej. C1043" required/>
-          <Field label="Entre calles" placeholder="Opcional" className="span-2"/>
-          <label className="form-field span-2" htmlFor="delivery-notes"><span>Notas / Instrucciones de entrega</span><textarea id="delivery-notes" placeholder="Ej. Tocar timbre B, dejar en recepción..." rows="3"/></label>
-          <SelectField label="Chofer asignado" className="driver-field"><option>Sin asignar</option><option>Chofer 1</option><option>Chofer 2</option><option>Chofer 3</option></SelectField>
-        </div>
-      </section>
-      <aside className="validation-column">
-        <section className="panel geo-panel">
-          <div className="section-heading"><span className="step-number">2</span><div><h2>Validación Geográfica</h2><p>La ubicación se actualiza en tiempo real.</p></div></div>
-          <div className="map-placeholder"><div className="map-grid"/><div className="map-empty"><Icon name="pin" size={21}/><span>Completá la dirección para<br/>visualizar su ubicación</span></div></div>
-          <div className="address-alert"><Icon name="alert" size={15}/><div><b>La altura falta o no es válida</b><span>Corregí los campos para habilitar el despacho automático.</span></div></div>
-          <button className="button confirm-button" disabled><Icon name="pin" size={14}/> Confirmar Ubicación y Habilitar Despacho</button>
-          <button className="button button-outline correct-button" type="button">Corregir Datos</button>
-        </section>
-        <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>La validación evita direcciones incompletas y reduce entregas fallidas.</small></div></div>
-      </aside>
-    </div>
-  </main>
-}
-
-function OperatorApp({ role, onLogout }) {
+function OperatorApp({ user, onLogout, logoutError }) {
   const [page, setPage] = useState('board')
-  return <div className="operator-app"><Sidebar page={page} setPage={setPage} role={role} onLogout={onLogout}/><div className="workspace">{page === 'form' ? <OrderForm setPage={setPage}/> : <Board setPage={setPage}/>}</div></div>
+  const role = user.rol === 'admin' ? 'Administrador' : 'Operador'
+  return <div className="operator-app"><Sidebar page={page} setPage={setPage} role={role} name={user.nombre} onLogout={onLogout}/><div className="workspace"><p className="prototype-notice">Pedidos persistidos · Revisión geográfica y despacho pendientes de integración.</p>{logoutError && <p className="login-error" role="alert">{logoutError}</p>}{page === 'users' && user.rol === 'admin' ? <Users/> : page === 'form' ? <OrderForm setPage={setPage}/> : <Board setPage={setPage}/>}</div></div>
 }
 
 function App() {
-  const [role, setRole] = useState(null)
-  if (!role) return <Login onLogin={setRole}/>
-  if (role === 'Chofer') return <DriverApp onLogout={() => setRole(null)}/>
-  return <OperatorApp role={role} onLogout={() => setRole(null)}/>
+  const [user, setUser] = useState(null)
+  const [checking, setChecking] = useState(true)
+  const [sessionError, setSessionError] = useState('')
+  const [logoutError, setLogoutError] = useState('')
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [demo, setDemo] = useState(false)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    function expired() { setUser(null); setSessionError('Tu sesión venció. Iniciá sesión nuevamente.') }
+    window.addEventListener('mandatodo-session-expired', expired)
+    api('/sesion', { signal: controller.signal }).then((session) => {
+      if (!controller.signal.aborted) setUser(session.usuario)
+    }).catch((failure) => {
+      if (!controller.signal.aborted && failure.status !== 401) setSessionError(failure.message)
+    }).finally(() => {
+      if (!controller.signal.aborted) setChecking(false)
+    })
+    return () => { controller.abort(); window.removeEventListener('mandatodo-session-expired', expired) }
+  }, [])
+
+  async function logout() {
+    if (loggingOut) return
+    setLoggingOut(true)
+    setLogoutError('')
+    try {
+      await api('/sesion', { method: 'DELETE' })
+      setUser(null)
+      setSessionError('')
+    } catch (failure) {
+      if (failure.status === 401) setUser(null)
+      else setLogoutError(failure.message)
+    } finally {
+      setLoggingOut(false)
+    }
+  }
+
+  if (checking) return <main className="session-loading" role="status">Comprobando sesión…</main>
+  if (demo) return <><p className="prototype-notice">Demostración del chofer · Datos ficticios; recargar restablece las paradas.</p><DriverApp onLogout={() => setDemo(false)}/></>
+  if (!user) return <Login initialError={sessionError} onDemo={() => setDemo(true)} onLogin={(nextUser) => { setUser(nextUser); setSessionError('') }}/>
+  return <OperatorApp user={user} onLogout={logout} logoutError={logoutError}/>
 }
 
 export default App
