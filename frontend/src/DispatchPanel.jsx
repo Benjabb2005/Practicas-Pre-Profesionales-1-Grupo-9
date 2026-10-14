@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react'
 import { api } from './api.js'
 import DeliveryActions from './DeliveryActions.jsx'
 
-export default function DispatchPanel({ order, onUpdated, compact = false, driverOptions, stateLabel }) {
+export default function DispatchPanel({ order, onUpdated, compact = false, driverOptions, driverError, stateLabel }) {
   const [drivers, setDrivers] = useState(null)
   const [assigned, setAssigned] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [assignedName, setAssignedName] = useState('')
   const [operationLoaded, setOperationLoaded] = useState(false)
+  const [operationRefresh, setOperationRefresh] = useState(0)
   useEffect(() => {
     const controller = new AbortController()
     const options = compact ? Promise.resolve(driverOptions) : api('/choferes', { signal: controller.signal })
     options.then(async (data) => {
       if (controller.signal.aborted) return
+      setError('')
+      setOperationLoaded(false)
       setDrivers(data)
       if (data?.enabled) {
         const operation = await api(`/pedidos/${order.id}/operacion`, { signal: controller.signal })
@@ -21,7 +24,7 @@ export default function DispatchPanel({ order, onUpdated, compact = false, drive
       }
     }).catch((failure) => { if (!controller.signal.aborted) setError(failure.message) })
     return () => controller.abort()
-  }, [order.id, compact, driverOptions])
+  }, [order.id, compact, driverOptions, operationRefresh])
   async function act(action, body = {}) {
     setPending(true); setError('')
     try { const updated = await api(`/pedidos/${order.id}/${action}`, { method: 'POST', body }); setAssigned(String(updated.choferId || '')); setAssignedName(updated.choferNombre || ''); onUpdated(updated) }
@@ -32,11 +35,11 @@ export default function DispatchPanel({ order, onUpdated, compact = false, drive
   if (compact) return <>
     <td className="order-driver-cell" data-label="Chofer">{drivers?.enabled ? <select aria-label={`Chofer de ${order.codigo}`} disabled={pending || !operationLoaded || !beforeDeparture} value={assigned} onChange={(event) => act('asignar', { choferId: event.target.value ? Number(event.target.value) : null })}>
       <option value="">Sin asignar</option>{assigned && !drivers.drivers.some((driver) => String(driver.id) === assigned) && <option value={assigned}>{assignedName || 'Chofer asignado'} · Inactivo</option>}{drivers.drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.nombre}</option>)}
-    </select> : <span>{drivers ? 'Operación no activada' : 'Cargando…'}</span>}</td>
+    </select> : <span>{driverError || error ? 'Chofer no disponible' : drivers ? 'Operación no activada' : 'Cargando…'}</span>}</td>
     <td className="order-state-cell" data-label="Estado"><span className={`order-state-badge ${order.estado}`}>{stateLabel}</span>
       <DeliveryActions order={order} allowRetry onSaved={(saved) => { if (saved.estado === 'en_preparacion') { setAssigned(''); setAssignedName('') } onUpdated({ ...order, ...saved }) }}/>
       {drivers?.enabled && beforeDeparture && <button type="button" className={`button ${order.estado === 'en_preparacion' ? 'button-primary' : 'button-outline'}`} disabled={pending || !operationLoaded} onClick={() => act(order.estado === 'en_preparacion' ? 'despachar' : 'preparar')} aria-label={`${order.estado === 'en_preparacion' ? 'Despachar' : 'Preparar'} ${order.codigo}`}>{order.estado === 'en_preparacion' ? 'Despachar' : 'Pasar a preparación'}</button>}
-      {pending && <span role="status">Guardando…</span>}{error && <p role="alert" className="order-row-error">{error}</p>}
+      {pending && <span role="status">Guardando…</span>}{error && <p role="alert" className="order-row-error">{error} <button type="button" className="button button-outline" disabled={pending} onClick={() => setOperationRefresh((value) => value + 1)}>Reintentar</button></p>}
     </td>
   </>
   return <section className="location-review" aria-label="Asignación y despacho"><h3>Asignación y despacho</h3>

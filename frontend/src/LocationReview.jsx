@@ -64,10 +64,11 @@ export function ConfirmedMap({ confirmation }) {
 
 export function LocationReview({ order, onConfirmed }) {
   const [editing, setEditing] = useState(false)
-  if (editing) return <section><LocationEditor order={order} onConfirmed={(updated) => { onConfirmed(updated); setEditing(false) }}/><button type="button" className="button button-outline" onClick={() => setEditing(false)}>Cancelar edición</button></section>
+  const canEdit = ['pendiente_validacion', 'requiere_revision', 'direccion_validada', 'en_preparacion'].includes(order.estado)
+  if (editing && canEdit) return <section><LocationEditor order={order} onConfirmed={(updated) => { onConfirmed(updated); setEditing(false) }}/><button type="button" className="button button-outline" onClick={() => setEditing(false)}>Cancelar edición</button></section>
   return <section className="location-review" aria-label="Ubicación del pedido"><h3>{order.confirmation ? 'Ubicación confirmada' : 'Ubicación pendiente de revisión'}</h3>
     {order.confirmation && <><OrderMapLink orderId={order.id}/><p>{order.confirmation.observation}</p></>}
-    <button type="button" className="button button-outline" onClick={() => setEditing(true)}>Editar ubicación</button>
+    {canEdit ? <button type="button" className="button button-outline" onClick={() => setEditing(true)}>Editar ubicación</button> : <p>En este estado, la ubicación está disponible solo para consulta.</p>}
   </section>
 }
 
@@ -173,6 +174,6 @@ export function DraftLocationReview({ address, onSave, disabled, saving, saveErr
     <button type="button" className="button button-primary" disabled={disabled || !version || !validPoint} onClick={() => { if (manual && !observation.trim()) { setError('Explicá la corrección del punto antes de confirmar.'); return } setError(''); onSave({ ...point, observation: observation.trim() || 'Ubicación propuesta por Georef revisada y confirmada en el mapa.', version }) }}>{saving ? 'Guardando…' : 'Confirmar ubicación y guardar pedido'}</button>
     {saveError && <p role="alert" className="login-error">{saveError}</p>}<p>Al confirmar declarás que revisaste personalmente el punto del mapa.</p>
     {complete && <button type="button" className="button button-outline" disabled={disabled || status === 'loading'} onClick={() => { setRetry((value) => value + 1); setManual(false) }}>Volver a buscar</button>}
-    <p>La confirmación queda vinculada a estos datos. El despacho operativo todavía no está habilitado.</p>
+    <p>La confirmación queda vinculada a estos datos. Después, asigná un chofer y prepará el despacho desde el tablero.</p>
   </section>
 }

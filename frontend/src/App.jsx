@@ -5,6 +5,7 @@ import LiveDriverApp from './LiveDriverApp.jsx'
 import { api } from './api.js'
 import { Board, OrderForm } from './Orders.jsx'
 import Users from './Users.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 
 function Icon({ name, size = 16 }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
@@ -59,7 +60,7 @@ function Login({ onLogin, onDemo, initialError }) {
       </div>
       <div className="login-rings" aria-hidden="true"><i/><i/><i/></div>
     </section>
-    <section className="login-panel" aria-labelledby="login-heading">
+    <section className="login-panel" aria-labelledby="login-heading"><ThemeToggle/>
       <div className="login-form-wrap">
         <p className="login-eyebrow">Bienvenido</p>
         <h2 id="login-heading">Iniciar sesión</h2>
@@ -93,7 +94,7 @@ function Brand() {
 
 function Sidebar({ page, setPage, role, name, onLogout }) {
   return <aside className="sidebar">
-    <Brand/>
+    <div className="sidebar-brand-row"><Brand/><ThemeToggle/></div>
     <nav className="navigation" aria-label="Navegación principal">
       {NAV_ITEMS.filter((item) => !item.adminOnly || role === 'Administrador').map((item) => <button key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={() => !item.soon && setPage(item.id)} disabled={item.soon}>
         <Icon name={item.icon}/><span>{item.label}</span>{item.soon && <small>PRÓX.</small>}
@@ -106,7 +107,7 @@ function Sidebar({ page, setPage, role, name, onLogout }) {
 function OperatorApp({ user, onLogout, logoutError }) {
   const [page, setPage] = useState('board')
   const role = user.rol === 'admin' ? 'Administrador' : 'Operador'
-  return <div className="operator-app"><Sidebar page={page} setPage={setPage} role={role} name={user.nombre} onLogout={onLogout}/><div className="workspace"><p className="prototype-notice">Pedidos persistidos · Confirmá la ubicación antes del despacho.</p>{logoutError && <p className="login-error" role="alert">{logoutError}</p>}{page === 'users' && user.rol === 'admin' ? <Users/> : page === 'form' ? <OrderForm setPage={setPage}/> : <Board setPage={setPage}/>}</div></div>
+  return <div className="operator-app"><Sidebar page={page} setPage={setPage} role={role} name={user.nombre} onLogout={onLogout}/><div className="workspace">{logoutError && <p className="login-error" role="alert">{logoutError}</p>}{page === 'users' && user.rol === 'admin' ? <Users/> : page === 'form' ? <OrderForm setPage={setPage}/> : <Board setPage={setPage}/>}</div></div>
 }
 
 function App() {
@@ -148,7 +149,7 @@ function App() {
   }
 
   if (checking) return <main className="session-loading" role="status">Comprobando sesión…</main>
-  if (demo) return <><p className="prototype-notice">Demostración del chofer · Datos ficticios; recargar restablece las paradas.</p><DriverApp onLogout={() => setDemo(false)}/></>
+  if (demo) return <DriverApp onLogout={() => setDemo(false)}/>
   if (!user) return <Login initialError={sessionError} onDemo={() => setDemo(true)} onLogin={(nextUser) => { setUser(nextUser); setSessionError('') }}/>
   if (user.rol === 'chofer') return <LiveDriverApp user={user} onLogout={logout} logoutError={logoutError}/>
   return <OperatorApp user={user} onLogout={logout} logoutError={logoutError}/>

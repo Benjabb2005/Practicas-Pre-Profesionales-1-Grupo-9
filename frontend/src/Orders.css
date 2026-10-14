@@ -94,3 +94,13 @@
 .order-detail-modal::backdrop { background: #101a2bcc; }
 .order-detail-modal .order-detail { margin: 0; border: 0; box-shadow: none; }
 .order-detail-modal .order-detail-header { position: sticky; top: 0; z-index: 2; }
+
+.board-page .filters { flex-wrap: wrap; gap: 10px; padding: 7px 13px; }
+.board-page .filters label { font-size: 10px; gap: 7px; }
+.board-page .filters select, .board-page .filters input { min-height: 28px; max-width: 100%; padding: 4px 8px; border: 1px solid #d6deea; border-radius: 5px; background: #fff; color: #26364e; font: inherit; font-size: 11px; }
+.board-page .filters select { min-width: 140px; }
+.board-page .filters .button { font-size: 11px; min-height: 28px; }
+
+.board-page .order-search label { flex-wrap: wrap; min-width: 0; }
+.board-page .order-search input { width: 260px; min-width: 0; }
+@media (max-width: 680px) { .board-page .order-search label, .board-page .order-search input { width: 100%; } }

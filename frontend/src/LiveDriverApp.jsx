@@ -1,3 +1,4 @@
+import ThemeToggle from './ThemeToggle.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
 import { OrderMapLink } from './LocationReview.jsx'
@@ -33,7 +34,7 @@ export default function LiveDriverApp({ user, onLogout, logoutError }) {
     <header className="driver-header"><div className="driver-brand">
       <span className="driver-brand-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="19" r="1.7"/><circle cx="18" cy="19" r="1.7"/></svg></span>
       <span className="driver-brand-copy"><strong>MandáTodo</strong><small>TUS ENVÍOS{summary ? ` · ${summary.total} PARADAS` : ''}</small></span>
-    </div><button className="driver-logout" type="button" onClick={onLogout}>Cerrar sesión</button></header>
+    </div><div className="driver-header-actions"><ThemeToggle/><button className="driver-logout" type="button" onClick={onLogout}>Cerrar sesión</button></div></header>
     <section className="driver-intro" aria-labelledby="live-driver-title"><div><p className="driver-eyebrow">¡Hola! Estas son tus entregas</p><h1 id="live-driver-title">{user.nombre}</h1><span className="driver-online"><span/>{error ? 'Sin actualizar' : 'Sesión activa'}</span></div><span className="driver-avatar" aria-label={user.nombre}>{initials}</span></section>
     <section className="driver-progress" aria-label="Avance de tus envíos"><div className="driver-progress-heading"><h2>Avance de tus envíos</h2><strong>{summary ? `${finished} / ${summary.total}` : '—'} <span>Finalizados</span></strong></div><progress value={finished} max={summary?.total || 1} aria-label={summary ? `${finished} de ${summary.total} envíos finalizados` : 'Cargando avance'}/><div className="live-driver-counts"><span><strong>{summary?.pendientes ?? '—'}</strong> pendientes</span><span><strong>{summary?.entregados ?? '—'}</strong> entregados</span><span><strong>{summary?.fallidos ?? '—'}</strong> fallidos</span></div></section>
     <div className="live-driver-list-heading"><h2>Mis paradas</h2><button className="button button-outline" type="button" onClick={() => { setResult(null); setError(''); setRetry((value) => value + 1) }}>Actualizar</button></div>

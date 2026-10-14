@@ -1,3 +1,4 @@
+import ThemeToggle from './ThemeToggle.jsx'
 import { useEffect, useRef, useState } from 'react'
 import './DriverApp.css'
 
@@ -122,15 +123,15 @@ function DriverApp({ onLogout }) {
           <span className="driver-brand-icon"><TruckIcon/></span>
           <span className="driver-brand-copy">
             <strong>MandáTodo</strong>
-            <small>HOY • {totalCount} PARADAS</small>
+            <small>DEMO • {totalCount} PARADAS</small>
           </span>
         </div>
-        <button className="driver-logout" type="button" onClick={onLogout}>Cerrar sesión</button>
+        <div className="driver-header-actions"><ThemeToggle/><button className="driver-logout" type="button" onClick={onLogout}>Cerrar sesión</button></div>
       </header>
 
       <section className="driver-intro" aria-labelledby="driver-page-title">
         <div>
-          <p className="driver-eyebrow">Ruta del día</p>
+          <p className="driver-eyebrow">Demostración · Datos ficticios</p>
           <h1 id="driver-page-title">Andrés Silva</h1>
           <span className="driver-online"><span/>En línea</span>
         </div>

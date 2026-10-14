@@ -119,3 +119,25 @@ Chofer: Registrar entrega e Intento fallido en cada envío abren modal con recep
 ## Portal chofer completo sobre demo local · 14/10/2026
 
 Referencia DriverApp.jsx y relevamiento previo. LiveDriverApp recupera nombre/avatar/marca, numeración de tarjetas, barra de avance y botón entrega verde; agrega navegación Pendientes/Entregadas/Fallidas, contadores globales y detalle modal propio con dirección/contacto/indicaciones/historial/método. Las finalizadas permanecen consultables a su chofer actual. Avance de tus envíos cuenta pedidos actualmente asignados en envío/entregado/fallido, resueltos = entregados+fallidos; no es jornada diaria ni ruta optimizada. Reintento que despeja/reasigna chofer deja de verse al anterior según propiedad vigente. Método exitoso ahora tarjetas radio Efectivo/Transferencia en formulario compartido. Usuario ratifica no marcar PAGADO automáticamente. Mapa/modal anidado y estados vacíos por vista conservados.
+
+14/10, revisión integral: mensajes posteriores a confirmación/carga ya indican preparar/asignar/despachar desde tablero; retirado aviso viejo de despacho no habilitado. Editar ubicación se ofrece solo en estados que admite backend (pendiente_validacion, requiere_revision, direccion_validada, en_preparacion); demás estados dejan consulta del mapa. Si estado cambia mientras editor abierto deja de ofrecer esa edición.
+
+## Tema claro/oscuro · 14/10/2026
+
+Barra global superior con botón Modo oscuro / Modo claro, visible desde login y roles reales/demo. Sidebar se ubica debajo de barra para no tapar marca; móvil conserva controles separados. Tema afecta superficies/textos/campos/estados/errores/modales y presentación Leaflet (tiles filtrados, controles oscuros, pin y atribución preservados). Preferencia local por navegador, persiste recarga/logout y sincroniza entre pestañas; primera carga usa preferencia sistema. Cambiar no borra formularios ni altera datos de pedidos.
+
+Ajuste de tema (14/10): sin barra superior adicional ni aviso operativo amarillo. Ícono sol/luna junto a marca del menú, esquina del login y encabezado chofer. Oscuro en gris carbón; demo identificada discretamente como ficticia.
+
+El menú lateral conserva el azul original tanto en modo claro como oscuro (pedido posterior del usuario).
+
+Tablero: encabezado sin descripción técnica de MySQL; filtros de estado y fechas con labels13px, controles14px y altura36px para facilitar lectura.
+
+Por devolución posterior, filtros del tablero se compactan: labels10px, controles/botón11px y altura mínima28px, reemplazando tamaños del ajuste anterior.
+
+## Búsqueda de pedidos · 14/10/2026
+
+Tablero administrador/operador: buscador compacto por código PED, nombre completo, DNI o teléfono. Buscar o Enter aplica coincidencia parcial literal en toda la base; Limpiar búsqueda conserva estado/fechas. Combina filtros, vuelve a página1 y mantiene total/paginación del resultado. Estados cargando/error/vacío existentes; pantalla móvil adapta filas.
+
+Buscador admite número de pedido sin PED-: coincidencia exacta de ID además de búsqueda DNI/teléfono. Error de choferes se muestra separado con reintento; Actualizar vuelve a consultar choferes.
+
+Búsqueda numérica ahora exacta: número de pedido, DNI completo o teléfono completo. No se compara un número corto con fragmentos de contactos.

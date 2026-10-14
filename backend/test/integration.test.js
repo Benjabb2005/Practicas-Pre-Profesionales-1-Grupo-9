@@ -169,6 +169,34 @@ test("MySQL aislado: migración repetible, cuentas, sesión y revocación persis
         const localDayData = await localDay.json();
         assert.equal(localDayData.pagination.total, 1);
         assert.equal(localDayData.data[0].id, concurrentData[0].data.id, "Filtro respeta medianoche de Buenos Aires, no UTC.");
+        for (const term of [String(order.id), 'PED-' + order.id, 'Cliente sintético Prueba', '80000001', '1100000001']) {
+            const found = await request('/api/pedidos?q=' + encodeURIComponent(term), { headers: { Cookie: cookie } });
+            assert.equal(found.status, 200);
+            const body = await found.json();
+            assert.ok(body.data.some((row) => row.id === order.id), 'Busca código, nombre, DNI y teléfono en MySQL');
+        }
+        for (const id of [order.id, concurrentData[0].data.id]) {
+            const exactNumber = await (await request('/api/pedidos?q=' + id, { headers: { Cookie: cookie } })).json();
+            assert.equal(exactNumber.pagination.total, 1, 'Número corto no coincide parcialmente con DNI/teléfono');
+            assert.equal(exactNumber.data[0].id, id);
+        }
+        const firstSearchPage = await (await request('/api/pedidos?q=80000001&pageSize=1', { headers: { Cookie: cookie } })).json();
+        const secondSearchPage = await (await request('/api/pedidos?q=80000001&pageSize=1&page=2', { headers: { Cookie: cookie } })).json();
+        assert.ok(firstSearchPage.pagination.total > 1);
+        assert.equal(firstSearchPage.pagination.total, secondSearchPage.pagination.total);
+        assert.notEqual(firstSearchPage.data[0].id, secondSearchPage.data[0].id);
+        const excludedState = await request('/api/pedidos?q=80000001&estado=cancelado', { headers: { Cookie: cookie } });
+        assert.equal((await excludedState.json()).pagination.total, 0);
+        const combined = await request('/api/pedidos?q=80000001&fechaDesde=2026-10-13&fechaHasta=2026-10-13&pageSize=1', { headers: { Cookie: cookie } });
+        assert.equal((await combined.json()).pagination.total, 1);
+        const empty = await request('/api/pedidos?q=persona-inexistente', { headers: { Cookie: cookie } });
+        assert.equal((await empty.json()).pagination.total, 0);
+        for (const term of ['%', '_', "' OR 1=1 --", '!']) {
+            const literal = await request('/api/pedidos?q=' + encodeURIComponent(term), { headers: { Cookie: cookie } });
+            assert.equal((await literal.json()).pagination.total, 0, 'Entrada literal sin comodines ni inyección');
+        }
+        assert.equal((await request('/api/pedidos?q=' + 'x'.repeat(151), { headers: { Cookie: cookie } })).status, 400);
+        assert.equal((await request('/api/pedidos?q=a&q=b', { headers: { Cookie: cookie } })).status, 400);
         const incomplete = { ...orderInput, direccion: { ...orderInput.direccion, altura: "0" } };
         assert.equal((await request("/api/pedidos", { method: "POST", headers: secondHeaders, body: JSON.stringify(incomplete) })).status, 422);
         assert.equal((await request("/api/pedidos?estado=listo_despacho", { headers: { Cookie: cookie } })).status, 200);

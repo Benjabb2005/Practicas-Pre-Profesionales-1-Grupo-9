@@ -107,14 +107,24 @@ function createOrderStore(pool) {
         return { pedido: await detail(rows[0].id, connection), replayed: true };
     }
     return {
-        async list({ estado, fechaDesde, fechaHasta, page, pageSize }) {
+        async list({ estado, fechaDesde, fechaHasta, q, page, pageSize }) {
             const where = [], values = [];
             if (estado) { where.push("p.estado = ?"); values.push(estado); }
             // El calendario operativo usa Buenos Aires (UTC-3); las marcas se consultan en UTC.
             if (fechaDesde) { where.push("p.created_at >= ?"); values.push(`${fechaDesde} 03:00:00`); }
             if (fechaHasta) { where.push("p.created_at < DATE_ADD(?, INTERVAL 1 DAY)"); values.push(`${fechaHasta} 03:00:00`); }
+            if (q) {
+                const term = '%' + q.replace(/[!%_]/g, (character) => '!' + character) + '%';
+                if (/^\d+$/.test(q)) {
+                    where.push("(p.id = ? OR c.dni = ? OR c.telefono = ?)");
+                    values.push(q, q, q);
+                } else {
+                    where.push("(CONCAT('PED-', p.id) LIKE ? ESCAPE '!' OR CONCAT_WS(' ', c.nombre, c.apellido) LIKE ? ESCAPE '!' OR c.dni LIKE ? ESCAPE '!' OR c.telefono LIKE ? ESCAPE '!')");
+                    values.push(term, term, term, term);
+                }
+            }
             const filter = where.length ? ` WHERE ${where.join(" AND ")}` : "";
-            const [counts] = await pool.execute(`SELECT COUNT(*) AS total FROM pedidos p${filter}`, values);
+            const [counts] = await pool.execute(`SELECT COUNT(*) AS total FROM pedidos p JOIN clientes c ON c.id = p.cliente_id${filter}`, values);
             const [rows] = await pool.query(`${select}${filter} ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?`, [...values, pageSize, (page - 1) * pageSize]);
             return { data: rows, pagination: { page, pageSize, total: counts[0].total } };
         },
@@ -266,7 +276,8 @@ function createOrders({ store, authenticate, geocode = createGeoref() }) {
                 if (value && (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0, 10) !== value)) throw issue(400, "INVALID_FILTER", "La fecha no es válida.");
             }
             if (req.query.fechaDesde && req.query.fechaHasta && req.query.fechaDesde > req.query.fechaHasta) throw issue(400, "INVALID_FILTER", "El rango de fechas no es válido.");
-            res.json(await store.list({ page, pageSize, estado, fechaDesde: req.query.fechaDesde, fechaHasta: req.query.fechaHasta }));
+            if (req.query.q !== undefined && (typeof req.query.q !== "string" || req.query.q.length > 150)) throw issue(400, "INVALID_FILTER", "La búsqueda debe tener hasta 150 caracteres.");
+            res.json(await store.list({ page, pageSize, estado, q: req.query.q?.trim(), fechaDesde: req.query.fechaDesde, fechaHasta: req.query.fechaHasta }));
         } catch (error) { next(error); }
     });
     router.get("/pedidos/:id", async (req, res, next) => {
