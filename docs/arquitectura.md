@@ -60,3 +60,24 @@ No se cambió Docker ni SQL. Evaluar npm ci en Docker y readiness al preparar T0
 ## Material descartado
 
 La revisión previa encontró material de aprendizaje ajeno a este proyecto: un ABM de ejemplo con CRUD `/Clientes` sobre una tabla `Cliente`, CORS abierto, consultas parametrizadas pero sin validación de permisos ni de entradas, y logging del cuerpo de la petición; además una guía de Angular con SQL Server, incompatibles con el stack vigente. Nada de eso forma parte del repositorio y no se copió. Este proyecto se construye con el código que hay en `backend/`, `frontend/` y `database/`: no hace falta ningún módulo heredado para arrancarlo.
+
+## Actualización MVP1 · 13/10/2026
+
+Se implementó el núcleo del MVP1 sobre la rama `MVP-1`. Este apartado describe el estado real verificado en la sesión; el bloque del 30/09/2026 queda como fotografía histórica.
+
+| Ruta | Qué hace hoy |
+| --- | --- |
+| backend/app.js | Fábrica `createApp(deps)` sin base: monta `/`, `/api/health`, `/api/auth`, `/api/usuarios`, `/api/estados`, notFound y errorHandler |
+| backend/index.js | Carga env, crea el pool `mysql2/promise`, escucha HTTP y avisa por consola si MySQL no responde |
+| backend/src/ | `config`, `constants`, `lib`, `middleware`, `repositories`, `services`, `controllers`, `routes`, `import`: presentación, contrato, lógica y persistencia separadas |
+| backend/scripts/ | `migrate.mjs` (con `--dry-run`), `seed.mjs` e `import-excel.mjs`, idempotentes |
+| database/migrations/ | `001_esquema_inicial.sql`: esquema objetivo (usuarios, clientes, pedidos, direcciones, historial_geolocalizacion, pagos, historial_estados, schema_migrations) |
+| frontend/src/api/ y src/auth/ | Cliente Axios con `Authorization: Bearer`, contexto de sesión, guardas por rol y almacenamiento del token |
+| frontend/src/pages/ | Login real y ABM de usuarios |
+| frontend/src/App.jsx | Router de React Router; la barra lateral y el tablero reutilizan la maqueta |
+
+Flujo implementado: login contra `POST /api/auth/login` → token JWT → guardas de ruta por rol → operaciones con `Authorization: Bearer`. El backend valida permisos, formato y pertenencia; la guarda del cliente es solo navegación, no seguridad.
+
+Contrato vigente: `GET/POST/PUT /api/usuarios` (solo ADMINISTRADOR), `GET /api/estados` y `POST /api/estados/:id` (transiciones y `puedeDespacharse`), `GET /api/health` y `POST /api/auth/login`, `GET /api/auth/me`. No hay todavía endpoints de pedidos, clientes ni direcciones: el tablero, la carga manual y la ruta del chofer siguen siendo maqueta.
+
+Límites vigentes: `database/init.sql` no se tocó ni se reaplicó; la geocodificación/mapa (D06) y la importación real del Excel siguen pendientes.

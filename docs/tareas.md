@@ -2,7 +2,7 @@
 
 ## Estado
 
-Preparación terminada y handed off. No hay negocio implementado: frontend maqueta, backend con solo `GET /`, SQL inicial sin migrar. El handoff del 30/09/2026 verificó el descubrimiento de skills en OpenCode, cerró dos huecos reales y dejó evidencia fresca. Sigue pendiente arrancar el stack, probar sesiones nuevas de Codex y Claude Code, y ejecutar T01. Ver [verificación](verificacion.md).
+Núcleo del MVP1 implementado el 13/10/2026: entorno, esquema con migraciones y seed, autenticación JWT, ABM de usuarios, módulo de estados e importación histórica en backend; login real con guardas por rol y pantalla de Usuarios en frontend. La maqueta del tablero, la carga manual y la ruta del chofer siguen sin integrarse al backend. Falta la importación real del Excel (no está en `temp/`), la geocodificación/mapa (D06) y cerrar T04/T05/T07. Ver [verificación](verificacion.md).
 
 Responsables de las tareas siguientes: a asignar por el equipo. Cada tarea debe registrar rama/checkout, archivos reservados, decisión vinculada y evidencia de aceptación.
 
@@ -73,3 +73,23 @@ Cambios, todos en instrucciones y validación, ninguno en código de producto:
 Aceptación cumplida: `npm run check` pasó completo, `git diff --check` sin errores y sin problemas de codificación. Se comprobó la detección negativa de `backend/AGENTS.md` ausente restaurando el archivo después.
 
 Límites: no se arrancó Docker ni MySQL, no se leyeron los ZIP ni el Excel, no se implementó negocio y no se probaron Codex ni Claude Code porque no están en PATH. `frontend/AGENTS.md` sigue en inglés, en inglés de origen del equipo: se dejó así para no reescribir un archivo ajeno, y se anota como observación.
+
+## Sesión MVP1: núcleo (13/10/2026)
+
+Estado: completada en backend y en la autenticación de frontend; importación real y geocodificación pendientes. Responsable: agente OpenCode sobre rama `MVP-1`. Sin commit, push ni deploy. Verificación detallada en [verificación](verificacion.md).
+
+Alcance: entorno reproducible, esquema con migraciones y seed, autenticación JWT, autorización por rol y recurso, ABM de usuarios, módulo de estados y `puedeDespacharse`, importación histórica del Excel y frontend con login real, guardas de ruta y pantalla de Usuarios.
+
+Cambios y archivos:
+- Backend: `app.js` como fábrica sin base; `index.js` con pool; `src/config/env.js`, `src/lib/errors.js`, `src/lib/validar.js`, `src/lib/publico.js`, `src/constants/{roles,estados}.js`, middleware `auth`, `roles`, `errorHandler`, `notFound`; repositorios, servicios, controladores y rutas de auth, usuarios y estados; y `src/import/importador.js`.
+- Datos: `database/migrations/001_esquema_inicial.sql` y scripts `migrate.mjs`, `seed.mjs`, `import-excel.mjs`; `database/init.sql` sin tocar.
+- Frontend: `src/api/client.js`, `src/auth/{contexto.js,AuthContext.jsx,useAuth.js,ProtectedRoute.jsx,tokenStore.js}`, `src/pages/{LoginPage,UsersPage}.jsx`, `src/components/Icon.jsx`, `App.jsx` con router, `main.jsx` y `vite.config.js` con proxy.
+- Pruebas: `backend/test/{auth,estados,import}.test.js` y `frontend/src/**/*.test.js`; spec `frontend/specs/autenticacion-real.md`.
+
+Criterios cumplidos: 21/21 pruebas de backend y 6/6 de frontend; lint y build de Vite OK; smoke HTTP real con login admin, `GET`/`POST /api/usuarios`, rechazo 400 de payload inválido y 403 para chofer; migración y seed idempotentes; importación reejecutable sin duplicar contra MySQL 8.4.
+
+No cumplidos / límites: no se importó el Excel real (ausente en `temp/`); la maqueta de tablero, carga manual y ruta del chofer no llaman al backend; no hay geocodificación ni mapa (D06); no hay pruebas end-to-end de navegador.
+
+Decisión nueva: D18 (importación idempotente), D19 (token en `localStorage`), D20 (arnés de pruebas), además de actualizar D02, D04, D05 y D10.
+
+Siguiente paso: T04/T05 (flujo de carga y revisión con geocodificación) y depositar el Excel en `temp/` para validar la importación real (T06).

@@ -35,6 +35,11 @@ services:
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SEED_OPERADOR_PASSWORD: ${SEED_OPERADOR_PASSWORD}
+      SEED_CHOFER_PASSWORD: ${SEED_CHOFER_PASSWORD}
       PORT: 3000
 
     ports:
@@ -54,6 +59,9 @@ services:
       context: ./frontend
 
     container_name: mandatodo_frontend
+
+    environment:
+      VITE_API_PROXY: http://backend:3000
 
     ports:
       - "5173:5173"

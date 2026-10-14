@@ -1,13 +1,13 @@
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { once } = require("node:events");
-const app = require("../app");
+const createApp = require("../app");
 
 let server;
 let baseUrl;
 
 before(async () => {
-    server = app.listen(0, "127.0.0.1");
+    server = createApp().listen(0, "127.0.0.1");
     await once(server, "listening");
     baseUrl = `http://127.0.0.1:${server.address().port}`;
 });
@@ -30,4 +30,14 @@ test("GET / responde por HTTP sin necesitar MySQL", async () => {
 test("una ruta inexistente no comunica éxito", async () => {
     const response = await fetch(`${baseUrl}/ruta-inexistente`, { signal: AbortSignal.timeout(3000) });
     assert.equal(response.status, 404);
+    const body = await response.json();
+    assert.equal(body.error.codigo, "NO_ENCONTRADO");
+});
+
+test("GET /api/health responde sin base y la informa como no configurada", async () => {
+    const response = await fetch(`${baseUrl}/api/health`, { signal: AbortSignal.timeout(3000) });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.estado, "ok");
+    assert.equal(body.servicios.db, "no_configurada");
 });

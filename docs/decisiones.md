@@ -5,15 +5,15 @@ Actualizar fecha, responsable y evidencia al resolver; no convertir una propuest
 | ID | Estado | Decisión o pendiente | Evidencia / siguiente acción |
 | --- | --- | --- | --- |
 | D01 | Vigente | React/Vite JS, Node/Express CommonJS, MySQL, Compose | Código y manifests; conservar stack |
-| D02 | Registrada previamente | JWT como dirección de autenticación | AGENTS.md anterior; todavía sin dependencia ni contrato de sesión |
+| D02 | Implementada, 13/10/2026 | JWT de sesión stateless para autenticación | `POST /api/auth/login` devuelve `{ token, usuario }`; las rutas protegidas leen `Authorization: Bearer`; `GET /api/auth/me` restaura la sesión. Contrato en `backend/src/services/AuthService.js` |
 | D03 | Confirmado según entrevista resumida | Confirmación humana siempre antes de despacho; carga manual estructurada | ZIP; implementar bloqueo servidor |
-| D04 | Pendiente equipo/cliente | Matriz admin/operador/chofer, transiciones y quién acredita transferencia | No asumir permisos iguales por controles de demo |
-| D05 | Pendiente equipo | Reconciliar SQL con roles, estados, DNI, asignación, confirmación versionada y pago | Diseñar migración no destructiva antes de aplicar |
+| D04 | Parcial, 13/10/2026: propuesta aplicada, falta definir quién acredita transferencia | Matriz admin/operador/chofer, transiciones y quién acredita transferencia | `/api/usuarios` restringido a ADMINISTRADOR; transiciones y `puedeDespacharse` en `EstadoPedidoService`; el equipo todavía no cerró la acreditación de pago |
+| D05 | Resuelta en lo técnico, 13/10/2026; el equipo debe validar el modelo | Reconciliar SQL con roles, estados, DNI, asignación, confirmación versionada y pago | Esquema objetivo en `database/migrations/001_esquema_inicial.sql` (7 tablas + `schema_migrations`); `database/init.sql` intacto y sin reaplicar |
 | D06 | Pendiente equipo | Proveedor geográfico y librería de mapa | Comparar cobertura, precisión, licencias, límites, costos y retención con docs oficiales; default georef no decide |
 | D07 | Pendiente cliente/docentes | Pantalla independiente ABM Clientes en MVP 1 | Separarla de datos del pedido y frecuentes; aclarar CRUD académico |
 | D08 | Pendiente cliente | Campos obligatorios: DNI, CP, provincia y alternativa cuando falta DNI | Provincia ausente en demo; distinguir CABA de provincia de Buenos Aires |
 | D09 | Pendiente cliente | Borradores incompletos, cancelación, entrega fallida y reintentos | No despachar mientras falta información |
-| D10 | Propuesta técnica | Invalidar confirmación si cambia dirección; identificar responsable y versión | Incluir en criterios de T04/T05 y acordar modelo |
+| D10 | Propuesta técnica; contrato implementado, modelo pendiente | Invalidar confirmación si cambia dirección; identificar responsable y versión | `puedeDespacharse` ya exige `estado_validacion = CONFIRMADA`; falta acordar representación, responsable y auditoría |
 | D11 | Pendiente cliente | Duplicado de pedido y resolución de discrepancias de frecuentes | DNI o dirección compartida no autorizan fusionar envíos |
 | D12 | Pendiente docentes/equipo | Reporte mínimo Hito 2 y calendario | Separar entrega académica de MVP comerciales |
 | D13 | Adoptada en preparación | Una fuente AGENTS.md; skills canónicas .agents/skills; adaptadores Claude generados y comprobados | Compatibilidad documentada, sin instalar agentes ni dependencias |
@@ -21,6 +21,9 @@ Actualizar fecha, responsable y evidencia al resolver; no convertir una propuest
 | D15 | Diferida por usuario, 30/09/2026 | Dejar pendiente revisión autenticada de demo y código remoto | Respuesta explícita al solicitar acceso seguro; retomar T08 con sesión de prueba, código autorizado o capturas/exportación, nunca contraseñas por chat |
 | D16 | Adoptada en integración, 30/09/2026 | Integrar ZIP actualizado preservando trabajo local | Git ya modificado, docs y seis skills existentes; solo actualizar instrucciones/documentación, separar resultados históricos de verificaciones nuevas |
 | D17 | Adoptada en preparación, 30/09/2026 | Reglas de trabajo siempre activas en el `AGENTS.md` raíz, con un `AGENTS.md` por carpeta técnica | `backend/AGENTS.md` y `backend/CLAUDE.md` nuevos para cerrar la asimetría con frontend; los archivos por carpeta complementan al raíz, no lo reemplazan |
+| D18 | Adoptada, 13/10/2026 | Importación histórica idempotente por códigos de origen; no unir pedidos ni inventar DNI | `backend/src/import/importador.js`: clientes por `codigo_origen`, pedidos por `codigo`; los intentos de historial no se duplican por dirección/resultado/coordenadas. Reejecución probada contra MySQL |
+| D19 | Adoptada, 13/10/2026 | Sesión MVP con token JWT en `localStorage` | Es simple para el MVP; cualquier script de la página podría leerlo. Se evalúa cookie `HttpOnly` en una etapa posterior |
+| D20 | Adoptada, 13/10/2026 | Arnés de pruebas: `node:test` en backend y Vitest en frontend | Backend cubre auth, estados e importación; frontend cubre la capa API/sesión. No reemplaza pruebas end-to-end de navegador |
 
 Histórico corregido: AGENTS.md decía frontend scaffold y esquema inexistente; ambos estaban desactualizados. Se incorporó operador, se retiró la secuencia rígida de estados y la atribución definitiva de PAGADO al chofer. Se quitó el comando destructivo de volúmenes de la guía. Se conservaron simplicidad, explicación para defensa, tratamiento de errores externos y decisión humana en arquitectura.
 

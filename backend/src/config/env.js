@@ -1,0 +1,44 @@
+// Carga y valida la configuración por entorno. No tiene valores secretos por defecto:
+// si falta algo obligatorio, falla con un mensaje claro antes de arrancar.
+function leerPuerto(valor, porDefecto) {
+    const numero = Number(valor ?? porDefecto);
+    return Number.isInteger(numero) && numero > 0 ? numero : porDefecto;
+}
+
+function loadEnv(env = process.env) {
+    const config = {
+        entorno: env.NODE_ENV || "development",
+        puerto: leerPuerto(env.PORT, 3000),
+        db: {
+            host: env.DB_HOST,
+            port: leerPuerto(env.DB_PORT, 3306),
+            user: env.DB_USER,
+            password: env.DB_PASSWORD ?? "",
+            database: env.DB_NAME,
+        },
+        jwt: {
+            secret: env.JWT_SECRET,
+            expiraEn: env.JWT_EXPIRES_IN || "8h",
+        },
+    };
+
+    const faltantes = [];
+    const obligatorias = [
+        ["DB_HOST", config.db.host],
+        ["DB_USER", config.db.user],
+        ["DB_NAME", config.db.database],
+        ["JWT_SECRET", config.jwt.secret],
+    ];
+    for (const [clave, valor] of obligatorias) {
+        if (valor === undefined || valor === "") faltantes.push(clave);
+    }
+    if (faltantes.length) {
+        const error = new Error(`Faltan variables de entorno obligatorias: ${faltantes.join(", ")}. Revisá .env.example.`);
+        error.codigo = "CONFIG_INVALIDA";
+        throw error;
+    }
+
+    return config;
+}
+
+module.exports = { loadEnv };
