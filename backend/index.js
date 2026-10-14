@@ -1,16 +1,23 @@
 require("dotenv").config();
+if (!process.env.SESSION_SECRET && process.env.SESSION_SECRET_FILE) {
+    process.env.SESSION_SECRET = require('node:fs').readFileSync(process.env.SESSION_SECRET_FILE, 'utf8').trim();
+}
 
 const { createApp } = require("./app");
 const { createDatabase } = require("./database");
 const { createAuthStore } = require("./auth-store");
 const { createOrderStore } = require("./orders");
 const { createUserStore } = require("./users");
+const { createDispatchStore } = require('./dispatch');
+const { createDeliveryStore } = require('./deliveries');
 const PORT = process.env.PORT || 3000;
 const database = createDatabase();
 const app = createApp({
     checkDatabase: database.checkDatabase,
     orders: createOrderStore(database.pool),
     users: createUserStore(database.pool),
+    dispatch: createDispatchStore(database.pool),
+    deliveries: createDeliveryStore(database.pool),
     auth: {
         store: createAuthStore(database.pool),
         secret: process.env.SESSION_SECRET,

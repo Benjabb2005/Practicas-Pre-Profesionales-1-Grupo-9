@@ -11,3 +11,14 @@
 .location-candidates button { white-space: normal; text-align: left; overflow-wrap: anywhere; }
 .location-ack input { margin-right: 8px; }
 @media (max-width: 480px) { .location-map { height: 260px; } }
+.order-map-modal { width: min(900px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 0; border-radius: 16px; box-shadow: 0 24px 80px #0005; color: #172a35; background: white; }
+.order-map-modal::backdrop { background: #101a2bcc; }
+.order-map-content { padding: 22px; }
+.order-map-content header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.order-map-content header p { margin: 0 0 5px; color: #718094; font-size: 12px; }
+.order-map-content h2 { margin: 0; font-size: 22px; }
+.order-map-close { flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid #e1e7ef; border-radius: 10px; background: #f5f7fb; font-size: 26px; color: #344b65; cursor: pointer; }
+.order-map-close:focus-visible { outline: 3px solid #3159d5; outline-offset: 2px; }
+.order-map-address { margin: 16px 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.order-map-modal .location-map { height: clamp(280px, 60dvh, 560px); border-radius: 10px; }
+@media (max-width: 480px) { .order-map-content { padding: 16px; } .order-map-modal .location-map { height: 52dvh; } }

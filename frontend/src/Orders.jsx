@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
 import './Orders.css'
-import { LocationReview, DraftLocationReview } from './LocationReview.jsx'
+import DispatchPanel from './DispatchPanel.jsx'
+import { DeliveryHistory } from './DeliveryActions.jsx'
+import { LocationReview, DraftLocationReview, OrderMapLink } from './LocationReview.jsx'
 
-const labels = { pendiente_validacion: 'Pendiente de validación', requiere_revision: 'Requiere revisión', direccion_validada: 'Dirección validada', listo_despacho: 'Listo para despacho', en_camino: 'En camino', entregado: 'Entregado', fallido: 'Fallido', cancelado: 'Cancelado' }
+const labels = { pendiente_validacion: 'Pendiente de validación', en_preparacion: 'En preparación', requiere_revision: 'Requiere revisión', direccion_validada: 'Dirección validada', listo_despacho: 'Listo para despacho', en_camino: 'En envío', entregado: 'Entregado', fallido: 'Fallido', cancelado: 'Cancelado' }
 const customerFields = [['nombre', 'Nombre', 'text', 100], ['apellido', 'Apellido', 'text', 100], ['dni', 'DNI sin puntos', 'text', 20], ['telefono', 'Teléfono', 'tel', 50], ['email', 'Email', 'email', 150]]
 const addressFields = [['calle', 'Calle', 'text', 150], ['altura', 'Altura', 'number', 20], ['pisoDepto', 'Piso/Depto (opcional)', 'text', 100], ['localidad', 'Localidad', 'text', 100], ['provincia', 'Provincia / CABA', 'text', 100], ['codigoPostal', 'Código postal', 'text', 10]]
 
@@ -116,6 +118,12 @@ export function OrderForm({ setPage }) {
   </form><aside className="validation-column"><DraftLocationReview key={JSON.stringify(direccion)} address={direccion} disabled={pending || conflict} saving={pending} saveError={error} onSave={(ubicacion) => save(null, ubicacion)}/></aside></div></main>
 }
 
+function DetailModal({ children, onClose }) {
+  const dialog = useRef(null)
+  useEffect(() => { const element = dialog.current; element.showModal(); return () => { if (element.open) element.close() } }, [])
+  return <dialog ref={dialog} className="order-detail-modal" aria-labelledby="order-detail-title" onClose={() => { if (!dialog.current?.open) onClose() }} onClick={(event) => { if (event.target === event.currentTarget) dialog.current.close() }}>{children}</dialog>
+}
+
 export function Board({ setPage }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
@@ -125,6 +133,12 @@ export function Board({ setPage }) {
   const [refresh, setRefresh] = useState(0)
   const [detail, setDetail] = useState(null)
   const [detailError, setDetailError] = useState('')
+  const [driverOptions, setDriverOptions] = useState(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    api('/choferes', { signal: controller.signal }).then((data) => { if (!controller.signal.aborted) setDriverOptions(data) }).catch((failure) => { if (!controller.signal.aborted) setError(failure.message) })
+    return () => controller.abort()
+  }, [])
   useEffect(() => {
     const controller = new AbortController()
     api(`/pedidos?page=${page}&estado=${encodeURIComponent(state)}&fechaDesde=${dates.fechaDesde}&fechaHasta=${dates.fechaHasta}`, { fullResponse: true, signal: controller.signal }).then((data) => {
@@ -141,7 +155,18 @@ export function Board({ setPage }) {
     <section className="shipments-card persisted-panel"><div className="filters"><label htmlFor="order-state">Estado<select id="order-state" value={state} onChange={(event) => { setState(event.target.value); setPageNumber(1); setResult(null) }}><option value="">Todos</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><button type="button" className="button button-outline" onClick={() => { setRefresh((v) => v + 1); setResult(null); setError('') }}>Actualizar</button></div>
       <div className="filters">{[['fechaDesde', 'Desde'], ['fechaHasta', 'Hasta']].map(([field, label]) => <label key={field} htmlFor={`filter-${field}`}>{label}<input id={`filter-${field}`} type="date" value={dates[field]} onChange={(event) => { setDates((current) => ({ ...current, [field]: event.target.value })); setPageNumber(1); setResult(null) }}/></label>)}</div>
       {error && <p className="login-error" role="alert">{error}</p>}{!result && !error && <p role="status">Cargando pedidos…</p>}
-      {result && <><p role="status">{result.pagination.total} pedidos con este filtro.</p>{result.data.length === 0 ? <p>Todavía no hay pedidos para este filtro.</p> : <div className="order-table-wrap"><table className="order-table"><thead><tr><th>Código</th><th>Cliente</th><th>Dirección</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>{result.data.map((p) => <tr key={p.id}><td>{p.codigo}</td><td>{p.nombre} {p.apellido || ''}</td><td>{p.calle || 'Pendiente'} {p.altura || ''}, {p.localidad || 'Localidad pendiente'}</td><td>{labels[p.estado] || p.estado}</td><td><button className="button button-outline" type="button" onClick={() => inspect(p.id)} aria-label={`Ver pedido ${p.codigo}`}>Ver</button></td></tr>)}</tbody></table></div>}<div className="order-pagination"><button type="button" className="button button-outline" disabled={page === 1} onClick={() => { setPageNumber(page - 1); setResult(null) }}>Anterior</button><span>Página {page}</span><button type="button" className="button button-outline" disabled={page * result.pagination.pageSize >= result.pagination.total} onClick={() => { setPageNumber(page + 1); setResult(null) }}>Siguiente</button></div></>}
-    </section>{detailError && <p className="login-error" role="alert">{detailError}</p>}{detail && <section className="panel persisted-panel" aria-label="Detalle del pedido"><h2>{detail.codigo}</h2><p>{detail.nombre} {detail.apellido || ''} · {detail.telefono} · {detail.email}</p><p>Dirección original: {detail.direccionOriginal}</p><p>{detail.calle} {detail.altura} {detail.pisoDepto || ''}, {detail.localidad}, {detail.provincia}, CP {detail.codigoPostal}</p><p>Estado: {labels[detail.estado]}</p><LocationReview key={detail.id} order={detail} onConfirmed={setDetail}/><p>{detail.observaciones || 'Sin notas de entrega.'}</p><button type="button" className="button button-outline" onClick={() => setDetail(null)}>Cerrar detalle</button></section>}
+      {result && <><p role="status">{result.pagination.total} pedidos con este filtro.</p>{result.data.length === 0 ? <p>Todavía no hay pedidos para este filtro.</p> : <div className="order-table-wrap"><table className="order-table"><thead><tr><th>Código</th><th>Cliente</th><th>Dirección</th><th>Chofer</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{result.data.map((p) => <tr key={p.id} aria-label={`Pedido ${p.codigo}`}><td data-label="Código">{p.codigo}</td><td data-label="Cliente">{p.nombre} {p.apellido || ''}</td><td data-label="Dirección">{p.calle || 'Pendiente'} {p.altura || ''}, {p.localidad || 'Localidad pendiente'}</td>
+        <DispatchPanel compact order={p} driverOptions={driverOptions} stateLabel={labels[p.estado] || p.estado} onUpdated={(updated) => { setResult((current) => current ? ({ ...current, data: current.data.map((item) => item.id === updated.id ? updated : item) }) : current); setDetail((current) => current?.id === updated.id ? { ...current, ...updated } : current); setRefresh((value) => value + 1) }}/>
+        <td data-label="Acciones"><div className="order-row-actions"><OrderMapLink orderId={p.id}/><button className="button button-outline" type="button" onClick={() => inspect(p.id)} aria-label={`Ver pedido ${p.codigo}`}>Ver detalle</button></div></td></tr>)}</tbody></table></div>}<div className="order-pagination"><button type="button" className="button button-outline" disabled={page === 1} onClick={() => { setPageNumber(page - 1); setResult(null) }}>Anterior</button><span>Página {page}</span><button type="button" className="button button-outline" disabled={page * result.pagination.pageSize >= result.pagination.total} onClick={() => { setPageNumber(page + 1); setResult(null) }}>Siguiente</button></div></>}
+    </section>{detailError && <p className="login-error" role="alert">{detailError}</p>}{detail && <DetailModal key={detail.id} onClose={() => setDetail(null)}><section className="panel persisted-panel order-detail" aria-label="Detalle del pedido">
+      <header className="order-detail-header"><div className="order-detail-title"><span className="order-detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><div><p>Detalle del pedido</p><h2 id="order-detail-title">{detail.codigo}</h2></div></div><div className="order-detail-header-actions"><span className={`order-state-badge ${detail.estado}`}>{labels[detail.estado] || detail.estado}</span><button type="button" className="button button-outline" onClick={() => setDetail(null)}>Cerrar detalle</button></div></header>
+      <div className="order-detail-grid">
+        <section className="order-detail-card"><h3><span aria-hidden="true">01</span> Cliente</h3><p className="order-detail-name">{detail.nombre} {detail.apellido || ''}</p><dl><div><dt>DNI</dt><dd>{detail.dni || 'No informado'}</dd></div><div><dt>Teléfono</dt><dd>{detail.telefono ? <a href={`tel:${detail.telefono.replace(/[^+\d]/g, '')}`}>{detail.telefono}</a> : 'No informado'}</dd></div><div className="order-detail-wide"><dt>Email</dt><dd>{detail.email ? <a href={`mailto:${detail.email}`}>{detail.email}</a> : 'No informado'}</dd></div></dl></section>
+        <section className="order-detail-card"><h3><span aria-hidden="true">02</span> Dirección de entrega</h3><p className="order-detail-name">{detail.calle || 'Calle pendiente'} {detail.altura || ''}</p><dl><div><dt>Piso / Departamento</dt><dd>{detail.pisoDepto || 'No informado'}</dd></div><div><dt>Código postal</dt><dd>{detail.codigoPostal || 'No informado'}</dd></div><div><dt>Localidad</dt><dd>{detail.localidad || 'No informada'}</dd></div><div><dt>Provincia</dt><dd>{detail.provincia || 'No informada'}</dd></div></dl><div className="order-detail-original"><span>Dirección original recibida</span><p>{detail.direccionOriginal || 'No se informó una dirección original.'}</p></div></section>
+        <section className="order-detail-card order-detail-location"><h3><span aria-hidden="true">03</span> Ubicación y revisión</h3><LocationReview key={detail.id} order={detail} onConfirmed={setDetail}/></section>
+        <section className="order-detail-card"><h3><span aria-hidden="true">04</span> Indicaciones de entrega</h3><p className={`order-detail-notes ${detail.observaciones ? '' : 'empty'}`}>{detail.observaciones || 'Este pedido no tiene indicaciones adicionales.'}</p></section>
+        <DeliveryHistory orderId={detail.id} version={detail.estado}/>
+      </div>
+    </section></DetailModal>}
   </main>
 }

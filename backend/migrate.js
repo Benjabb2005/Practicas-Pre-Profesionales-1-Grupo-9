@@ -5,7 +5,7 @@ const { createDatabase } = require("./database");
 const { loadCliConfig } = require("./cli-config");
 
 const tables = ["clientes", "direcciones", "pedidos", "historial_geolocalizacion", "historial_estados", "usuarios"];
-const files = ["001_sesiones.sql", "002_carga_pedidos.sql", "003_revision_direccion.sql"];
+const files = ["001_sesiones.sql", "002_carga_pedidos.sql", "003_revision_direccion.sql", "004_asignacion_despacho.sql"];
 
 function statements(text) {
     return text.replace(/^--.*$/gm, "").split(";").map((s) => s.trim()).filter(Boolean);
@@ -67,6 +67,12 @@ async function migrate(pool, { apply = false } = {}) {
                 if (columns.length || triggers.length) throw new Error("Hay objetos de la migración 003 sin registro; revisar recuperación antes de aplicar.");
             }
             if (apply && !recorded) {
+                if (file === "004_asignacion_despacho.sql") {
+                    const [columns] = await connection.query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pedidos' AND COLUMN_NAME = 'chofer_id'");
+                    const [roles] = await connection.query("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'rol'");
+                    const [states] = await connection.query("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pedidos' AND COLUMN_NAME = 'estado'");
+                    if (columns.length || roles[0].COLUMN_TYPE.includes("'chofer'") || states[0].COLUMN_TYPE.includes("'en_preparacion'")) throw new Error("Objetos parciales de 004 sin registro: revisar recuperación antes de aplicar.");
+                }
                 for (const sql of statements(text)) await connection.query(sql);
                 await connection.execute("INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)", [file, checksum]);
             }

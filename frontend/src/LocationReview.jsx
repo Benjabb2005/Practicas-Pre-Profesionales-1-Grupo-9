@@ -5,6 +5,39 @@ import { api, initialAddressVersion } from './api.js'
 import { browserGeoref } from './georef.js'
 import './LocationReview.css'
 
+export function OrderMapLink({ orderId, className = 'button button-outline' }) {
+  const [open, setOpen] = useState(false)
+  return <><button type="button" className={className} onClick={() => setOpen(true)}>Ver ubicación</button>{open && <OrderMapModal orderId={orderId} onClose={() => setOpen(false)}/>}</>
+}
+
+function OrderMapModal({ orderId, onClose }) {
+  const dialog = useRef(null)
+  const [order, setOrder] = useState(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    const element = dialog.current
+    element.showModal()
+    const controller = new AbortController()
+    async function load() {
+      try {
+        const session = await api('/sesion', { signal: controller.signal })
+        const path = session.usuario.rol === 'chofer' ? `/chofer/pedidos/${orderId}` : `/pedidos/${orderId}`
+        const data = await api(path, { signal: controller.signal })
+        if (!controller.signal.aborted) setOrder(data)
+      } catch (failure) { if (!controller.signal.aborted) setError(failure.message) }
+    }
+    load()
+    return () => { controller.abort(); if (element.open) element.close() }
+  }, [orderId])
+  return <dialog ref={dialog} className="order-map-modal" aria-labelledby={`map-title-${orderId}`} onClose={() => { if (!dialog.current?.open) onClose() }} onClick={(event) => { if (event.target === event.currentTarget) dialog.current.close() }}>
+    <div className="order-map-content"><header><div><p>Ubicación del pedido</p><h2 id={`map-title-${orderId}`}>{order?.codigo || 'Mapa de entrega'}</h2></div><button type="button" className="order-map-close" aria-label="Cerrar mapa" onClick={() => dialog.current.close()}>×</button></header>
+      {error && <p role="alert" className="login-error">{error}</p>}
+      {!order && !error && <p role="status">Cargando ubicación…</p>}
+      {order && <><p className="order-map-address">{order.calle} {order.altura}, {order.localidad}, {order.provincia}</p><ConfirmedMap confirmation={order.confirmation}/></>}
+    </div>
+  </dialog>
+}
+
 function Map({ point, onPoint }) {
   const element = useRef(null)
   const [tileError, setTileError] = useState(false)
@@ -25,11 +58,15 @@ function Map({ point, onPoint }) {
   return <>{tileError && <p role="alert">La cartografía no pudo cargarse. No confirmes sin revisar la ubicación.</p>}<div className="location-map" ref={element} aria-label="Mapa de revisión de ubicación"/></>
 }
 
+export function ConfirmedMap({ confirmation }) {
+  return confirmation ? <Map point={{ lat: confirmation.lat, lng: confirmation.lng }}/> : <p>La ubicación requiere revisión del equipo antes de continuar.</p>
+}
+
 export function LocationReview({ order, onConfirmed }) {
   const [editing, setEditing] = useState(false)
   if (editing) return <section><LocationEditor order={order} onConfirmed={(updated) => { onConfirmed(updated); setEditing(false) }}/><button type="button" className="button button-outline" onClick={() => setEditing(false)}>Cancelar edición</button></section>
   return <section className="location-review" aria-label="Ubicación del pedido"><h3>{order.confirmation ? 'Ubicación confirmada' : 'Ubicación pendiente de revisión'}</h3>
-    {order.confirmation && <><Map point={{ lat: order.confirmation.lat, lng: order.confirmation.lng }}/><p>{order.confirmation.observation}</p></>}
+    {order.confirmation && <><OrderMapLink orderId={order.id}/><p>{order.confirmation.observation}</p></>}
     <button type="button" className="button button-outline" onClick={() => setEditing(true)}>Editar ubicación</button>
   </section>
 }

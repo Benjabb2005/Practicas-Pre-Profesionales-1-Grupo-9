@@ -1,0 +1,66 @@
+.live-driver { background: #f5f7fa; padding-top: 24px; }
+.live-driver .driver-shell { width: min(100%, 520px); }
+.live-driver .driver-header { padding-bottom: 20px; border-bottom: 1px solid #e1e7ed; }
+.live-driver .driver-brand-icon { background: #15243c; border-radius: 12px; }
+.live-driver .driver-brand-copy strong { font-size: 18px; letter-spacing: -.4px; }
+.live-driver .driver-brand-copy small { font-size: 9px; letter-spacing: 1px; }
+.live-driver .driver-intro { padding: 8px 0 24px; }
+.live-driver .driver-intro h1 { font-size: 29px; letter-spacing: -.7px; }
+.live-driver .driver-avatar { background: #e7edff; color: #3159d5; border-color: #d6dffc; }
+.live-driver .driver-progress, .live-driver .driver-stop { border-color: #e3e8ef; border-radius: 16px; box-shadow: 0 3px 12px #172a3504; }
+.live-driver-summary { display: flex; justify-content: space-between; align-items: center; padding: 22px; }
+.live-driver-summary strong { font-size: 36px; line-height: 1.2; color: #162641; }
+.live-driver-summary p:last-child { margin: 6px 0 0; font-size: 12px; color: #718094; }
+.live-driver-summary-icon { width: 48px; height: 48px; border-radius: 14px; background: #edf2ff; color: #2e5bea; display: grid; place-items: center; font-size: 28px; }
+.live-driver-list-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 25px; }
+.live-driver-list-heading h2 { margin: 0; font-size: 17px; color: #162641; }
+.live-driver-list-heading button { min-height: 36px; padding: 6px 12px; background: white; }
+.live-driver-hint { color: #718094; font-size: 12px; line-height: 1.6; margin: 8px 0 18px; }
+.live-driver .driver-stop { padding: 21px; min-width: 0; }
+.live-driver-code { font-size: 12px; color: #738095; letter-spacing: .4px; }
+.live-driver .driver-stop-status.next { color: #235aca; background: #edf3ff; border-radius: 999px; padding: 7px 10px; }
+.live-driver .driver-stop-detail { gap: 5px; overflow-wrap: anywhere; }
+.live-driver .driver-stop-detail > span { font-size: 9px; letter-spacing: 1px; font-weight: 700; }
+.live-driver .driver-stop-detail h3 { margin: 0 0 8px; color: #162641; font-size: 18px; }
+.live-driver .driver-stop-detail p { margin: 0; line-height: 1.6; }
+.live-driver-address { font-size: 15px; font-weight: 600; }
+.live-driver-locality { color: #718094; font-size: 12px; }
+.live-driver-phone { width: fit-content; margin-top: 7px; color: #3159d5; font-size: 13px; padding: 5px 0; }
+.live-driver .driver-stop-detail .live-driver-notes { display: grid; gap: 4px; background: #f5f7fb; border-radius: 10px; padding: 12px; margin-top: 8px; font-size: 12px; }
+.live-driver-notes strong { font-size: 11px; }
+.live-driver .driver-map-button { width: 100%; background: #edf3ff; color: #2855cb; border: 1px solid #dae5ff; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; text-decoration: none; padding: 10px; box-sizing: border-box; }
+.live-driver .driver-map-button:hover { background: #e1eaff; }
+.live-driver-map { margin-top: 16px; overflow: hidden; border-radius: 12px; }
+.live-driver-empty { padding: 34px 20px; text-align: center; background: white; border: 1px dashed #dbe3ed; border-radius: 16px; color: #718094; font-size: 13px; line-height: 1.7; }
+.live-driver-empty h2 { font-size: 17px; color: #263951; margin: 14px 0 8px; }
+.live-driver-empty p { margin: 0; }
+.live-driver-empty-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: auto; background: #edf3ff; border-radius: 50%; color: #3159d5; font-size: 30px; }
+@media (max-width: 360px) {
+  .live-driver .driver-stop { padding: 16px; }
+  .live-driver .driver-brand-copy strong { font-size: 16px; }
+  .live-driver .driver-logout { font-size: 11px; padding: 0 3px; }
+}
+.live-driver-counts { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; color: #718094; font-size: 11px; }
+.live-driver-counts strong { color: #243951; }
+.live-driver-tabs { display: flex; gap: 5px; padding: 5px; background: #eaf0f7; border-radius: 11px; margin-top: 14px; }
+.live-driver-tabs button { flex: 1; padding: 10px 4px; background: transparent; color: #64758c; border: 0; border-radius: 7px; cursor: pointer; font: inherit; font-size: 12px; }
+.live-driver-tabs button[aria-pressed="true"] { background: white; color: #243951; font-weight: 600; box-shadow: 0 2px 5px #172a350a; }
+.live-driver-card-tools { display: flex; gap: 8px; }
+.live-driver .driver-stop-number { background: #edf2ff; color: #3159d5; }
+.live-driver .driver-stop-status.completed, .driver-details-modal .driver-stop-status.completed { background: #e2f3e9; color: #287449; }
+.driver-stop-status.failed { background: #fdefed; color: #a12b22; }
+.live-driver .delivery-actions { display: grid; grid-template-columns: 1fr 1fr; }
+.live-driver .delivery-actions > .button { padding: 12px 8px; border-radius: 9px; }
+.live-driver .delivery-actions > .button-primary { background: #2f9863; border-color: #248455; }
+.live-driver .delivery-actions > .button-primary:hover { background: #247b50; }
+.live-driver-result-hint { color: #718094; font-size: 12px; line-height: 1.6; margin: 12px 0 0; }
+.driver-details-modal { width: min(560px, calc(100vw - 32px)); }
+.driver-details-content { padding: 24px; }
+.driver-details-content header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.driver-details-content header p { margin: 0 0 5px; font-size: 12px; color: #718094; }
+.driver-details-content h2 { font-size: 20px; margin: 0; overflow-wrap: anywhere; }
+.driver-details-address { background: #f7f9fc; padding: 16px; border-radius: 12px; margin-bottom: 18px; }
+.driver-details-address h3 { margin: 0 0 12px; font-size: 14px; }
+.driver-details-address p { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.driver-details-address a { display: block; color: #3159d5; font-size: 13px; margin-bottom: 16px; }
+@media (max-width: 360px) { .driver-details-content { padding: 16px; } .live-driver .driver-stop-heading { gap: 8px; } .live-driver .driver-stop-status { font-size: 9px; } }

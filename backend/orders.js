@@ -17,6 +17,7 @@ async function insertConfirmation(connection, order, input, user) {
 
 function currentConfirmation(order, row) {
     if (!row || order.addressRevision === null || !validAddress(order)) return null;
+    if ([row.coordenadas_lat, row.coordenadas_lng].some((value) => value === null || value === undefined || !Number.isFinite(Number(value)))) return null;
     try {
         const review = JSON.parse(row.direccion_enviada);
         if (review.version !== addressVersion(order)) return null;
@@ -133,7 +134,7 @@ function createOrderStore(pool) {
                 if (order.addressRevision === null) throw issue(503, "REVISION_UNAVAILABLE", "La confirmación requiere aplicar la migración 003 de revisión de dirección.");
                 if (!validAddress(order)) throw issue(422, "INCOMPLETE_ADDRESS", "La dirección está incompleta.");
                 if (input.version !== addressVersion(order)) throw issue(409, "ADDRESS_CHANGED", "La dirección cambió. Volvé a abrir el detalle y revisá la ubicación.");
-                if (!["pendiente_validacion", "requiere_revision", "direccion_validada"].includes(order.estado)) throw issue(409, "ORDER_STATE", "Este pedido no admite revisión de ubicación en su estado actual.");
+                if (!["pendiente_validacion", "requiere_revision", "direccion_validada", "en_preparacion"].includes(order.estado)) throw issue(409, "ORDER_STATE", "Este pedido no admite revisión de ubicación en su estado actual.");
                 const previous = (await detail(id, connection)).confirmation;
                 if (previous && previous.lat === input.lat && previous.lng === input.lng && previous.observation === input.observation && previous.user === `usuario:${user.id}`) {
                     await connection.commit();
@@ -259,7 +260,7 @@ function createOrders({ store, authenticate, geocode = createGeoref() }) {
             const page = Number(req.query.page || 1), pageSize = Number(req.query.pageSize || 20);
             if (!Number.isSafeInteger(page) || page < 1 || page > 1000000 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) throw issue(400, "INVALID_FILTER", "La paginación no es válida.");
             const estado = req.query.estado;
-            if (estado && !["pendiente_validacion", "requiere_revision", "direccion_validada", "listo_despacho", "en_camino", "entregado", "fallido", "cancelado"].includes(estado)) throw issue(400, "INVALID_FILTER", "El estado no es válido.");
+            if (estado && !["pendiente_validacion", "requiere_revision", "direccion_validada", "listo_despacho", "en_camino", "entregado", "fallido", "cancelado", "en_preparacion"].includes(estado)) throw issue(400, "INVALID_FILTER", "El estado no es válido.");
             for (const key of ["fechaDesde", "fechaHasta"]) {
                 const value = req.query[key];
                 if (value && (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0, 10) !== value)) throw issue(400, "INVALID_FILTER", "La fecha no es válida.");

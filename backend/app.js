@@ -2,9 +2,11 @@ const express = require("express");
 const { createAuth } = require("./auth");
 const { createOrders } = require("./orders");
 const { createUsers } = require("./users");
+const { createDispatch } = require("./dispatch");
+const { createDeliveries } = require('./deliveries');
 
 // Las dependencias reales se inyectan desde index.js, nunca al importar la app.
-function createApp({ checkDatabase, readinessTimeoutMs = 2500, auth, orders, users } = {}) {
+function createApp({ checkDatabase, readinessTimeoutMs = 2500, auth, orders, users, dispatch, deliveries } = {}) {
     const app = express();
     app.disable("x-powered-by");
 
@@ -43,7 +45,9 @@ function createApp({ checkDatabase, readinessTimeoutMs = 2500, auth, orders, use
     app.use(express.json({ limit: "16kb" }));
     const access = createAuth(auth);
     app.use("/api", access.router);
+    if (deliveries) app.use('/api', createDeliveries({ store: deliveries, authenticate: access.authenticate }));
     if (users) app.use("/api/usuarios", createUsers({ store: users, authenticate: access.authenticate }));
+    if (dispatch) app.use('/api', createDispatch({ store: dispatch, authenticate: access.authenticate }));
     if (orders) app.use("/api", createOrders({ store: orders, authenticate: access.authenticate }));
     app.use((error, req, res, next) => {
         if (res.headersSent) return next(error);

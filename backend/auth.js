@@ -57,7 +57,7 @@ function createAuth({ store, secret, allowedOrigin, secureCookies = false } = {}
         try {
             const user = await store.findUser(email.trim().toLowerCase());
             const valid = await verifyPassword(password, user?.password_hash || await (dummyHash ||= hashPassword(randomBytes(32).toString("hex"))));
-            if (!valid || !user?.activo || !["admin", "operador"].includes(user.rol)) {
+            if (!valid || !user?.activo || !["admin", "operador", "chofer"].includes(user.rol)) {
                 return fail(res, 401, "INVALID_CREDENTIALS", "Usuario o contraseña incorrectos.");
             }
             const jti = randomUUID();
@@ -82,7 +82,7 @@ function createAuth({ store, secret, allowedOrigin, secureCookies = false } = {}
         }
         try {
             const user = await store.findSession(payload.jti);
-            if (!user || String(user.id) !== payload.sub || !["admin", "operador"].includes(user.rol)) {
+            if (!user || String(user.id) !== payload.sub || !["admin", "operador", "chofer"].includes(user.rol)) {
                 return fail(res, 401, "SESSION_REQUIRED", "Tu sesión no es válida. Iniciá sesión nuevamente.");
             }
             req.user = publicUser(user);

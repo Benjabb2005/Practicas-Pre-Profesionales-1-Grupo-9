@@ -23,6 +23,31 @@ services:
       retries: 10
 
 
+  initialize:
+    build:
+      context: ./backend
+    command: ["node", "initialize.js"]
+    restart: "no"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      SESSION_SECRET_FILE: /runtime/session-secret
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./database:/database:ro
+      - session_config:/runtime
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   backend:
     build:
       context: ./backend
@@ -37,6 +62,7 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       PORT: 3000
       SESSION_SECRET: ${SESSION_SECRET:-}
+      SESSION_SECRET_FILE: /runtime/session-secret
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:5173}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
 
@@ -46,10 +72,13 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - session_config:/runtime:ro
 
     depends_on:
       mysql:
         condition: service_healthy
+      initialize:
+        condition: service_completed_successfully
 
 
   frontend:
@@ -75,3 +104,4 @@ services:
 
 volumes:
   mysql_data:
+  session_config:

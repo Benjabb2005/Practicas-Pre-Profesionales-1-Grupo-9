@@ -6,12 +6,21 @@ function validationError(status, code, message, fields = {}) {
     return Object.assign(new Error(message), { status, code, fields });
 }
 
-async function createUser(pool, { nombre, email, password, rol }) {
+function validateAccount({ nombre, email, password, rol }) {
     if (typeof nombre !== "string" || !nombre.trim() || nombre.trim().length > 100 ||
         typeof email !== "string" || email.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
-        !["admin", "operador"].includes(rol)) throw validationError(422, "INVALID_ACCOUNT", "Completá nombre, email y un rol válido.");
+        !["admin", "operador", "chofer"].includes(rol)) throw validationError(422, "INVALID_ACCOUNT", "Completá nombre, email y un rol válido.");
     if (typeof password !== "string" || password.length < 12 || password.length > 128) {
         throw validationError(422, "INVALID_ACCOUNT", "La contraseña debe tener entre 12 y 128 caracteres.", { password: "Usá entre 12 y 128 caracteres." });
+    }
+}
+
+async function createUser(pool, account) {
+    validateAccount(account);
+    const { nombre, email, password, rol } = account;
+    if (rol === 'chofer') {
+        const [columns] = await pool.query("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'rol'");
+        if (!columns[0]?.COLUMN_TYPE.includes("'chofer'")) throw validationError(503, 'DRIVER_UNAVAILABLE', 'Las cuentas de chofer todavía no están activadas en este entorno.');
     }
     const hash = await hashPassword(password);
     const connection = await pool.getConnection();
@@ -47,7 +56,7 @@ async function main() {
         try {
             const nombre = await prompt.question("Nombre: ");
             const email = await prompt.question("Email: ");
-            const rol = process.argv.includes("--admin") ? "admin" : (await prompt.question("Rol (admin/operador): ")).trim();
+            const rol = process.argv.includes("--admin") ? "admin" : (await prompt.question("Rol (admin/operador/chofer): ")).trim();
             async function askPassword(label) {
                 process.stdout.write(label); hidden = true;
                 try { return await prompt.question(""); }
@@ -71,4 +80,4 @@ if (require.main === module) main().catch((error) => {
     process.exitCode = 1;
 });
 
-module.exports = { createUser };
+module.exports = { createUser, validateAccount };

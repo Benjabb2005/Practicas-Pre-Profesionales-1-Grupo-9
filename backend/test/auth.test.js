@@ -99,8 +99,18 @@ test("inactivar usuario o cambiarlo a un rol no soportado revoca acceso", async 
         user.activo = 0;
         assert.equal((await request("/sesion", { cookie })).status, 401);
         user.activo = 1;
-        user.rol = "chofer";
+        user.rol = "desconocido";
         assert.equal((await request("/sesion", { cookie })).status, 401);
+    });
+});
+
+test('chofer puede iniciar y recuperar sesión real', async () => {
+    await fixture(async ({ user, login, request }) => {
+        user.rol = 'chofer';
+        const cookie = await login();
+        const response = await request('/sesion', { cookie });
+        assert.equal(response.status, 200);
+        assert.equal((await response.json()).data.usuario.rol, 'chofer');
     });
 });
 

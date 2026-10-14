@@ -1,0 +1,24 @@
+.delivery-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.delivery-error { color: #b42318; font-size: 12px; line-height: 1.5; }
+.delivery-modal { width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); border: 0; border-radius: 16px; padding: 0; color: #243951; }
+.delivery-modal::backdrop { background: #101a2bcc; }
+.delivery-modal form { padding: 24px; }
+.delivery-modal header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.delivery-modal header p { margin: 0 0 5px; color: #718094; font-size: 12px; }
+.delivery-modal h2 { font-size: 20px; margin: 0; }
+.delivery-modal label { display: grid; gap: 7px; margin-top: 18px; font-size: 13px; }
+.delivery-modal input, .delivery-modal select, .delivery-modal textarea { width: 100%; box-sizing: border-box; border: 1px solid #d1dbe8; border-radius: 8px; padding: 10px; font: inherit; }
+.delivery-modal textarea { resize: vertical; }
+.delivery-destination, .delivery-hint { font-size: 12px; color: #718094; line-height: 1.6; }
+.delivery-modal footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+.delivery-history { grid-column: 1 / -1; }
+.delivery-history article { border-left: 2px solid #dce5fb; padding: 0 0 16px 14px; margin-top: 14px; }
+.delivery-history small { display: block; margin-top: 5px; color: #718094; font-size: 11px; }
+.delivery-history p { margin: 7px 0 0; white-space: pre-wrap; }
+.order-state-badge.fallido { color: #a12b22; background: #fdefed; }
+@media (max-width: 480px) { .delivery-modal form { padding: 18px; } }
+.delivery-payment-options { padding: 0; margin: 18px 0 0; border: 0; }
+.delivery-payment-options legend { font-size: 13px; margin-bottom: 2px; }
+.delivery-modal .delivery-payment-options label { display: grid; grid-template-columns: 18px 1fr; align-items: center; padding: 13px; border: 1px solid #d1dbe8; border-radius: 10px; margin-top: 8px; cursor: pointer; }
+.delivery-modal .delivery-payment-options label:has(input:checked) { background: #edf6f0; border-color: #2f9863; color: #247b50; }
+.delivery-modal .delivery-payment-options input { width: 18px; height: 18px; margin: 0; accent-color: #2f9863; }

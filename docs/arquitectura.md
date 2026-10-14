@@ -78,3 +78,19 @@ Vite proxy /api y /health hacia backend:3000 en Compose, 127.0.0.1:3000 nativo. 
 ## Material descartado
 
 La revisión previa encontró material de aprendizaje ajeno a este proyecto: un ABM de ejemplo con CRUD `/Clientes` sobre una tabla `Cliente`, CORS abierto, consultas parametrizadas pero sin validación de permisos ni de entradas, y logging del cuerpo de la petición; además una guía de Angular con SQL Server, incompatibles con el stack vigente. Nada de eso forma parte del repositorio y no se copió. Este proyecto se construye con el código que hay en `backend/`, `frontend/` y `database/`: no hace falta ningún módulo heredado para arrancarlo.
+
+## Corte operativo · 14/10/2026
+
+backend/dispatch.js concentra transacciones de asignación/preparación/despacho, validación de ubicación vigente y auditoría en historial_estados. Bloquea pedido/dirección/cliente/chofer para decidir sobre datos actuales; reintento idéntico no duplica historial. API admin/operador: GET /api/choferes, GET /api/pedidos/:id/operacion y POST /api/pedidos/:id/asignar (choferId o null), /preparar y /despachar (objeto vacío). Chofer: GET /api/chofer/pedidos?page=1 y /:id; identidad tomada de sesión, recurso ajeno devuelve 404. No acepta estado arbitrario desde cliente. Migración 004 pendiente de activar localmente; schema anterior conserva carga/consulta.
+
+## Arranque de instalación · 14/10/2026
+
+Compose agrega initialize (node initialize.js) entre mysql saludable y backend; montaje database de lectura permite reutilizar runner y checksum, sin duplicar SQL. create-user exporta validación para revisar cuenta antes de migrar. Esquema nuevo se completa y recibe solo admin; repetición conserva cuentas existentes. initialize usa credenciales administrativas aisladas del proceso backend. Secreto de sesión opcional en .env; ausencia genera /runtime/session-secret persistido en session_config, backend lo lee si no tiene SESSION_SECRET. Fallo del instalador bloquea arranque backend; DDL parcial requiere recuperación manual. No cambios automáticos de esquema en bases existentes pendientes.
+
+## Resultados de entrega · 14/10/2026
+
+backend/deliveries.js se monta antes del middleware staff de pedidos; usa sesión real y ownership chofer en servidor. GET /api/pedidos/:id/entregas; POST /resultado con resultado/receptor/motivo/observacion; POST /reintentar con objeto vacío. Escrituras exigen Idempotency-Key UUID v4, bloqueo del pedido y transacción estado/historial; hash del resultado/actor detecta reutilización con datos distintos. Historial conserva cada intento en historial_estados, sin nueva tabla/migración; clave/hash internos no expuestos. Reintento staff limpia asignación y no duplica evento al repetir clave. Chofer ajeno recibe 404. Resultado únicamente desde en_camino; entregado/fallido separados del pago. DeliveryActions/DeliveryHistory comparten UI chofer/tablero/detalle.
+
+14/10, contrato de resultado ampliado: metodoPago obligatorio en entregado, valores efectivo/transferencia; no admitido en fallido. observacion opcional en ambos. Campo se persiste en JSON de historial y hash idempotente, sin migración ni cambios financieros. Registros antiguos sin método conservados sin inventar valor. DetailModal usa dialog nativo y respeta modales anidados de mapa.
+
+14/10, lectura del portal chofer: GET /api/chofer/pedidos?vista=en_camino|entregado|fallido&page=1 retorna resumen global pendientes/entregados/fallidos/total de asignación actual más página. GET /api/chofer/pedidos/:id permite esos estados siempre que chofer_id coincida; no incluye DNI/email. Consulta por filtro se revalida en lectura de recurso para no mezclar resultado que cambió estado durante la respuesta. UI separa finalizados y pendientes con progreso de resultados registrados, sin atribuir jornada/ruta optimizada ni pago acreditado. Historial existente consulta responsable/método en detalle real.

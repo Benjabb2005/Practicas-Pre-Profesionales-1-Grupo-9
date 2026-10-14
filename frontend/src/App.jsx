@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import DriverApp from './DriverApp.jsx'
+import LiveDriverApp from './LiveDriverApp.jsx'
 import { api } from './api.js'
 import { Board, OrderForm } from './Orders.jsx'
 import Users from './Users.jsx'
@@ -149,6 +150,7 @@ function App() {
   if (checking) return <main className="session-loading" role="status">Comprobando sesión…</main>
   if (demo) return <><p className="prototype-notice">Demostración del chofer · Datos ficticios; recargar restablece las paradas.</p><DriverApp onLogout={() => setDemo(false)}/></>
   if (!user) return <Login initialError={sessionError} onDemo={() => setDemo(true)} onLogin={(nextUser) => { setUser(nextUser); setSessionError('') }}/>
+  if (user.rol === 'chofer') return <LiveDriverApp user={user} onLogout={logout} logoutError={logoutError}/>
   return <OperatorApp user={user} onLogout={logout} logoutError={logoutError}/>
 }
 
