@@ -29,6 +29,9 @@
 
 .cliente-vacio { padding: 7px 9px; color: #8e9bb0; font-size: 8px; }
 
+.cliente-divider { margin-top: 12px; }
+.cliente-campos { margin-bottom: 6px; }
+
 .cliente-elegido {
   display: flex;
   align-items: center;

@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import ClienteSelector from '../components/ClienteSelector.jsx'
+import ClienteCampos from '../components/ClienteCampos.jsx'
 import DireccionForm from '../components/DireccionForm.jsx'
 import { DIRECCION_VACIA } from '../components/direccion.js'
+import { CLIENTE_VACIO, datosDeCliente } from '../components/cliente.js'
 import MapPreview from '../components/MapPreview.jsx'
 import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
 import { mensajeError } from '../api/client'
-import { confirmarDireccion, crearPedido, geocodificarPedido } from '../api/pedidos'
+import { confirmarDireccion, crearCliente, crearPedido, geocodificarPedido } from '../api/pedidos'
 import './Pedidos.css'
 
 const RESULTADOS = {
@@ -20,6 +22,7 @@ const RESULTADOS = {
 function PedidosCargaPage() {
   const navegar = useNavigate()
   const [cliente, setCliente] = useState(null)
+  const [datosCliente, setDatosCliente] = useState({ ...CLIENTE_VACIO })
   const [direccion, setDireccion] = useState({ ...DIRECCION_VACIA })
   const [observaciones, setObservaciones] = useState('')
   const [pedido, setPedido] = useState(null)
@@ -36,23 +39,51 @@ function PedidosCargaPage() {
     setDireccion((actual) => ({ ...actual, [campo]: valor }))
   }
 
+  function cambiarCliente(campo, valor) {
+    setDatosCliente((actual) => ({ ...actual, [campo]: valor }))
+  }
+
+  function seleccionarCliente(opcion) {
+    setCliente(opcion)
+    setDatosCliente(datosDeCliente(opcion))
+  }
+
   async function guardar(event) {
     event.preventDefault()
-    if (!cliente) {
-      setError('Elegí un cliente de la lista antes de guardar.')
+    const nombre = datosCliente.nombre.trim()
+    if (!cliente && !nombre) {
+      setError('Elegí un cliente de la lista o completá el nombre para dar de alta uno nuevo.')
       return
     }
     setGuardando(true)
     setError('')
     setAviso('')
     try {
-      const data = await crearPedido({ cliente_id: cliente.id, observaciones: observaciones || null, direccion })
+      let clienteId = cliente?.id
+      let avisoCliente = ''
+      if (!clienteId) {
+        const creado = await crearCliente({
+          nombre,
+          dni: datosCliente.dni.trim() || null,
+          telefono: datosCliente.telefono.trim() || null,
+          email: datosCliente.email.trim() || null,
+        })
+        clienteId = creado.cliente.id
+        setCliente(creado.cliente)
+        setDatosCliente(datosDeCliente(creado.cliente))
+        const repetidos = creado.posiblesDuplicados || []
+        if (repetidos.length) {
+          avisoCliente = `Cliente creado. Atención: hay ${repetidos.length} cliente(s) con teléfono o email parecido.`
+        }
+      }
+      const data = await crearPedido({ cliente_id: clienteId, observaciones: observaciones || null, direccion })
       setPedido(data.pedido)
       setResultado(null)
       const duplicados = data.posiblesDuplicados || []
-      setAviso(duplicados.length
+      const avisoPedido = duplicados.length
         ? `Pedido guardado. Atención: hay ${duplicados.length} pedido(s) de este cliente con la misma dirección.`
-        : 'Pedido guardado como borrador. Geocodificá la dirección para continuar.')
+        : 'Pedido guardado como borrador. Geocodificá la dirección para continuar.'
+      setAviso([avisoCliente, avisoPedido].filter(Boolean).join(' '))
     } catch (fallo) {
       setError(mensajeError(fallo))
     } finally {
@@ -93,6 +124,7 @@ function PedidosCargaPage() {
 
   function nuevaCarga() {
     setCliente(null)
+    setDatosCliente({ ...CLIENTE_VACIO })
     setDireccion({ ...DIRECCION_VACIA })
     setObservaciones('')
     setPedido(null)
@@ -103,7 +135,7 @@ function PedidosCargaPage() {
 
   return <main className="main-content form-page">
     <header className="page-header">
-      <div><p className="eyebrow">Nuevo envío</p><h1>Carga Manual de Pedido</h1><p className="subtitle">Elegí el cliente, cargá la dirección y confirmá la ubicación antes de despachar.</p></div>
+      <div><p className="eyebrow">Nuevo envío</p><h1>Carga Manual de Pedido</h1><p className="subtitle">Elegí o cargá el cliente, completá la dirección y confirmá la ubicación antes de despachar.</p></div>
       <button className="button button-outline header-action" onClick={() => navegar('/pedidos/revision')}>Bandeja de revisión</button>
     </header>
 
@@ -113,7 +145,9 @@ function PedidosCargaPage() {
     <div className="order-layout">
       <section className="panel order-panel">
         <div className="section-heading"><span className="step-number">1</span><div><h2>Cliente y dirección de entrega</h2><p>Los campos marcados con * son obligatorios.</p></div></div>
-        <ClienteSelector cliente={cliente} onSeleccionar={setCliente} bloqueado={Boolean(pedido) || ocupado}/>
+        <ClienteSelector cliente={cliente} onSeleccionar={seleccionarCliente} bloqueado={Boolean(pedido) || ocupado}/>
+        <div className="form-divider cliente-divider"><span>{cliente ? 'Datos del cliente elegido' : 'o cargá los datos de un cliente nuevo'}</span></div>
+        <ClienteCampos valor={datosCliente} onChange={cambiarCliente} bloqueado={Boolean(pedido) || ocupado || Boolean(cliente)}/>
         <div className="form-divider address-divider"><span>Dirección de entrega</span></div>
         <DireccionForm valor={direccion} onChange={cambiarDireccion} bloqueado={Boolean(pedido) || ocupado}/>
         <label className="form-field span-2" htmlFor="pedido-observaciones"><span>Notas / Instrucciones de entrega</span>

@@ -12,6 +12,7 @@ function createClientesRouter(container = {}) {
 
     router.use(auth, requiereRol(ROLES.ADMINISTRADOR, ROLES.OPERADOR));
     router.get("/", controller.listar);
+    router.post("/", controller.crear);
 
     return router;
 }

@@ -36,3 +36,8 @@ export async function listarClientes(busqueda) {
   const { data } = await api.get('/clientes', { params: busqueda ? { busqueda } : {} })
   return data.clientes
 }
+
+export async function crearCliente(cuerpo) {
+  const { data } = await api.post('/clientes', cuerpo)
+  return data
+}

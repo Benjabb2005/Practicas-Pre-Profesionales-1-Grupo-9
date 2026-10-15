@@ -153,3 +153,21 @@ Ejecutado sobre la rama `MVP-1`. Se reactivó el stack de desarrollo conservando
 | Frontend | `GET http://localhost:5173/` | `200` |
 
 Límites: no se ejecutó el flujo completo en navegador (carga → geocodificar → confirmar → revisión) ni la geocodificación real con Nominatim. `npm run migrate` **dentro del contenedor** falla con `ENOENT` porque `database/migrations/` no entra en la imagen ni en el bind mount `./backend:/app`; migración y seed se corrieron desde el host. Queda como observación para decidir si el contenedor debe poder migrar por sí mismo.
+
+## Alta de cliente en la carga manual (15/10/2026, OpenCode)
+
+Ejecutado sobre la rama `MVP-1`, continuando T04. Se agregó el alta de cliente con `POST /api/clientes` para poder cargar pedidos cuando no existe el cliente (la base tenía 0 clientes y la pantalla sólo permitía elegir uno existente). Sin cambios de esquema.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` | 44/44 (5 nuevas de clientes: normalización de DNI, conflicto por DNI, aviso de teléfono/email sin fusionar, DNI sin dígitos, guardas 401/403/400) |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | Sin errores |
+| Build frontend | `npm.cmd --prefix frontend run build` | `vite build` OK (146 módulos) |
+| Alta real de cliente | `POST /api/clientes` con Bearer de OPERADOR | `201`; id 1, DNI normalizado `30111222` (entró `30.111.222`), `posiblesDuplicados` vacío |
+| DNI duplicado real | segundo `POST /api/clientes` con el mismo DNI | `409 CONFLICTO`, no crea |
+| Autorización real | `POST /api/clientes` sin token | `401` |
+| Pedido con el cliente nuevo | `POST /api/pedidos` con `cliente_id = 1` y dirección estructurada | `201`; pedido id 1 `EN STOCK` / `PENDIENTE` |
+
+El backend del contenedor se reinició (`docker compose restart backend`) para tomar el código nuevo del bind mount antes del smoke.
+
+Límites: el flujo en navegador y la geocodificación real con Nominatim siguen sin ejecutarse. El aviso de duplicados es informativo y no fusiona (D09/D11 pendientes); el DNI duplicado sí bloquea porque identifica al cliente. El smoke dejó datos de prueba en la base de desarrollo: cliente id 1 (DNI `30111222`) y pedido id 1; no se borraron para no usar operaciones destructivas.

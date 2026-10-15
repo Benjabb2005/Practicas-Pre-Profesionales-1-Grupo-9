@@ -132,3 +132,20 @@ Evidencia: `docker compose ps` con los 3 servicios `Up` (MySQL `healthy`); log d
 Credenciales de desarrollo del seed (ya presentes en `.env.example`): `admin@mandatodo.com`, `operador@mandatodo.com`, `chofer@mandatodo.com`, todas con contraseña `Admin123!`.
 
 Siguiente paso: probar el flujo real en el navegador (login → carga → geocodificar → confirmar → revisión) y retomar T07 cuando D04/D09 se definan.
+
+## Alta de cliente en la carga manual (continuación de T04, 15/10/2026)
+
+Estado: completada. Responsable: agente OpenCode sobre rama `MVP-1`. Sin commit, push ni deploy.
+
+Motivo: la base de desarrollo tenía 0 clientes y la pantalla de carga sólo permitía elegir uno existente, así que no se podía cargar ningún pedido ni geocodificar. Se agregó el alta de cliente dentro del mismo formulario. Es parte del flujo de MVP1 ("datos del cliente dentro del pedido"); no es la pantalla independiente de ABM de clientes, que sigue pendiente en D07.
+
+Cambios y archivos:
+- Backend: `repositories/ClienteRepository.js` (`crear`, `buscarPorDni`, `buscarCoincidencias`); `services/ClienteService.js` (`crear` normaliza el DNI a solo dígitos, rechaza DNI duplicado como conflicto y devuelve coincidencias por teléfono/email sin fusionar); `controllers/clientes.controller.js` (`crear` con zod); `routes/clientes.routes.js` (`POST /api/clientes`, ADMINISTRADOR y OPERADOR). Sin cambios de esquema. Pruebas nuevas en `test/clientes.test.js`.
+- Frontend: `api/pedidos.js` (`crearCliente`); nuevos `components/{ClienteCampos.jsx,cliente.js}`; `pages/PedidosCargaPage.jsx` (elige frecuente o carga un cliente nuevo; crea el cliente y después el pedido) y `pages/Pedidos.css`; spec `frontend/specs/pedidos-carga-revision.md`.
+- Docs: `arquitectura.md` (contrato `POST /api/clientes`), `pantallas.md` (campos del cliente en la carga), este apartado y `verificacion.md`.
+
+Evidencia (detalle en `docs/verificacion.md`): backend `npm.cmd --prefix backend test` 44/44; lint y build de frontend OK; smoke real contra los contenedores con alta de cliente (`201`, DNI `30.111.222` → `30111222`), DNI duplicado (`409`), sin token (`401`) y pedido creado con ese cliente (`EN STOCK`/`PENDIENTE`).
+
+Límites: no se probó en navegador ni la geocodificación real con Nominatim; el aviso de duplicados es informativo y no fusiona (D09/D11 pendientes). El smoke dejó datos de prueba en la base de desarrollo (cliente id 1 y pedido id 1), no borrados.
+
+Siguiente paso: probar en navegador la carga de un pedido con cliente nuevo y geocodificar; retomar T07 cuando D04/D09 se definan.
