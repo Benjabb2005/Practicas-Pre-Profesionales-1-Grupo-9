@@ -4,6 +4,9 @@ import Icon from './components/Icon.jsx'
 import DriverApp from './DriverApp.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
+import PedidosCargaPage from './pages/PedidosCargaPage.jsx'
+import PedidosRevisionPage from './pages/PedidosRevisionPage.jsx'
+import PedidoRevisionDetallePage from './pages/PedidoRevisionDetallePage.jsx'
 import ProtectedRoute from './auth/ProtectedRoute.jsx'
 import { useAuth } from './auth/useAuth'
 
@@ -21,6 +24,7 @@ function Sidebar({ rol, onLogout }) {
   const items = [
     { to: '/', label: 'Tablero de Envíos', icon: 'grid', end: true },
     { to: '/form', label: 'Cargar Pedido', icon: 'plus' },
+    { to: '/pedidos/revision', label: 'Revisión de Direcciones', icon: 'eye' },
     { label: 'Rutas', icon: 'route', soon: true },
     { label: 'Clientes', icon: 'users', soon: true },
   ]
@@ -69,53 +73,6 @@ function Board() {
   </main>
 }
 
-function Field({ label, placeholder, required, type = 'text', className = '' }) {
-  const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  return <label className={`form-field ${className}`} htmlFor={id}><span>{label}{required && <b> *</b>}</span><input id={id} type={type} autoComplete="off" placeholder={placeholder}/></label>
-}
-
-function SelectField({ label, children, className = '' }) {
-  const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  return <label className={`form-field ${className}`} htmlFor={id}><span>{label}</span><select id={id}>{children}</select></label>
-}
-
-function OrderForm() {
-  const navegar = useNavigate()
-  return <main className="main-content form-page">
-    <PageHeader eyebrow="Nuevo envío" title="Carga Manual de Pedido" subtitle="Completá los datos y validá la ubicación antes de despachar." action="Ver tablero" onAction={() => navegar('/')}/>
-    <div className="order-layout">
-      <section className="panel order-panel">
-        <div className="section-heading"><span className="step-number">1</span><div><h2>Datos del cliente y envío</h2><p>Los campos marcados con * son obligatorios.</p></div></div>
-        <div className="customer-search"><label htmlFor="customer-search">Cliente frecuente</label><div className="search-input"><Icon name="search" size={15}/><input id="customer-search" autoComplete="off" placeholder="Buscar por DNI, email o teléfono"/></div></div>
-        <div className="form-divider"><span>Datos del cliente</span></div>
-        <div className="fields-grid customer-fields">
-          <Field label="Nombre" placeholder="Ej. María" required/><Field label="Apellido" placeholder="Ej. González" required/>
-          <Field label="DNI" placeholder="Documento"/><Field label="Teléfono" placeholder="11 0000 0000" type="tel"/>
-          <Field label="Email" placeholder="cliente@email.com" type="email" className="span-2"/>
-        </div>
-        <div className="form-divider address-divider"><span>Dirección de entrega</span></div>
-        <div className="fields-grid address-fields">
-          <Field label="Calle" placeholder="Ej. Av. Corrientes" required className="street-field"/><Field label="Altura" placeholder="1234" required/>
-          <Field label="Piso/Depto" placeholder="Ej. 4° B"/><Field label="Localidad" placeholder="Ej. CABA" required/><Field label="Código Postal" placeholder="Ej. C1043" required/>
-          <Field label="Entre calles" placeholder="Opcional" className="span-2"/>
-          <label className="form-field span-2" htmlFor="delivery-notes"><span>Notas / Instrucciones de entrega</span><textarea id="delivery-notes" placeholder="Ej. Tocar timbre B, dejar en recepción..." rows="3"/></label>
-          <SelectField label="Chofer asignado" className="driver-field"><option>Sin asignar</option><option>Chofer 1</option><option>Chofer 2</option><option>Chofer 3</option></SelectField>
-        </div>
-      </section>
-      <aside className="validation-column">
-        <section className="panel geo-panel">
-          <div className="section-heading"><span className="step-number">2</span><div><h2>Validación Geográfica</h2><p>La ubicación se actualiza en tiempo real.</p></div></div>
-          <div className="map-placeholder"><div className="map-grid"/><div className="map-empty"><Icon name="pin" size={21}/><span>Completá la dirección para<br/>visualizar su ubicación</span></div></div>
-          <div className="address-alert"><Icon name="alert" size={15}/><div><b>La altura falta o no es válida</b><span>Corregí los campos para habilitar el despacho automático.</span></div></div>
-          <button className="button confirm-button" disabled><Icon name="pin" size={14}/> Confirmar Ubicación y Habilitar Despacho</button>
-          <button className="button button-outline correct-button" type="button">Corregir Datos</button>
-        </section>
-        <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>La validación evita direcciones incompletas y reduce entregas fallidas.</small></div></div>
-      </aside>
-    </div>
-  </main>
-}
-
 function OperatorLayout() {
   const { usuario, logout } = useAuth()
   const navegar = useNavigate()
@@ -137,7 +94,9 @@ function App() {
     <Route path="/login" element={<LoginPage/>}/>
     <Route element={<ProtectedRoute roles={['ADMINISTRADOR', 'OPERADOR']}><OperatorLayout/></ProtectedRoute>}>
       <Route index element={<Board/>}/>
-      <Route path="form" element={<OrderForm/>}/>
+      <Route path="form" element={<PedidosCargaPage/>}/>
+      <Route path="pedidos/revision" element={<PedidosRevisionPage/>}/>
+      <Route path="pedidos/:id/revision" element={<PedidoRevisionDetallePage/>}/>
       <Route path="usuarios" element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsersPage/></ProtectedRoute>}/>
     </Route>
     <Route path="/chofer" element={<ProtectedRoute roles={['CHOFER']}><ChoferRuta/></ProtectedRoute>}/>

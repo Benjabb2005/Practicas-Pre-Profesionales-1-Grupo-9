@@ -93,3 +93,42 @@ No cumplidos / límites: no se importó el Excel real (ausente en `temp/`); la m
 Decisión nueva: D18 (importación idempotente), D19 (token en `localStorage`), D20 (arnés de pruebas), además de actualizar D02, D04, D05 y D10.
 
 Siguiente paso: T04/T05 (flujo de carga y revisión con geocodificación) y depositar el Excel en `temp/` para validar la importación real (T06).
+
+## Sesión MVP1: carga y revisión de direcciones (T04/T05, 15/10/2026)
+
+Estado: T04 y T05 implementados en backend y frontend, con pruebas de negocio; pendiente la prueba end-to-end contra MySQL/Docker y el cierre de decisiones humanas. Responsable: agente OpenCode sobre rama `MVP-1`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Alcance:
+- Carga manual de pedidos con cliente real (`GET /api/clientes`) y dirección estructurada, guardada como borrador `EN STOCK`.
+- Bandeja de revisión de direcciones no confirmadas y detalle con mapa, historial e invalidación al cambiar la dirección.
+- Geocodificación vía Nominatim (OSM) y confirmación manual con mapa Leaflet (D06).
+
+Cambios y archivos:
+- Backend: `src/repositories/{ClienteRepository,PedidoRepository}.js`; `src/services/{ClienteService,PedidoService,GeocodeService}.js`; `src/geocode/{nominatim.js,index.js}`; `src/controllers/{pedidos.controller,clientes.controller}.js`; `src/routes/{pedidos.routes,clientes.routes}.js`; bloque `geocode` en `src/config/env.js`; `container.js` y `app.js` con las rutas `/api/pedidos` y `/api/clientes`.
+- Frontend: `src/api/pedidos.js`; `src/components/{ClienteSelector,DireccionForm,MapPreview,EstadoValidacionBadge}.jsx` y `src/components/direccion.js`; `src/pages/{PedidosCargaPage,PedidosRevisionPage,PedidoRevisionDetallePage}.jsx` y `src/pages/Pedidos.css`; rutas y navegación en `App.jsx`; spec `frontend/specs/pedidos-carga-revision.md`. Dependencias nuevas: `leaflet` y `react-leaflet` (D06).
+- Pruebas: `backend/test/{pedidos,geocode}.test.js`.
+
+Criterios cumplidos: 39/39 pruebas de backend (incluye borradores, invalidación D09/D10, geocodificación ok/aproximada/sin resultados/timeout/error y guardas de rol 401/403/200) y 6/6 de frontend; lint y build de Vite OK; `npm run check` completo (exit 0).
+
+No cumplidos / límites: no se probó el flujo contra MySQL/Docker ni con el proveedor real (Nominatim) porque requiere contenedores en ejecución y red; el mapa muestra teselas de OSM y depende de acceso a Internet en el navegador; no hay pruebas end-to-end de navegador. D09 (borradores/cancelación) y D11 (duplicados) siguen pendientes del cliente: sólo se avisan potenciales duplicados, no se fusionan.
+
+Siguiente paso: probar el flujo real contra los contenedores (login → carga → geocodificar → confirmar → revisión), y retomar T07 (asignación, entregas y pagos) cuando D04/D09 se definan.
+
+## Reparación del entorno Docker y smoke real (T04/T05, 15/10/2026)
+
+Estado: completada. Responsable: agente OpenCode sobre rama `MVP-1`. Sin commit, push ni deploy. Se reactivó el stack Docker y se corrió el flujo real de autenticación y consulta.
+
+Motivo: los contenedores habían quedado creados con `.env` incompleto (secretos vacíos) y con volúmenes anónimos de `node_modules` desactualizados, por lo que el backend caía con `MODULE_NOT_FOUND` y el login no funcionaba.
+
+Cambios y archivos:
+- `.env` (raíz) y `backend/.env`: completados con valores de desarrollo (contraseña de root, usuario y contraseña de aplicación y `JWT_SECRET`, definidos localmente). Están gitignoreados y no se versionan; los `.env.example` siguen con los campos vacíos para no publicar credenciales.
+- MySQL: el volumen nombrado `mysql_data` ya estaba inicializado (root con contraseña y base `mandatodo` vacía, sin tablas ni usuario de aplicación); no se borró ningún volumen. Se creó el usuario de aplicación con `CREATE USER IF NOT EXISTS` + `GRANT` sobre `mandatodo.*`, porque el entrypoint no lo crea sobre un volumen ya inicializado.
+- Stack recreado con `docker compose up -d --build -V` para reconstruir imágenes (traen `bcryptjs`, `jsonwebtoken`, `zod` en backend y `leaflet`, `react-leaflet` en frontend) y renovar los volúmenes anónimos de `node_modules`.
+
+Observación (no abordada, queda para otra tarea): `backend/scripts/migrate.mjs` resuelve `../../database/migrations/` respecto de su propia ubicación, así que `npm run migrate` **dentro del contenedor** falla con `ENOENT` porque ese directorio no entra ni en la imagen ni en el bind mount `./backend:/app`. Migración y seed se corrieron desde el host (`npm.cmd --prefix backend run migrate|seed`) contra `127.0.0.1:3306`. Falta decidir si el contenedor debe poder migrar por sí mismo.
+
+Evidencia: `docker compose ps` con los 3 servicios `Up` (MySQL `healthy`); log del backend `Conexión a MySQL exitosa`; `POST /api/auth/login` admin devuelve token (rol `ADMINISTRADOR`); `GET /api/pedidos` y `GET /api/clientes` responden `200` (0 filas, base recién migrada); `http://localhost:5173/` responde `200`.
+
+Credenciales de desarrollo del seed (ya presentes en `.env.example`): `admin@mandatodo.com`, `operador@mandatodo.com`, `chofer@mandatodo.com`, todas con contraseña `Admin123!`.
+
+Siguiente paso: probar el flujo real en el navegador (login → carga → geocodificar → confirmar → revisión) y retomar T07 cuando D04/D09 se definan.

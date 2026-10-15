@@ -4,6 +4,8 @@ const { createHealthRouter } = require("./src/routes/health.routes");
 const { createAuthRouter } = require("./src/routes/auth.routes");
 const { createUsuariosRouter } = require("./src/routes/usuarios.routes");
 const { createEstadosRouter } = require("./src/routes/estados.routes");
+const { createPedidosRouter } = require("./src/routes/pedidos.routes");
+const { createClientesRouter } = require("./src/routes/clientes.routes");
 const { notFound } = require("./src/middleware/notFound");
 const { errorHandler } = require("./src/middleware/errorHandler");
 
@@ -24,6 +26,8 @@ function createApp(deps = {}) {
     app.use("/api/auth", createAuthRouter(container));
     app.use("/api/usuarios", createUsuariosRouter(container));
     app.use("/api/estados", createEstadosRouter());
+    app.use("/api/pedidos", createPedidosRouter(container));
+    app.use("/api/clientes", createClientesRouter(container));
 
     app.use(notFound);
     app.use(errorHandler);

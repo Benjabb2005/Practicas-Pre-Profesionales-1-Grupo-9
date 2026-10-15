@@ -20,6 +20,12 @@ function loadEnv(env = process.env) {
             secret: env.JWT_SECRET,
             expiraEn: env.JWT_EXPIRES_IN || "8h",
         },
+        geocode: {
+            proveedor: env.GEOCODE_PROVIDER || "nominatim",
+            baseUrl: env.GEOCODE_BASE_URL || "https://nominatim.openstreetmap.org",
+            userAgent: env.GEOCODE_USER_AGENT || "Mandatodo-MVP1",
+            timeoutMs: leerPuerto(env.GEOCODE_TIMEOUT_MS, 5000),
+        },
     };
 
     const faltantes = [];

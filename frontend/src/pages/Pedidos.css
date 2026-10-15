@@ -1,0 +1,101 @@
+/* Estilos de la carga y la revisión de pedidos (T04/T05). Reutiliza las clases
+   base de App.css (.panel, .form-field, .fields-grid, .search-input, etc.). */
+
+.cliente-selector { display: grid; gap: 7px; margin-bottom: 4px; }
+
+.form-field-label { color: #24334a; font-size: 8px; font-weight: 600; }
+
+.cliente-lista { display: grid; gap: 4px; max-height: 168px; overflow-y: auto; margin: 2px 0 0; padding: 0; list-style: none; }
+
+.cliente-lista li button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid #d1dbe8;
+  border-radius: 5px;
+  background: #fff;
+  color: #26364d;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cliente-lista li button:hover,
+.cliente-lista li button:focus-visible { border-color: #2860ed; background: #f3f7ff; }
+
+.cliente-lista li button b { font-size: 8px; font-weight: 600; }
+.cliente-lista li button small { color: #8e9bb0; font-size: 7px; }
+
+.cliente-vacio { padding: 7px 9px; color: #8e9bb0; font-size: 8px; }
+
+.cliente-elegido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #cfe0c8;
+  border-radius: 5px;
+  background: #f4faf1;
+}
+
+.cliente-elegido b { display: block; color: #26364d; font-size: 9px; }
+.cliente-elegido small { display: block; margin-top: 2px; color: #7d8a9e; font-size: 7px; }
+.cliente-elegido .button { flex: 0 0 auto; }
+
+.map-preview { height: 180px; overflow: hidden; border: 1px solid #dfe5ed; border-radius: 5px; }
+.map-preview .leaflet-container { height: 100%; width: 100%; font: inherit; background: #e9eef3; }
+
+.validacion-estado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  color: #35465d;
+  font-size: 8px;
+}
+
+.validacion-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.validacion-badge.gris { background: #eef1f5; color: #66748a; }
+.validacion-badge.amber { background: #fff2d8; color: #a5741a; }
+.validacion-badge.blue { background: #e5edff; color: #2b5bd7; }
+.validacion-badge.green { background: #e4f4e0; color: #2f7d3a; }
+
+.geo-nota { margin: 8px 0 0; color: #66748a; font-size: 7px; line-height: 1.5; }
+.geo-nota b { color: #26364d; }
+
+.geo-panel .button { width: 100%; margin-top: 8px; justify-content: center; }
+
+.order-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+.detalle-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 10px;
+  margin: 0 0 4px;
+}
+
+.detalle-datos div { display: grid; gap: 3px; }
+.detalle-datos dt { color: #8e9bb0; font-size: 7px; text-transform: uppercase; letter-spacing: .4px; }
+.detalle-datos dd { margin: 0; color: #26364d; font-size: 8px; }
+
+@media (max-width: 960px) {
+  .map-preview { height: 230px; }
+}
+
+@media (max-width: 620px) {
+  .map-preview { height: 165px; }
+  .detalle-datos { grid-template-columns: minmax(0, 1fr); }
+}

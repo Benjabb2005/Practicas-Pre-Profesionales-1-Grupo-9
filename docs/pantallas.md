@@ -78,3 +78,14 @@ Estos cambios son locales y no modifican el relevamiento remoto; la referencia v
 - El tablero, la carga manual, la barra lateral y la ruta del chofer conservan su aspecto de maqueta; sólo cambiaron de navegación por `useState` a React Router y el cierre de sesión.
 
 No se probó visualmente en navegador ni en viewport móvil en esta sesión; ver límites en [verificación](verificacion.md).
+
+## Carga y revisión implementadas · 15/10/2026 (T04/T05)
+
+Reemplazan a la maqueta de carga manual; conservan el lenguaje visual observado (dos columnas, tarjetas, acentos azules). Detalle funcional en `frontend/specs/pedidos-carga-revision.md`.
+
+- **Carga Manual de Pedido** (`frontend/src/pages/PedidosCargaPage.jsx`, ruta `/form`): columna 1 con selector de cliente frecuente contra `GET /api/clientes` (búsqueda por nombre, email, teléfono o código) y formulario de dirección estructurada (calle obligatoria; altura opcional: sin altura queda borrador). Columna 2 con mapa Leaflet, estado de validación y botones Geocodificar y Confirmar. Guardar crea un borrador `EN STOCK`; avisa si hay posibles duplicados sin fusionarlos.
+- **Revisión de direcciones** (`frontend/src/pages/PedidosRevisionPage.jsx`, ruta `/pedidos/revision`): tabla de pedidos con filtro por estado de validación (por defecto, sin confirmar) y enlace Revisar. Acceso nuevo en la barra lateral ("Revisión de Direcciones").
+- **Detalle de revisión** (`frontend/src/pages/PedidoRevisionDetallePage.jsx`, ruta `/pedidos/:id/revision`): datos del cliente, dirección editable, mapa, historial de intentos de geocodificación y acciones Geocodificar y Confirmar. Guardar un cambio de calle/altura invalida la confirmación previa y exige revisar de nuevo.
+- El mapa es de sólo lectura sobre teselas de OpenStreetMap; la corrección se hace en el formulario y la confirmación siempre la realiza una persona.
+
+Estas pantallas no se probaron visualmente en navegador contra el backend en esta sesión; se acreditan con lint, build y pruebas unitarias de los servicios (ver [verificación](verificacion.md)).
