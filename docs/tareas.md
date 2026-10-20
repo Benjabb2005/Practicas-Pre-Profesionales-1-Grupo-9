@@ -192,3 +192,23 @@ Evidencia: backend `npm test` 103/103 y lint de frontend OK. `npm test` del fron
 Límites: no se probó en navegador, contra MySQL/Docker ni con Nominatim. Después de guardar en la carga el formulario sigue bloqueado; la corrección se hace desde el detalle de revisión, ahora con acceso directo.
 
 Siguiente paso: probar el flujo completo en navegador contra los contenedores (carga con problemas → Corregir dirección → corregir → geocodificar → confirmar) y restablecer las dependencias de frontend declaradas para poder correr Vitest y el build.
+
+## Provincias y localidades con Georef (continuación de T04/T05, 20/10/2026)
+
+Estado: completada en backend, frontend y pruebas con Georef simulado. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema ni dependencias nuevas.
+
+Motivo: provincia era texto libre y localidad no tenía ayuda, así que se podían cargar jurisdicciones inexistentes o localidades de otra provincia. Se separó el catálogo de provincias y se agregó una consulta informativa a Georef sin debilitar la regla de oro: nunca bloquea el despacho ni convierte al validador en una llamada de red.
+
+Cambios y archivos:
+- Backend: `src/constants/provincias.js` (24 jurisdicciones, variantes, tabla CPA y `normalizarProvincia`), `src/lib/texto.js` (normalización compartida), `src/georef/localidades.js` (cliente con timeout y errores clasificados), `src/services/LocalidadService.js` (sugerencias y verificación), `src/controllers/localidades.controller.js`, `src/routes/{provincias,localidades}.routes.js`. `ValidadorDireccion` y `NormalizadorDireccion` importan el catálogo nuevo y el validador sigue reexportando `normalizarProvincia`. `PedidoService` suma `LOCALIDAD_NO_ENCONTRADA` / `LOCALIDAD_NO_VERIFICADA` como ADVERTENCIA al crear y editar, con `localidades` opcional para no romper usos existentes. `config/env.js` agrega `georef` (`GEOREF_BASE_URL`, `GEOREF_TIMEOUT_MS`); `container.js` permite inyectar el cliente y `app.js` monta `/api/provincias` y `/api/localidades`.
+- Frontend: `src/api/localidades.js`; `DireccionForm.jsx` con `<select>` de provincias y `<datalist>` de localidades con debounce y descarte de respuestas tardías; `Pedidos.css` con estilos de error/advertencia para `select`; spec `frontend/specs/direcciones-provincia-localidad.md`.
+- Pruebas: `backend/test/localidades.test.js` (cliente, servicio y endpoints con fetch simulado) y `backend/test/pedidos-localidad.test.js` (advertencias sin ERROR).
+- Docs: `arquitectura.md`, `pantallas.md`, `decisiones.md` (D21), este apartado y `verificacion.md`.
+
+Decisiones aceptadas por el usuario: `/api/provincias` público como `/api/estados`; localidades sólo ADMINISTRADOR y OPERADOR; las advertencias se calculan al guardar, no al leer; `localidades` queda opcional en `PedidoService`.
+
+Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 125/125; `npm.cmd --prefix frontend run lint` OK; `npm.cmd --prefix frontend run build` OK (148 módulos). Los tests existentes de validador, normalizador y pedidos pasaron sin cambios.
+
+Límites: no se llamó a Georef real ni se probó contra MySQL/Docker o navegador. No se agregó caché ni límite de uso propio; el timeout es de 3 s por defecto y el navegador nunca consulta Georef. `docker-compose.yml` no reenvía `GEOREF_*`; la configuración se toma de `backend/.env`, igual que las variables de geocodificación actuales.
+
+Siguiente paso: probar en navegador la carga con provincia y sugerencias contra los contenedores y, si hay red, verificar una localidad real de Georef sin datos personales.

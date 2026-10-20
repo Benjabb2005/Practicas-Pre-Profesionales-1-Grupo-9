@@ -6,6 +6,8 @@ const { createUsuariosRouter } = require("./src/routes/usuarios.routes");
 const { createEstadosRouter } = require("./src/routes/estados.routes");
 const { createPedidosRouter } = require("./src/routes/pedidos.routes");
 const { createClientesRouter } = require("./src/routes/clientes.routes");
+const { createProvinciasRouter } = require("./src/routes/provincias.routes");
+const { createLocalidadesRouter } = require("./src/routes/localidades.routes");
 const { notFound } = require("./src/middleware/notFound");
 const { errorHandler } = require("./src/middleware/errorHandler");
 
@@ -28,6 +30,8 @@ function createApp(deps = {}) {
     app.use("/api/estados", createEstadosRouter());
     app.use("/api/pedidos", createPedidosRouter(container));
     app.use("/api/clientes", createClientesRouter(container));
+    app.use("/api/provincias", createProvinciasRouter());
+    app.use("/api/localidades", createLocalidadesRouter(container));
 
     app.use(notFound);
     app.use(errorHandler);

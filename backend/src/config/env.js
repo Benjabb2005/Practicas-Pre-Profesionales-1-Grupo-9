@@ -26,6 +26,10 @@ function loadEnv(env = process.env) {
             userAgent: env.GEOCODE_USER_AGENT || "Mandatodo-MVP1",
             timeoutMs: leerPuerto(env.GEOCODE_TIMEOUT_MS, 5000),
         },
+        georef: {
+            baseUrl: env.GEOREF_BASE_URL || "https://apis.datos.gob.ar/georef/api",
+            timeoutMs: leerPuerto(env.GEOREF_TIMEOUT_MS, 3000),
+        },
     };
 
     const faltantes = [];

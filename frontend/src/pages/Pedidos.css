@@ -81,8 +81,10 @@
 
 .geo-motivo { margin: 5px 0 0; color: #66748a; font-size: 7px; line-height: 1.45; }
 
-.form-field input.campo-error { border-color: #c34339; box-shadow: 0 0 0 2px #c343391a; }
-.form-field input.campo-advertencia { border-color: #e0a01c; box-shadow: 0 0 0 2px #e0a01c1a; }
+.form-field input.campo-error, .form-field select.campo-error { border-color: #c34339; box-shadow: 0 0 0 2px #c343391a; }
+.form-field input.campo-advertencia, .form-field select.campo-advertencia { border-color: #e0a01c; box-shadow: 0 0 0 2px #e0a01c1a; }
+
+.campo-ayuda { color: #8a5a12; font-size: 7px; font-weight: 400; line-height: 1.4; }
 
 .direccion-problemas { display: grid; gap: 5px; margin: 8px 0 0; padding: 0; list-style: none; }
 

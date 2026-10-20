@@ -195,3 +195,20 @@ Ejecutado sin base de datos ni proveedor real; los casos de `obtener` usan el re
 | Build frontend | `npm run build` (desde `frontend/`) | No ejecutable: falta `react-router-dom` en `node_modules`; el error es de resolución de una dependencia preexistente, no de los archivos modificados |
 
 Límites: no se ejecutó SQL ni migraciones; no se probó en navegador, viewport móvil, MySQL/Docker ni Nominatim. No se instalaron dependencias para no modificar el entorno. La verificación visual de colores, foco de teclado y layout responsive queda pendiente.
+
+## Provincias y localidades con Georef (20/10/2026)
+
+Verificación ejecutada sobre el checkout local. Georef se reemplazó por un `fetch` simulado: no hubo llamadas reales a Internet.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` | 125/125; 22 casos nuevos de cliente Georef, servicio, endpoints y advertencias de localidad. Los 103 casos previos pasaron sin cambios |
+| Sintaxis backend | `npm run check` (raíz) | Ver bloque siguiente |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | Sin errores |
+| Build frontend | `npm.cmd --prefix frontend run build` | `vite build` OK (148 módulos). En esta sesión las dependencias declaradas ya estaban instaladas; la limitación anterior de `node_modules` no se reprodujo |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | No ejecutadas en esta tarea; el cambio de UI se acredita con lint y build, no con un test de navegador |
+| Georef real | - | No ejecutado: requiere red y no se usaron datos personales |
+
+Casos cubiertos con proveedor simulado: respuesta válida recortada a 10, HTTP 503, fallo de red, timeout (`AbortError`), respuesta con forma inesperada, provincia canónica en la consulta, deduplicación de sugerencias, `EXISTE`/`NO_EXISTE`/`NO_VERIFICADO`, CABA y Capital Federal, y roles 401/403/200 en `/api/localidades`. También que una localidad inexistente o no verificada queda como ADVERTENCIA y conserva `estado_validacion: VALIDA`, y que no se consulta Georef si la provincia ya es inválida.
+
+Límites de esta verificación: no se probó con MySQL/Docker ni en navegador; no se validó la disponibilidad ni la latencia real de Georef; no se agregó caché ni control de cuota propio.

@@ -2,6 +2,27 @@ const { noEncontrado, errorValidacion } = require("../lib/errors");
 const { ESTADO_INICIAL } = require("../constants/estados");
 const { normalizarDireccion: normalizarCamposDireccion } = require("./NormalizadorDireccion");
 const { validarDireccion } = require("./ValidadorDireccion");
+const { normalizarProvincia } = require("../constants/provincias");
+
+const MENSAJES_LOCALIDAD = Object.freeze({
+    LOCALIDAD_NO_ENCONTRADA: "La localidad no figura en el listado oficial de esa provincia. Revisá la escritura o la provincia.",
+    LOCALIDAD_NO_VERIFICADA: "No se pudo verificar la localidad con el servicio oficial. Revisala manualmente antes de confirmar la dirección.",
+});
+
+// Chequeo informativo contra Georef: nunca genera ERROR ni cambia el estado de
+// validación, porque el proveedor puede no cubrir barrios o localidades chicas.
+async function advertenciasLocalidad(localidades, direccion) {
+    if (!localidades) return [];
+    const provincia = normalizarProvincia(direccion.provincia);
+    const localidad = String(direccion.localidad == null ? "" : direccion.localidad).trim();
+    if (!provincia || !localidad) return [];
+
+    const resultado = await localidades.verificar({ provincia, localidad });
+    if (resultado === "EXISTE") return [];
+
+    const codigo = resultado === "NO_EXISTE" ? "LOCALIDAD_NO_ENCONTRADA" : "LOCALIDAD_NO_VERIFICADA";
+    return [{ codigo, campo: "localidad", mensaje: MENSAJES_LOCALIDAD[codigo], gravedad: "ADVERTENCIA" }];
+}
 
 // Compone la dirección original legible a partir de los campos estructurados.
 // No inventa datos: solo une lo que el operador cargó.
@@ -47,7 +68,7 @@ function prepararDireccion(direccion) {
 
 // Carga manual y revisión de pedidos. El despacho seguro se apoya en direcciones
 // cuya confirmación es siempre humana; acá nunca se marca una dirección CONFIRMADA.
-function createPedidoService({ pedidos, clientes }) {
+function createPedidoService({ pedidos, clientes, localidades }) {
     return {
         async listar(filtros = {}) {
             return pedidos.listar(filtros);
@@ -68,6 +89,7 @@ function createPedidoService({ pedidos, clientes }) {
 
             const preparada = prepararDireccion(direccion);
             const { estado, problemas } = validarDireccion(preparada);
+            const problemasLocalidad = await advertenciasLocalidad(localidades, preparada);
             const direccionValidada = { ...preparada, estado_validacion: estado };
 
             const posiblesDuplicados = await pedidos.detectarDuplicados({
@@ -86,7 +108,11 @@ function createPedidoService({ pedidos, clientes }) {
                 direccion: direccionValidada,
             });
 
-            return { pedido: await pedidos.obtenerDetalle(pedidoId), posiblesDuplicados, problemas };
+            return {
+                pedido: await pedidos.obtenerDetalle(pedidoId),
+                posiblesDuplicados,
+                problemas: [...problemas, ...problemasLocalidad],
+            };
         },
 
         async actualizarDireccion(pedidoId, direccion) {
@@ -96,6 +122,7 @@ function createPedidoService({ pedidos, clientes }) {
 
             const preparada = prepararDireccion(direccion);
             const { estado, problemas } = validarDireccion(preparada);
+            const problemasLocalidad = await advertenciasLocalidad(localidades, preparada);
             const cambio = cambioRelevante(normalizarCamposDireccion(detalle), preparada);
 
             const invalidar = detalle.estado_validacion === "CONFIRMADA" && cambio;
@@ -112,7 +139,11 @@ function createPedidoService({ pedidos, clientes }) {
                 { invalidar, descartarCoordenadas }
             );
 
-            return { pedido: await pedidos.obtenerDetalle(pedidoId), invalidada: invalidar, problemas };
+            return {
+                pedido: await pedidos.obtenerDetalle(pedidoId),
+                invalidada: invalidar,
+                problemas: [...problemas, ...problemasLocalidad],
+            };
         },
     };
 }
