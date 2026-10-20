@@ -149,3 +149,23 @@ Evidencia (detalle en `docs/verificacion.md`): backend `npm.cmd --prefix backend
 Límites: no se probó en navegador ni la geocodificación real con Nominatim; el aviso de duplicados es informativo y no fusiona (D09/D11 pendientes). El smoke dejó datos de prueba en la base de desarrollo (cliente id 1 y pedido id 1), no borrados.
 
 Siguiente paso: probar en navegador la carga de un pedido con cliente nuevo y geocodificar; retomar T07 cuando D04/D09 se definan.
+
+## Validación y normalización de direcciones en el flujo de pedidos (continuación de T04/T05, 20/10/2026)
+
+Estado: completada en backend y pruebas. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema.
+
+Motivo: el validador y el normalizador existían como módulos aislados; la creación y edición de pedidos seguía guardando `PENDIENTE` y el proveedor de geocodificación podía cambiar el estado. El despacho seguro necesita que el estado lo decida el validador y que las coordenadas no sobrevivan a una corrección de la dirección.
+
+Cambios y archivos:
+- `services/PedidoService.js`: `prepararDireccion` compone `direccion_original` con el texto crudo, normaliza los campos estructurados y recién después pasa faltantes a `null`. `crear` y `actualizarDireccion` validan, guardan el estado del validador y devuelven `problemas`. La comparación de cambios usa la dirección guardada y la nueva ya normalizadas.
+- `repositories/PedidoRepository.js`: `crear` recibe `estado_validacion`; `actualizarDireccion` siempre escribe ese estado y descarta coordenadas y confianza ante cualquier cambio relevante; `registrarGeocodificacion` dejó de escribir el estado.
+- `services/GeocodeService.js`: sólo geocodifica direcciones `VALIDA` (conflicto accionable para `PENDIENTE`, `CON_ADVERTENCIAS` y `CONFIRMADA`, con el mensaje "Esta dirección ya está confirmada." para esta última); el resultado del proveedor sólo guarda coordenadas y confianza. `confirmar` exige `VALIDA` con coordenadas.
+- `test/pedidos.test.js`: actualizados los casos de creación, invalidación, geocodificación y confirmación; nuevos casos de normalización, abreviaturas equivalentes, dirección legacy y corrección de una `VALIDA` ya geocodificada.
+
+Decisión: si un pedido `CONFIRMADA` recibe la misma dirección escrita distinto (por ejemplo `av. corrientes`), conserva la confirmación y las coordenadas. Si hay un cambio relevante, descarta coordenadas y confianza siempre, aunque el pedido no estuviera confirmado, porque pertenecen a la versión anterior de la dirección. Registrado en D10.
+
+Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 101/101; sin pruebas contra MySQL ni el proveedor real.
+
+Límites y observación pendiente: el frontend todavía habilita confirmar con `CON_ADVERTENCIAS` y no muestra la lista `problemas`; se dejó fuera de esta tarea. No se probó el flujo completo contra contenedores.
+
+Siguiente paso: mostrar `problemas` en las pantallas de carga/revisión, habilitar confirmar sólo con `VALIDA` y probar el flujo contra MySQL/Docker.

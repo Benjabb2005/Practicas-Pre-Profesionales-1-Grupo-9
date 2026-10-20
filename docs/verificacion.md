@@ -171,3 +171,14 @@ Ejecutado sobre la rama `MVP-1`, continuando T04. Se agregó el alta de cliente 
 El backend del contenedor se reinició (`docker compose restart backend`) para tomar el código nuevo del bind mount antes del smoke.
 
 Límites: el flujo en navegador y la geocodificación real con Nominatim siguen sin ejecutarse. El aviso de duplicados es informativo y no fusiona (D09/D11 pendientes); el DNI duplicado sí bloquea porque identifica al cliente. El smoke dejó datos de prueba en la base de desarrollo: cliente id 1 (DNI `30111222`) y pedido id 1; no se borraron para no usar operaciones destructivas.
+
+## Validación y normalización en pedidos (20/10/2026, OpenCode)
+
+Ejecutado sin base de datos ni proveedor real, con repositorios y adaptadores falsos en las pruebas.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` (desde `backend/`) | 101/101; incluye creación con `VALIDA`/`CON_ADVERTENCIAS`, `problemas` en la respuesta, normalización de calle/altura/provincia/CP, abreviaturas equivalentes, dirección legacy, invalidación de confirmación, descarte de coordenadas al corregir una `VALIDA` geocodificada, geocodificación bloqueada para `PENDIENTE`/`CON_ADVERTENCIAS`/`CONFIRMADA`, proveedor que no cambia estado y confirmación sólo `VALIDA` |
+| Check coordinado | `npm run check` desde la raíz | `context:check` OK, sintaxis backend OK, backend 101/101 y lint frontend sin errores; el build de Vite falló porque `react-router-dom` está declarado en `frontend/package.json` pero no instalado en `node_modules`. Es una limitación previa del entorno, ajena a esta tarea |
+
+Límites: no se ejecutó SQL ni migraciones; `database/init.sql` y el esquema quedaron intactos. No se probó el flujo real contra MySQL/Docker ni Nominatim, ni la visualización de `problemas` en el frontend (fuera del alcance de esta tarea). El build de frontend no se pudo verificar por la dependencia faltante; no se instaló nada para no modificar el entorno.

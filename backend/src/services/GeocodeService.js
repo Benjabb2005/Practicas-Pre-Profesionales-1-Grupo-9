@@ -16,6 +16,16 @@ function createGeocodeService({ pedidos, adapter }) {
 
         async geocodificar(pedidoId, usuarioId) {
             const detalle = await cargarDetalle(pedidoId);
+            if (detalle.estado_validacion === "PENDIENTE") {
+                throw conflicto("Esta dirección todavía no fue revisada. Guardala de nuevo para validarla antes de buscarla en el mapa.");
+            }
+            if (detalle.estado_validacion === "CONFIRMADA") {
+                throw conflicto("Esta dirección ya está confirmada.");
+            }
+            if (detalle.estado_validacion !== "VALIDA") {
+                throw conflicto("La dirección tiene errores para revisar. Corregila y guardala de nuevo antes de buscarla en el mapa.");
+            }
+
             const direccion = {
                 calle: detalle.calle,
                 altura: detalle.altura,
@@ -29,18 +39,13 @@ function createGeocodeService({ pedidos, adapter }) {
 
             const salida = await adapter.geocodificar(direccion);
 
-            let estadoValidacion = "PENDIENTE";
+            // El resultado del proveedor solo aporta coordenadas y confianza.
+            // El estado de validación lo decide el validador al guardar la dirección.
             let nivelConfianza = null;
             let latitud = null;
             let longitud = null;
-            if (salida.resultado === "OK") {
-                estadoValidacion = "VALIDA";
-                nivelConfianza = salida.nivelConfianza || "ALTO";
-                latitud = salida.latitud;
-                longitud = salida.longitud;
-            } else if (salida.resultado === "APPROXIMATE") {
-                estadoValidacion = "CON_ADVERTENCIAS";
-                nivelConfianza = salida.nivelConfianza || "MEDIO";
+            if (salida.resultado === "OK" || salida.resultado === "APPROXIMATE") {
+                nivelConfianza = salida.nivelConfianza || (salida.resultado === "OK" ? "ALTO" : "MEDIO");
                 latitud = salida.latitud;
                 longitud = salida.longitud;
             }
@@ -53,7 +58,6 @@ function createGeocodeService({ pedidos, adapter }) {
                 latitud,
                 longitud,
                 nivelConfianza,
-                estadoValidacion,
                 usuarioId: usuarioId ?? null,
             });
 
@@ -68,8 +72,8 @@ function createGeocodeService({ pedidos, adapter }) {
         async confirmar(pedidoId, usuarioId) {
             const detalle = await cargarDetalle(pedidoId);
 
-            if (!["VALIDA", "CON_ADVERTENCIAS"].includes(detalle.estado_validacion)) {
-                throw conflicto("Solo se puede confirmar una dirección ya geocodificada (con resultado).");
+            if (detalle.estado_validacion !== "VALIDA") {
+                throw conflicto("Solo se puede confirmar una dirección validada. Corregí los errores, guardala de nuevo y geocodificala.");
             }
             if (detalle.latitud === null || detalle.latitud === undefined || detalle.longitud === null || detalle.longitud === undefined) {
                 throw conflicto("La dirección no tiene coordenadas para confirmar.");

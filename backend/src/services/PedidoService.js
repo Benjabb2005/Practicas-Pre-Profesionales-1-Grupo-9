@@ -1,5 +1,7 @@
 const { noEncontrado, errorValidacion } = require("../lib/errors");
 const { ESTADO_INICIAL } = require("../constants/estados");
+const { normalizarDireccion: normalizarCamposDireccion } = require("./NormalizadorDireccion");
+const { validarDireccion } = require("./ValidadorDireccion");
 
 // Compone la dirección original legible a partir de los campos estructurados.
 // No inventa datos: solo une lo que el operador cargó.
@@ -24,16 +26,22 @@ function cambioRelevante(actual, nuevo) {
     });
 }
 
-function normalizarDireccion(direccion) {
+// La dirección original se compone con el texto crudo del operario, antes de
+// normalizar los campos estructurados: así conserva lo que realmente escribió.
+function prepararDireccion(direccion) {
+    const datos = direccion || {};
+    const direccionOriginal = datos.direccion_original || componerDireccionOriginal(datos) || null;
+    const normalizada = normalizarCamposDireccion(datos);
+
     return {
-        calle: direccion.calle ?? null,
-        altura: direccion.altura ?? null,
-        piso_depto: direccion.piso_depto ?? null,
-        entre_calles: direccion.entre_calles ?? null,
-        localidad: direccion.localidad ?? null,
-        provincia: direccion.provincia ?? null,
-        codigo_postal: direccion.codigo_postal ?? null,
-        direccion_original: direccion.direccion_original || componerDireccionOriginal(direccion) || null,
+        calle: normalizada.calle ?? null,
+        altura: normalizada.altura ?? null,
+        piso_depto: normalizada.piso_depto ?? null,
+        entre_calles: normalizada.entre_calles ?? null,
+        localidad: normalizada.localidad ?? null,
+        provincia: normalizada.provincia ?? null,
+        codigo_postal: normalizada.codigo_postal ?? null,
+        direccion_original: direccionOriginal,
     };
 }
 
@@ -55,11 +63,14 @@ function createPedidoService({ pedidos, clientes }) {
             const cliente = await clientes.buscarPorId(cliente_id);
             if (!cliente) throw errorValidacion({ cliente_id: "El cliente indicado no existe." });
 
-            const normalizada = normalizarDireccion(direccion);
+            const preparada = prepararDireccion(direccion);
+            const { estado, problemas } = validarDireccion(preparada);
+            const direccionValidada = { ...preparada, estado_validacion: estado };
+
             const posiblesDuplicados = await pedidos.detectarDuplicados({
                 clienteId: cliente_id,
-                calle: normalizada.calle,
-                altura: normalizada.altura,
+                calle: direccionValidada.calle,
+                altura: direccionValidada.altura,
             });
 
             const pedidoId = await pedidos.crear({
@@ -69,10 +80,10 @@ function createPedidoService({ pedidos, clientes }) {
                 estado: ESTADO_INICIAL,
                 observaciones: observaciones ?? null,
                 creadoPor: usuarioId ?? null,
-                direccion: normalizada,
+                direccion: direccionValidada,
             });
 
-            return { pedido: await pedidos.obtenerDetalle(pedidoId), posiblesDuplicados };
+            return { pedido: await pedidos.obtenerDetalle(pedidoId), posiblesDuplicados, problemas };
         },
 
         async actualizarDireccion(pedidoId, direccion) {
@@ -80,10 +91,25 @@ function createPedidoService({ pedidos, clientes }) {
             if (!detalle) throw noEncontrado("El pedido no existe.");
             if (!detalle.direccion_id) throw noEncontrado("El pedido no tiene dirección registrada.");
 
-            const invalidar = detalle.estado_validacion === "CONFIRMADA" && cambioRelevante(detalle, direccion);
-            await pedidos.actualizarDireccion(pedidoId, normalizarDireccion(direccion), { invalidar });
+            const preparada = prepararDireccion(direccion);
+            const { estado, problemas } = validarDireccion(preparada);
+            const cambio = cambioRelevante(normalizarCamposDireccion(detalle), preparada);
 
-            return { pedido: await pedidos.obtenerDetalle(pedidoId), invalidada: invalidar };
+            const invalidar = detalle.estado_validacion === "CONFIRMADA" && cambio;
+            // Si cambia la dirección, las coordenadas pertenecen a la versión anterior
+            // y no sirven para confirmar la ubicación nueva, aunque no estuviera confirmada.
+            const descartarCoordenadas = cambio;
+            const estadoFinal = detalle.estado_validacion === "CONFIRMADA" && !invalidar
+                ? "CONFIRMADA"
+                : estado;
+
+            await pedidos.actualizarDireccion(
+                pedidoId,
+                { ...preparada, estado_validacion: estadoFinal },
+                { invalidar, descartarCoordenadas }
+            );
+
+            return { pedido: await pedidos.obtenerDetalle(pedidoId), invalidada: invalidar, problemas };
         },
     };
 }

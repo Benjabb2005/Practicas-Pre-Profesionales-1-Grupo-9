@@ -27,7 +27,7 @@ function createPedidoRepository(db) {
                 await conexion.query(
                     `INSERT INTO direcciones
                         (pedido_id, direccion_original, calle, altura, piso_depto, entre_calles, localidad, provincia, codigo_postal, estado_validacion)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')`,
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         pedido.insertId,
                         direccion.direccion_original ?? null,
@@ -38,6 +38,7 @@ function createPedidoRepository(db) {
                         direccion.localidad ?? null,
                         direccion.provincia ?? null,
                         direccion.codigo_postal ?? null,
+                        direccion.estado_validacion ?? "PENDIENTE",
                     ]
                 );
                 await conexion.commit();
@@ -105,7 +106,7 @@ function createPedidoRepository(db) {
             return filas;
         },
 
-        async actualizarDireccion(pedidoId, direccion, { invalidar } = {}) {
+        async actualizarDireccion(pedidoId, direccion, { invalidar, descartarCoordenadas } = {}) {
             const conexion = await db.getConnection();
             try {
                 await conexion.beginTransaction();
@@ -118,6 +119,7 @@ function createPedidoRepository(db) {
                     "localidad = ?",
                     "provincia = ?",
                     "codigo_postal = ?",
+                    "estado_validacion = ?",
                 ];
                 const valores = [
                     direccion.direccion_original ?? null,
@@ -128,11 +130,12 @@ function createPedidoRepository(db) {
                     direccion.localidad ?? null,
                     direccion.provincia ?? null,
                     direccion.codigo_postal ?? null,
+                    direccion.estado_validacion ?? "PENDIENTE",
                 ];
-                if (invalidar) {
-                    // Al cambiar la dirección se pierde la confirmación previa (D09/D10):
-                    // se descartan coordenadas y confianza y hay que revisar de nuevo.
-                    asignaciones.push("latitud = NULL", "longitud = NULL", "nivel_confianza = NULL", "estado_validacion = 'PENDIENTE'");
+                if (descartarCoordenadas) {
+                    // Las coordenadas pertenecen a la versión anterior de la dirección:
+                    // al cambiarla hay que geocodificar y confirmar de nuevo (D09/D10).
+                    asignaciones.push("latitud = NULL", "longitud = NULL", "nivel_confianza = NULL");
                 }
                 valores.push(pedidoId);
                 await conexion.query(`UPDATE direcciones SET ${asignaciones.join(", ")} WHERE pedido_id = ?`, valores);
@@ -149,13 +152,13 @@ function createPedidoRepository(db) {
         },
 
         // Guarda el resultado de un intento de geocodificación y su historial en una transacción.
-        async registrarGeocodificacion({ pedidoId, direccionId, direccionEnviada, resultado, latitud, longitud, nivelConfianza, estadoValidacion, usuarioId }) {
+        async registrarGeocodificacion({ pedidoId, direccionId, direccionEnviada, resultado, latitud, longitud, nivelConfianza, usuarioId }) {
             const conexion = await db.getConnection();
             try {
                 await conexion.beginTransaction();
                 await conexion.query(
-                    `UPDATE direcciones SET latitud = ?, longitud = ?, nivel_confianza = ?, estado_validacion = ? WHERE id = ?`,
-                    [latitud, longitud, nivelConfianza, estadoValidacion, direccionId]
+                    `UPDATE direcciones SET latitud = ?, longitud = ?, nivel_confianza = ? WHERE id = ?`,
+                    [latitud, longitud, nivelConfianza, direccionId]
                 );
                 await conexion.query(
                     `INSERT INTO historial_geolocalizacion

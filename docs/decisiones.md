@@ -27,4 +27,4 @@ Actualizar fecha, responsable y evidencia al resolver; no convertir una propuest
 
 Histórico corregido: AGENTS.md decía frontend scaffold y esquema inexistente; ambos estaban desactualizados. Se incorporó operador, se retiró la secuencia rígida de estados y la atribución definitiva de PAGADO al chofer. Se quitó el comando destructivo de volúmenes de la guía. Se conservaron simplicidad, explicación para defensa, tratamiento de errores externos y decisión humana en arquitectura.
 
-D10: invalidar la confirmación tras editar dirección es un criterio técnico requerido por esta preparación; sigue pendiente definir su representación, responsable y auditoría en el modelo. Esto no demuestra que el código actual lo implemente.
+D10: invalidar la confirmación tras editar dirección es un criterio técnico requerido por esta preparación; sigue pendiente definir su representación, responsable y auditoría en el modelo. La implementación actual, además, descarta latitud, longitud y nivel de confianza ante cualquier cambio relevante de la dirección, aunque no estuviera `CONFIRMADA`, y compara los valores normalizados para no invalidar por diferencias de escritura.
