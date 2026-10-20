@@ -56,7 +56,10 @@ function createPedidoService({ pedidos, clientes }) {
         async obtener(pedidoId) {
             const detalle = await pedidos.obtenerDetalle(pedidoId);
             if (!detalle) throw noEncontrado("El pedido no existe.");
-            return detalle;
+            // Los problemas se calculan al leer sobre la dirección ya guardada:
+            // no se persisten y no alteran el estado_validacion almacenado.
+            const problemas = detalle.direccion_id ? validarDireccion(detalle).problemas : [];
+            return { ...detalle, problemas };
         },
 
         async crear({ cliente_id, canal_origen, observaciones, direccion }, usuarioId) {

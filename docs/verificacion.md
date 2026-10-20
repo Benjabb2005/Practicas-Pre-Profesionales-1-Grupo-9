@@ -182,3 +182,16 @@ Ejecutado sin base de datos ni proveedor real, con repositorios y adaptadores fa
 | Check coordinado | `npm run check` desde la raíz | `context:check` OK, sintaxis backend OK, backend 101/101 y lint frontend sin errores; el build de Vite falló porque `react-router-dom` está declarado en `frontend/package.json` pero no instalado en `node_modules`. Es una limitación previa del entorno, ajena a esta tarea |
 
 Límites: no se ejecutó SQL ni migraciones; `database/init.sql` y el esquema quedaron intactos. No se probó el flujo real contra MySQL/Docker ni Nominatim, ni la visualización de `problemas` en el frontend (fuera del alcance de esta tarea). El build de frontend no se pudo verificar por la dependencia faltante; no se instaló nada para no modificar el entorno.
+
+## Problemas de dirección en carga y revisión (20/10/2026, OpenCode)
+
+Ejecutado sin base de datos ni proveedor real; los casos de `obtener` usan el repositorio falso existente.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm test` (desde `backend/`) | 103/103; suma dos casos de `obtener`: dirección guardada incompleta devuelve `CAMPO_OBLIGATORIO`/`ERROR` sin escribir, y dirección válida devuelve `problemas: []` |
+| Lint frontend | `npm run lint` (desde `frontend/`) | Sin errores |
+| Pruebas frontend | `npm test` (desde `frontend/`) | No ejecutable: `vitest` está declarado en `frontend/package.json` pero no instalado en `node_modules` (limitación previa del entorno) |
+| Build frontend | `npm run build` (desde `frontend/`) | No ejecutable: falta `react-router-dom` en `node_modules`; el error es de resolución de una dependencia preexistente, no de los archivos modificados |
+
+Límites: no se ejecutó SQL ni migraciones; no se probó en navegador, viewport móvil, MySQL/Docker ni Nominatim. No se instalaron dependencias para no modificar el entorno. La verificación visual de colores, foco de teclado y layout responsive queda pendiente.

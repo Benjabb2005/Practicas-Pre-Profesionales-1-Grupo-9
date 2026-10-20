@@ -169,3 +169,26 @@ Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 1
 Límites y observación pendiente: el frontend todavía habilita confirmar con `CON_ADVERTENCIAS` y no muestra la lista `problemas`; se dejó fuera de esta tarea. No se probó el flujo completo contra contenedores.
 
 Siguiente paso: mostrar `problemas` en las pantallas de carga/revisión, habilitar confirmar sólo con `VALIDA` y probar el flujo contra MySQL/Docker.
+
+## Problemas de dirección visibles en carga y revisión (continuación de T04/T05, 20/10/2026)
+
+Estado: completada. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema ni dependencias nuevas.
+
+Motivo: el backend ya devolvía `problemas` al crear y editar la dirección, pero el frontend no los mostraba y todavía habilitaba Geocodificar/Confirmar con estados que el servidor rechaza. La pantalla de carga tampoco ofrecía un camino directo para corregir una dirección guardada con problemas.
+
+Cambios y archivos:
+- `backend/src/services/PedidoService.js`: `obtener` calcula `problemas` con `validarDireccion` sobre la dirección guardada y los devuelve junto con el pedido; no se persisten ni alteran `estado_validacion`.
+- `backend/test/pedidos.test.js`: dos pruebas nuevas para `obtener` (dirección incompleta y dirección válida), verificando que no se escriben datos.
+- `frontend/src/components/direccion.js`: helpers `tieneCoordenadas`, `motivoGeocodificar` y `motivoConfirmar`.
+- `frontend/src/components/ProblemasDireccion.jsx` (nuevo): lista accesible de problemas, ERROR en rojo y ADVERTENCIA en amarillo.
+- `frontend/src/components/DireccionForm.jsx`: resalta el campo afectado (`campo-error`/`campo-advertencia`) y lo asocia a la lista.
+- `frontend/src/pages/PedidosCargaPage.jsx` y `PedidoRevisionDetallePage.jsx`: muestran los problemas, toman los del alta/edición/lectura, deshabilitan Geocodificar salvo `VALIDA`, exigen `VALIDA` con coordenadas para Confirmar, explican el motivo y, en la carga, agregan "Corregir dirección" hacia `/pedidos/:id/revision`.
+- `frontend/src/pages/Pedidos.css`: estilos de la lista, bordes de campo, motivo y botones deshabilitados con la paleta existente.
+- `frontend/src/api/client.test.js`: prueba del mensaje seguro de un `409`; `mensajeError` ya lo mostraba, no hizo falta cambiar el cliente API.
+- Spec y docs: `frontend/specs/pedidos-carga-revision.md`, `docs/arquitectura.md`, `docs/pantallas.md`, `docs/verificacion.md`.
+
+Evidencia: backend `npm test` 103/103 y lint de frontend OK. `npm test` del frontend y `npm run build` no pudieron ejecutarse porque `vitest` y `react-router-dom` están declarados pero no instalados en `frontend/node_modules`; es una limitación previa del entorno, no de estos cambios.
+
+Límites: no se probó en navegador, contra MySQL/Docker ni con Nominatim. Después de guardar en la carga el formulario sigue bloqueado; la corrección se hace desde el detalle de revisión, ahora con acceso directo.
+
+Siguiente paso: probar el flujo completo en navegador contra los contenedores (carga con problemas → Corregir dirección → corregir → geocodificar → confirmar) y restablecer las dependencias de frontend declaradas para poder correr Vitest y el build.

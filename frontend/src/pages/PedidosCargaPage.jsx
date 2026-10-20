@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import ClienteSelector from '../components/ClienteSelector.jsx'
 import ClienteCampos from '../components/ClienteCampos.jsx'
 import DireccionForm from '../components/DireccionForm.jsx'
-import { DIRECCION_VACIA } from '../components/direccion.js'
+import ProblemasDireccion from '../components/ProblemasDireccion.jsx'
+import { DIRECCION_VACIA, motivoConfirmar, motivoGeocodificar, tieneCoordenadas } from '../components/direccion.js'
 import { CLIENTE_VACIO, datosDeCliente } from '../components/cliente.js'
 import MapPreview from '../components/MapPreview.jsx'
 import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
@@ -26,6 +27,7 @@ function PedidosCargaPage() {
   const [direccion, setDireccion] = useState({ ...DIRECCION_VACIA })
   const [observaciones, setObservaciones] = useState('')
   const [pedido, setPedido] = useState(null)
+  const [problemas, setProblemas] = useState([])
   const [resultado, setResultado] = useState(null)
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState('')
@@ -34,6 +36,8 @@ function PedidosCargaPage() {
   const [confirmando, setConfirmando] = useState(false)
 
   const ocupado = guardando || geocodificando || confirmando
+  const motivoGeo = motivoGeocodificar(pedido, ocupado)
+  const motivoConf = motivoConfirmar(pedido, ocupado)
 
   function cambiarDireccion(campo, valor) {
     setDireccion((actual) => ({ ...actual, [campo]: valor }))
@@ -78,6 +82,7 @@ function PedidosCargaPage() {
       }
       const data = await crearPedido({ cliente_id: clienteId, observaciones: observaciones || null, direccion })
       setPedido(data.pedido)
+      setProblemas(data.problemas || [])
       setResultado(null)
       const duplicados = data.posiblesDuplicados || []
       const avisoPedido = duplicados.length
@@ -128,6 +133,7 @@ function PedidosCargaPage() {
     setDireccion({ ...DIRECCION_VACIA })
     setObservaciones('')
     setPedido(null)
+    setProblemas([])
     setResultado(null)
     setError('')
     setAviso('')
@@ -149,7 +155,11 @@ function PedidosCargaPage() {
         <div className="form-divider cliente-divider"><span>{cliente ? 'Datos del cliente elegido' : 'o cargá los datos de un cliente nuevo'}</span></div>
         <ClienteCampos valor={datosCliente} onChange={cambiarCliente} bloqueado={Boolean(pedido) || ocupado || Boolean(cliente)}/>
         <div className="form-divider address-divider"><span>Dirección de entrega</span></div>
-        <DireccionForm valor={direccion} onChange={cambiarDireccion} bloqueado={Boolean(pedido) || ocupado}/>
+        <DireccionForm valor={direccion} onChange={cambiarDireccion} bloqueado={Boolean(pedido) || ocupado} problemas={problemas}/>
+        <ProblemasDireccion problemas={problemas}/>
+        {pedido && problemas.length > 0 && <div className="order-actions">
+          <Link className="button button-outline" to={`/pedidos/${pedido.id}/revision`}>Corregir dirección</Link>
+        </div>}
         <label className="form-field span-2" htmlFor="pedido-observaciones"><span>Notas / Instrucciones de entrega</span>
           <textarea id="pedido-observaciones" rows="3" value={observaciones} onChange={(event) => setObservaciones(event.target.value)} placeholder="Ej. Tocar timbre B, dejar en recepción..." disabled={Boolean(pedido) || ocupado}/>
         </label>
@@ -174,8 +184,10 @@ function PedidosCargaPage() {
           {resultado && !resultado.motivo && <p className="geo-nota">{RESULTADOS[resultado.resultado]}</p>}
           {pedido?.nivel_confianza && <p className="geo-nota">Confianza del proveedor: <b>{pedido.nivel_confianza}</b> ({resultado?.proveedor || 'nominatim'}).</p>}
 
-          <button type="button" className="button button-outline" onClick={geocodificar} disabled={!pedido || ocupado}><Icon name="pin" size={14}/> {geocodificando ? 'Geocodificando…' : 'Geocodificar dirección'}</button>
-          <button type="button" className="button confirm-button" onClick={confirmar} disabled={!pedido || ocupado || !['VALIDA', 'CON_ADVERTENCIAS'].includes(pedido.estado_validacion)}><Icon name="check" size={14}/> {confirmando ? 'Confirmando…' : 'Confirmar ubicación y habilitar despacho'}</button>
+          <button type="button" className="button button-outline" onClick={geocodificar} disabled={!pedido || ocupado || pedido.estado_validacion !== 'VALIDA'}><Icon name="pin" size={14}/> {geocodificando ? 'Geocodificando…' : 'Geocodificar dirección'}</button>
+          {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
+          <button type="button" className="button confirm-button" onClick={confirmar} disabled={!pedido || ocupado || pedido.estado_validacion !== 'VALIDA' || !tieneCoordenadas(pedido)}><Icon name="check" size={14}/> {confirmando ? 'Confirmando…' : 'Confirmar ubicación y habilitar despacho'}</button>
+          {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
           {pedido && <button type="button" className="button button-outline correct-button" onClick={nuevaCarga} disabled={ocupado}>Cargar otro pedido</button>}
         </section>
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Una dirección sin confirmar no habilita el despacho.</small></div></div>

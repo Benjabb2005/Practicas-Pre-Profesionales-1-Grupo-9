@@ -7,6 +7,11 @@ describe('mensajeError', () => {
     expect(mensajeError(error)).toBe('Usuario o contraseña incorrectos.')
   })
 
+  it('muestra el mensaje seguro de un conflicto 409', () => {
+    const error = { response: { status: 409, data: { error: { codigo: 'CONFLICTO', mensaje: 'La dirección no tiene coordenadas para confirmar.' } } } }
+    expect(mensajeError(error)).toBe('La dirección no tiene coordenadas para confirmar.')
+  })
+
   it('avisa cuando no hubo respuesta del servidor', () => {
     expect(mensajeError({ request: {}, message: 'Network Error' })).toMatch(/no pudimos contactar/i)
   })

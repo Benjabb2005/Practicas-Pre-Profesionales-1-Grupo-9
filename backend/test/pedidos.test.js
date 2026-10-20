@@ -111,6 +111,28 @@ test("crear pedido con dirección completa la guarda VALIDA y normalizada", asyn
     assert.deepEqual(resultado.problemas, []);
 });
 
+test("obtener calcula los problemas sobre la dirección guardada sin persistirlos", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ provincia: "" }) });
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const detalle = await servicio.obtener(10);
+
+    assert.equal(detalle.estado_validacion, "PENDIENTE");
+    assert.deepEqual(detalle.problemas.map((problema) => problema.campo), ["provincia"]);
+    assert.equal(detalle.problemas[0].gravedad, "ERROR");
+    assert.equal(pedidos.capturado.actualizarDireccion, null);
+    assert.equal(pedidos.capturado.crear, null);
+});
+
+test("obtener devuelve problemas vacíos cuando la dirección guardada es válida", async () => {
+    const pedidos = reposPedidosFalsos();
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const detalle = await servicio.obtener(10);
+
+    assert.deepEqual(detalle.problemas, []);
+});
+
 test("crear pedido con cliente inexistente se rechaza", async () => {
     const servicio = createPedidoService({ pedidos: reposPedidosFalsos(), clientes: clientesFalsos });
     await assert.rejects(

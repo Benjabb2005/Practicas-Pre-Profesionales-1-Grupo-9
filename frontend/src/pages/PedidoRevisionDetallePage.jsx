@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import DireccionForm from '../components/DireccionForm.jsx'
+import ProblemasDireccion from '../components/ProblemasDireccion.jsx'
 import MapPreview from '../components/MapPreview.jsx'
 import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
+import { motivoConfirmar, motivoGeocodificar, tieneCoordenadas } from '../components/direccion.js'
 import { mensajeError } from '../api/client'
 import { actualizarDireccion, confirmarDireccion, geocodificarPedido, obtenerPedido } from '../api/pedidos'
 import './Pedidos.css'
@@ -23,6 +25,7 @@ function direccionDesdePedido(pedido) {
 function PedidoRevisionDetallePage() {
   const { id } = useParams()
   const [pedido, setPedido] = useState(null)
+  const [problemas, setProblemas] = useState([])
   const [direccion, setDireccion] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
@@ -35,6 +38,7 @@ function PedidoRevisionDetallePage() {
       .then((detalle) => {
         if (!vigente) return
         setPedido(detalle)
+        setProblemas(detalle.problemas || [])
         setDireccion(direccionDesdePedido(detalle))
       })
       .catch((fallo) => { if (vigente) setError(mensajeError(fallo)) })
@@ -69,6 +73,7 @@ function PedidoRevisionDetallePage() {
     try {
       const data = await actualizarDireccion(id, direccion)
       setPedido(data.pedido)
+      setProblemas(data.problemas || [])
       setDireccion(direccionDesdePedido(data.pedido))
       setAviso(data.invalidada ? 'La dirección cambió: se invalidó la confirmación previa.' : 'Dirección actualizada.')
     } catch (fallo) {
@@ -107,7 +112,8 @@ function PedidoRevisionDetallePage() {
     </main>
   }
 
-  const puedeConfirmar = ['VALIDA', 'CON_ADVERTENCIAS'].includes(pedido.estado_validacion)
+  const motivoGeo = motivoGeocodificar(pedido, ocupado)
+  const motivoConf = motivoConfirmar(pedido, ocupado)
 
   return <main className="main-content revision-page">
     <header className="page-header">
@@ -130,7 +136,8 @@ function PedidoRevisionDetallePage() {
           <div><dt>Validación</dt><dd><EstadoValidacionBadge estado={pedido.estado_validacion}/></dd></div>
         </dl>
         <div className="form-divider address-divider"><span>Dirección de entrega</span></div>
-        <DireccionForm valor={direccion} onChange={cambiarDireccion} bloqueado={ocupado}/>
+        <DireccionForm valor={direccion} onChange={cambiarDireccion} bloqueado={ocupado} problemas={problemas}/>
+        <ProblemasDireccion problemas={problemas}/>
         <div className="order-actions">
           <button className="button button-primary" type="button" onClick={guardarCambios} disabled={ocupado}>Guardar cambios</button>
         </div>
@@ -159,8 +166,10 @@ function PedidoRevisionDetallePage() {
           <MapPreview latitud={pedido.latitud} longitud={pedido.longitud} etiqueta={pedido.direccion_original}/>
           <div className="validacion-estado"><span>Estado de la dirección</span><EstadoValidacionBadge estado={pedido.estado_validacion}/></div>
           {pedido.nivel_confianza && <p className="geo-nota">Confianza del proveedor: <b>{pedido.nivel_confianza}</b>.</p>}
-          <button type="button" className="button button-outline" onClick={geocodificar} disabled={ocupado}><Icon name="pin" size={14}/> Geocodificar dirección</button>
-          <button type="button" className="button confirm-button" onClick={confirmar} disabled={ocupado || !puedeConfirmar}><Icon name="check" size={14}/> Confirmar ubicación y habilitar despacho</button>
+          <button type="button" className="button button-outline" onClick={geocodificar} disabled={ocupado || pedido.estado_validacion !== 'VALIDA'}><Icon name="pin" size={14}/> Geocodificar dirección</button>
+          {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
+          <button type="button" className="button confirm-button" onClick={confirmar} disabled={ocupado || pedido.estado_validacion !== 'VALIDA' || !tieneCoordenadas(pedido)}><Icon name="check" size={14}/> Confirmar ubicación y habilitar despacho</button>
+          {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
         </section>
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Cambiar calle o altura invalida la confirmación anterior.</small></div></div>
       </aside>
