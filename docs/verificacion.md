@@ -171,3 +171,44 @@ Ejecutado sobre la rama `MVP-1`, continuando T04. Se agregó el alta de cliente 
 El backend del contenedor se reinició (`docker compose restart backend`) para tomar el código nuevo del bind mount antes del smoke.
 
 Límites: el flujo en navegador y la geocodificación real con Nominatim siguen sin ejecutarse. El aviso de duplicados es informativo y no fusiona (D09/D11 pendientes); el DNI duplicado sí bloquea porque identifica al cliente. El smoke dejó datos de prueba en la base de desarrollo: cliente id 1 (DNI `30111222`) y pedido id 1; no se borraron para no usar operaciones destructivas.
+
+## Validación y normalización en pedidos (20/10/2026, OpenCode)
+
+Ejecutado sin base de datos ni proveedor real, con repositorios y adaptadores falsos en las pruebas.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` (desde `backend/`) | 101/101; incluye creación con `VALIDA`/`CON_ADVERTENCIAS`, `problemas` en la respuesta, normalización de calle/altura/provincia/CP, abreviaturas equivalentes, dirección legacy, invalidación de confirmación, descarte de coordenadas al corregir una `VALIDA` geocodificada, geocodificación bloqueada para `PENDIENTE`/`CON_ADVERTENCIAS`/`CONFIRMADA`, proveedor que no cambia estado y confirmación sólo `VALIDA` |
+| Check coordinado | `npm run check` desde la raíz | `context:check` OK, sintaxis backend OK, backend 101/101 y lint frontend sin errores; el build de Vite falló porque `react-router-dom` está declarado en `frontend/package.json` pero no instalado en `node_modules`. Es una limitación previa del entorno, ajena a esta tarea |
+
+Límites: no se ejecutó SQL ni migraciones; `database/init.sql` y el esquema quedaron intactos. No se probó el flujo real contra MySQL/Docker ni Nominatim, ni la visualización de `problemas` en el frontend (fuera del alcance de esta tarea). El build de frontend no se pudo verificar por la dependencia faltante; no se instaló nada para no modificar el entorno.
+
+## Problemas de dirección en carga y revisión (20/10/2026, OpenCode)
+
+Ejecutado sin base de datos ni proveedor real; los casos de `obtener` usan el repositorio falso existente.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm test` (desde `backend/`) | 103/103; suma dos casos de `obtener`: dirección guardada incompleta devuelve `CAMPO_OBLIGATORIO`/`ERROR` sin escribir, y dirección válida devuelve `problemas: []` |
+| Lint frontend | `npm run lint` (desde `frontend/`) | Sin errores |
+| Pruebas frontend | `npm test` (desde `frontend/`) | No ejecutable: `vitest` está declarado en `frontend/package.json` pero no instalado en `node_modules` (limitación previa del entorno) |
+| Build frontend | `npm run build` (desde `frontend/`) | No ejecutable: falta `react-router-dom` en `node_modules`; el error es de resolución de una dependencia preexistente, no de los archivos modificados |
+
+Límites: no se ejecutó SQL ni migraciones; no se probó en navegador, viewport móvil, MySQL/Docker ni Nominatim. No se instalaron dependencias para no modificar el entorno. La verificación visual de colores, foco de teclado y layout responsive queda pendiente.
+
+## Provincias y localidades con Georef (20/10/2026)
+
+Verificación ejecutada sobre el checkout local. Georef se reemplazó por un `fetch` simulado: no hubo llamadas reales a Internet.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` | 125/125; 22 casos nuevos de cliente Georef, servicio, endpoints y advertencias de localidad. Los 103 casos previos pasaron sin cambios |
+| Sintaxis backend | `npm run check` (raíz) | Ver bloque siguiente |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | Sin errores |
+| Build frontend | `npm.cmd --prefix frontend run build` | `vite build` OK (148 módulos). En esta sesión las dependencias declaradas ya estaban instaladas; la limitación anterior de `node_modules` no se reprodujo |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | No ejecutadas en esta tarea; el cambio de UI se acredita con lint y build, no con un test de navegador |
+| Georef real | - | No ejecutado: requiere red y no se usaron datos personales |
+
+Casos cubiertos con proveedor simulado: respuesta válida recortada a 10, HTTP 503, fallo de red, timeout (`AbortError`), respuesta con forma inesperada, provincia canónica en la consulta, deduplicación de sugerencias, `EXISTE`/`NO_EXISTE`/`NO_VERIFICADO`, CABA y Capital Federal, y roles 401/403/200 en `/api/localidades`. También que una localidad inexistente o no verificada queda como ADVERTENCIA y conserva `estado_validacion: VALIDA`, y que no se consulta Georef si la provincia ya es inválida.
+
+Límites de esta verificación: no se probó con MySQL/Docker ni en navegador; no se validó la disponibilidad ni la latencia real de Georef; no se agregó caché ni control de cuota propio.

@@ -1,4 +1,4 @@
-const { normalizarProvincia } = require("./ValidadorDireccion");
+const { normalizarProvincia } = require("../constants/provincias");
 
 const CONECTORES = Object.freeze(new Set(["de", "del", "la", "las", "los", "y", "e"]));
 

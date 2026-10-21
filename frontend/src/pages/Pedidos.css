@@ -79,7 +79,33 @@
 .geo-nota { margin: 8px 0 0; color: #66748a; font-size: 7px; line-height: 1.5; }
 .geo-nota b { color: #26364d; }
 
+.geo-motivo { margin: 5px 0 0; color: #66748a; font-size: 7px; line-height: 1.45; }
+
+.form-field input.campo-error, .form-field select.campo-error { border-color: #c34339; box-shadow: 0 0 0 2px #c343391a; }
+.form-field input.campo-advertencia, .form-field select.campo-advertencia { border-color: #e0a01c; box-shadow: 0 0 0 2px #e0a01c1a; }
+
+.campo-ayuda { color: #8a5a12; font-size: 7px; font-weight: 400; line-height: 1.4; }
+
+.direccion-problemas { display: grid; gap: 5px; margin: 8px 0 0; padding: 0; list-style: none; }
+
+.direccion-problema {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid;
+  border-radius: 5px;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.direccion-problema svg { flex: 0 0 auto; margin-top: 1px; }
+.direccion-problema b { font-weight: 700; }
+.direccion-problema.error { border-color: #ffc8c2; background: #fff4f2; color: #b42318; }
+.direccion-problema.advertencia { border-color: #ffe0a3; background: #fff9ec; color: #a5741a; }
+
 .geo-panel .button { width: 100%; margin-top: 8px; justify-content: center; }
+.geo-panel .button:disabled { opacity: .6; cursor: not-allowed; }
 
 .order-actions { display: flex; gap: 8px; margin-top: 12px; }
 

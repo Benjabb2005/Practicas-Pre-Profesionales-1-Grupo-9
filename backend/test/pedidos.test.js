@@ -13,7 +13,7 @@ function detalleFixture(overrides = {}) {
         direccion_id: 5,
         estado_validacion: "PENDIENTE",
         direccion_validada: 0,
-        calle: "Av. Corrientes",
+        calle: "Avenida Corrientes",
         altura: "1234",
         piso_depto: null,
         entre_calles: null,
@@ -63,7 +63,7 @@ const clientesFalsos = {
     },
 };
 
-test("crear pedido guarda un borrador EN STOCK sin validar y avisa duplicados", async () => {
+test("crear pedido guarda el estado que decide el validador y avisa los problemas", async () => {
     const pedidos = reposPedidosFalsos();
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
@@ -75,8 +75,62 @@ test("crear pedido guarda un borrador EN STOCK sin validar y avisa duplicados", 
     assert.equal(pedidos.capturado.crear.estado, ESTADO_INICIAL);
     assert.equal(pedidos.capturado.crear.clienteId, 1);
     assert.equal(pedidos.capturado.crear.creadoPor, 7);
+    assert.equal(pedidos.capturado.crear.direccion.calle, "Avenida Corrientes");
     assert.equal(pedidos.capturado.crear.direccion.direccion_original, "Av. Corrientes 1234 CABA");
+    assert.equal(pedidos.capturado.crear.direccion.estado_validacion, "CON_ADVERTENCIAS");
+    assert.deepEqual(resultado.problemas.map((problema) => problema.campo), ["provincia"]);
+    assert.equal(resultado.problemas[0].gravedad, "ERROR");
     assert.deepEqual(resultado.posiblesDuplicados, []);
+});
+
+test("crear pedido con dirección completa la guarda VALIDA y normalizada", async () => {
+    const pedidos = reposPedidosFalsos();
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const resultado = await servicio.crear(
+        {
+            cliente_id: 1,
+            direccion: {
+                calle: "av. corrientes",
+                altura: "1.234",
+                localidad: "caba",
+                provincia: "caba",
+                codigo_postal: "c1043abc",
+            },
+        },
+        7
+    );
+
+    const direccion = pedidos.capturado.crear.direccion;
+    assert.equal(direccion.calle, "Avenida Corrientes");
+    assert.equal(direccion.altura, "1234");
+    assert.equal(direccion.localidad, "CABA");
+    assert.equal(direccion.provincia, "Ciudad Autónoma de Buenos Aires");
+    assert.equal(direccion.codigo_postal, "C1043ABC");
+    assert.equal(direccion.estado_validacion, "VALIDA");
+    assert.deepEqual(resultado.problemas, []);
+});
+
+test("obtener calcula los problemas sobre la dirección guardada sin persistirlos", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ provincia: "" }) });
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const detalle = await servicio.obtener(10);
+
+    assert.equal(detalle.estado_validacion, "PENDIENTE");
+    assert.deepEqual(detalle.problemas.map((problema) => problema.campo), ["provincia"]);
+    assert.equal(detalle.problemas[0].gravedad, "ERROR");
+    assert.equal(pedidos.capturado.actualizarDireccion, null);
+    assert.equal(pedidos.capturado.crear, null);
+});
+
+test("obtener devuelve problemas vacíos cuando la dirección guardada es válida", async () => {
+    const pedidos = reposPedidosFalsos();
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const detalle = await servicio.obtener(10);
+
+    assert.deepEqual(detalle.problemas, []);
 });
 
 test("crear pedido con cliente inexistente se rechaza", async () => {
@@ -87,7 +141,15 @@ test("crear pedido con cliente inexistente se rechaza", async () => {
     );
 });
 
-test("cambiar la dirección de un pedido confirmado invalida la confirmación", async () => {
+const DIRECCION_COMPLETA = {
+    calle: "Avenida Corrientes",
+    altura: "1234",
+    localidad: "CABA",
+    provincia: "CABA",
+    codigo_postal: "1043",
+};
+
+test("cambiar la dirección de un pedido confirmado invalida y descarta las coordenadas", async () => {
     const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1 }) });
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
@@ -95,45 +157,180 @@ test("cambiar la dirección de un pedido confirmado invalida la confirmación", 
 
     assert.equal(resultado.invalidada, true);
     assert.equal(pedidos.capturado.actualizarDireccion.opciones.invalidar, true);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.descartarCoordenadas, true);
+    assert.equal(pedidos.capturado.actualizarDireccion.direccion.estado_validacion, "CON_ADVERTENCIAS");
 });
 
 test("reenviar la misma dirección no invalida una confirmación vigente", async () => {
     const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1 }) });
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
-    const resultado = await servicio.actualizarDireccion(10, { calle: "Av. Corrientes", altura: "1234" });
+    const resultado = await servicio.actualizarDireccion(10, DIRECCION_COMPLETA);
 
     assert.equal(resultado.invalidada, false);
     assert.equal(pedidos.capturado.actualizarDireccion.opciones.invalidar, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.descartarCoordenadas, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.direccion.estado_validacion, "CONFIRMADA");
 });
 
-test("geocodificar un resultado exacto deja la dirección VALIDA sin confirmar", async () => {
-    const pedidos = reposPedidosFalsos();
+test("reenviar la misma dirección escrita con abreviaturas no invalida ni descarta coordenadas", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1 }) });
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const resultado = await servicio.actualizarDireccion(10, {
+        ...DIRECCION_COMPLETA,
+        calle: "av. corrientes",
+        localidad: "caba",
+        provincia: "caba",
+    });
+
+    assert.equal(resultado.invalidada, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.descartarCoordenadas, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.direccion.calle, "Avenida Corrientes");
+    assert.equal(pedidos.capturado.actualizarDireccion.direccion.estado_validacion, "CONFIRMADA");
+});
+
+test("una dirección guardada antes de normalizar no se invalida al reenviarla igual", async () => {
+    const pedidos = reposPedidosFalsos({
+        detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1, calle: "Av. Corrientes" }),
+    });
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const resultado = await servicio.actualizarDireccion(10, { ...DIRECCION_COMPLETA, calle: "Av. Corrientes" });
+
+    assert.equal(resultado.invalidada, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.descartarCoordenadas, false);
+});
+
+test("corregir una dirección VALIDA ya geocodificada descarta las coordenadas viejas", async () => {
+    const pedidos = reposPedidosFalsos({
+        detalle: detalleFixture({
+            estado_validacion: "VALIDA",
+            latitud: "-34.6",
+            longitud: "-58.4",
+            nivel_confianza: "ALTO",
+        }),
+    });
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const resultado = await servicio.actualizarDireccion(10, { ...DIRECCION_COMPLETA, altura: "1300" });
+
+    assert.equal(resultado.invalidada, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.invalidar, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.descartarCoordenadas, true);
+    assert.equal(pedidos.capturado.actualizarDireccion.direccion.estado_validacion, "VALIDA");
+});
+
+test("reenviar una dirección VALIDA geocodificada sin cambios conserva las coordenadas", async () => {
+    const pedidos = reposPedidosFalsos({
+        detalle: detalleFixture({
+            estado_validacion: "VALIDA",
+            latitud: "-34.6",
+            longitud: "-58.4",
+            nivel_confianza: "ALTO",
+        }),
+    });
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+
+    const resultado = await servicio.actualizarDireccion(10, DIRECCION_COMPLETA);
+
+    assert.equal(resultado.invalidada, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.opciones.descartarCoordenadas, false);
+    assert.equal(pedidos.capturado.actualizarDireccion.direccion.estado_validacion, "VALIDA");
+});
+
+function detalleValido(overrides = {}) {
+    return detalleFixture({ estado_validacion: "VALIDA", ...overrides });
+}
+
+test("geocodificar un resultado exacto guarda coordenadas sin cambiar el estado", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleValido() });
     const adapter = { nombre: "falso", async geocodificar() { return { resultado: "OK", latitud: -34.6, longitud: -58.4, nivelConfianza: "ALTO" }; } };
     const servicio = createGeocodeService({ pedidos, adapter });
 
     const salida = await servicio.geocodificar(10, 3);
 
     assert.equal(salida.resultado, "OK");
-    assert.equal(pedidos.capturado.geocodificacion.estadoValidacion, "VALIDA");
     assert.equal(pedidos.capturado.geocodificacion.latitud, -34.6);
+    assert.equal(pedidos.capturado.geocodificacion.longitud, -58.4);
+    assert.equal(pedidos.capturado.geocodificacion.nivelConfianza, "ALTO");
+    assert.equal(pedidos.capturado.geocodificacion.estadoValidacion, undefined);
 });
 
-test("geocodificar sin resultados deja la dirección PENDIENTE y sin coordenadas", async () => {
-    const pedidos = reposPedidosFalsos();
+test("una coincidencia aproximada guarda coordenadas MEDIAS sin cambiar el estado", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleValido() });
+    const adapter = { nombre: "falso", async geocodificar() { return { resultado: "APPROXIMATE", latitud: -34.6, longitud: -58.4 }; } };
+    const servicio = createGeocodeService({ pedidos, adapter });
+
+    await servicio.geocodificar(10, 3);
+
+    assert.equal(pedidos.capturado.geocodificacion.nivelConfianza, "MEDIO");
+    assert.equal(pedidos.capturado.geocodificacion.estadoValidacion, undefined);
+});
+
+test("geocodificar sin resultados no cambia el estado y deja sin coordenadas", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleValido() });
     const adapter = { nombre: "falso", async geocodificar() { return { resultado: "ZERO_RESULTS", motivo: "No se encontró." }; } };
     const servicio = createGeocodeService({ pedidos, adapter });
 
     const salida = await servicio.geocodificar(10, 3);
 
     assert.equal(salida.resultado, "ZERO_RESULTS");
-    assert.equal(pedidos.capturado.geocodificacion.estadoValidacion, "PENDIENTE");
     assert.equal(pedidos.capturado.geocodificacion.latitud, null);
+    assert.equal(pedidos.capturado.geocodificacion.nivelConfianza, null);
+    assert.equal(pedidos.capturado.geocodificacion.estadoValidacion, undefined);
+});
+
+test("no se geocodifica una dirección CON_ADVERTENCIAS", async () => {
+    let llamado = false;
+    const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "CON_ADVERTENCIAS" }) });
+    const adapter = { nombre: "falso", async geocodificar() { llamado = true; return { resultado: "OK" }; } };
+    const servicio = createGeocodeService({ pedidos, adapter });
+
+    await assert.rejects(
+        () => servicio.geocodificar(10, 3),
+        (error) => error.codigo === "CONFLICTO" && /errores para revisar/.test(error.message)
+    );
+    assert.equal(llamado, false);
+});
+
+test("una dirección ya confirmada no se vuelve a geocodificar", async () => {
+    let llamado = false;
+    const pedidos = reposPedidosFalsos({
+        detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1, latitud: "-34.6", longitud: "-58.4" }),
+    });
+    const adapter = { nombre: "falso", async geocodificar() { llamado = true; return { resultado: "OK" }; } };
+    const servicio = createGeocodeService({ pedidos, adapter });
+
+    await assert.rejects(
+        () => servicio.geocodificar(10, 3),
+        (error) => error.codigo === "CONFLICTO" && error.message === "Esta dirección ya está confirmada."
+    );
+    assert.equal(llamado, false);
+});
+
+test("una dirección PENDIENTE heredada no se geocodifica y el mensaje dice qué hacer", async () => {
+    const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "PENDIENTE" }) });
+    const servicio = createGeocodeService({ pedidos, adapter: { nombre: "falso", async geocodificar() { return { resultado: "OK" }; } } });
+
+    await assert.rejects(
+        () => servicio.geocodificar(10, 3),
+        (error) => error.codigo === "CONFLICTO" && /todavía no fue revisada/.test(error.message)
+    );
 });
 
 test("no se puede confirmar una dirección todavía PENDIENTE", async () => {
     const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "PENDIENTE" }) });
     const servicio = createGeocodeService({ pedidos, adapter: { nombre: "falso", async geocodificar() { return { resultado: "ERROR" }; } } });
+
+    await assert.rejects(() => servicio.confirmar(10, 3), (error) => error.codigo === "CONFLICTO");
+});
+
+test("no se puede confirmar una dirección CON_ADVERTENCIAS aunque tenga coordenadas", async () => {
+    const pedidos = reposPedidosFalsos({
+        detalle: detalleFixture({ estado_validacion: "CON_ADVERTENCIAS", latitud: "-34.6", longitud: "-58.4" }),
+    });
+    const servicio = createGeocodeService({ pedidos, adapter: { nombre: "falso", async geocodificar() { return { resultado: "OK" }; } } });
 
     await assert.rejects(() => servicio.confirmar(10, 3), (error) => error.codigo === "CONFLICTO");
 });

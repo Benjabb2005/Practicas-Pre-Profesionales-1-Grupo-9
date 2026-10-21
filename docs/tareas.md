@@ -149,3 +149,66 @@ Evidencia (detalle en `docs/verificacion.md`): backend `npm.cmd --prefix backend
 Límites: no se probó en navegador ni la geocodificación real con Nominatim; el aviso de duplicados es informativo y no fusiona (D09/D11 pendientes). El smoke dejó datos de prueba en la base de desarrollo (cliente id 1 y pedido id 1), no borrados.
 
 Siguiente paso: probar en navegador la carga de un pedido con cliente nuevo y geocodificar; retomar T07 cuando D04/D09 se definan.
+
+## Validación y normalización de direcciones en el flujo de pedidos (continuación de T04/T05, 20/10/2026)
+
+Estado: completada en backend y pruebas. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema.
+
+Motivo: el validador y el normalizador existían como módulos aislados; la creación y edición de pedidos seguía guardando `PENDIENTE` y el proveedor de geocodificación podía cambiar el estado. El despacho seguro necesita que el estado lo decida el validador y que las coordenadas no sobrevivan a una corrección de la dirección.
+
+Cambios y archivos:
+- `services/PedidoService.js`: `prepararDireccion` compone `direccion_original` con el texto crudo, normaliza los campos estructurados y recién después pasa faltantes a `null`. `crear` y `actualizarDireccion` validan, guardan el estado del validador y devuelven `problemas`. La comparación de cambios usa la dirección guardada y la nueva ya normalizadas.
+- `repositories/PedidoRepository.js`: `crear` recibe `estado_validacion`; `actualizarDireccion` siempre escribe ese estado y descarta coordenadas y confianza ante cualquier cambio relevante; `registrarGeocodificacion` dejó de escribir el estado.
+- `services/GeocodeService.js`: sólo geocodifica direcciones `VALIDA` (conflicto accionable para `PENDIENTE`, `CON_ADVERTENCIAS` y `CONFIRMADA`, con el mensaje "Esta dirección ya está confirmada." para esta última); el resultado del proveedor sólo guarda coordenadas y confianza. `confirmar` exige `VALIDA` con coordenadas.
+- `test/pedidos.test.js`: actualizados los casos de creación, invalidación, geocodificación y confirmación; nuevos casos de normalización, abreviaturas equivalentes, dirección legacy y corrección de una `VALIDA` ya geocodificada.
+
+Decisión: si un pedido `CONFIRMADA` recibe la misma dirección escrita distinto (por ejemplo `av. corrientes`), conserva la confirmación y las coordenadas. Si hay un cambio relevante, descarta coordenadas y confianza siempre, aunque el pedido no estuviera confirmado, porque pertenecen a la versión anterior de la dirección. Registrado en D10.
+
+Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 101/101; sin pruebas contra MySQL ni el proveedor real.
+
+Límites y observación pendiente: el frontend todavía habilita confirmar con `CON_ADVERTENCIAS` y no muestra la lista `problemas`; se dejó fuera de esta tarea. No se probó el flujo completo contra contenedores.
+
+Siguiente paso: mostrar `problemas` en las pantallas de carga/revisión, habilitar confirmar sólo con `VALIDA` y probar el flujo contra MySQL/Docker.
+
+## Problemas de dirección visibles en carga y revisión (continuación de T04/T05, 20/10/2026)
+
+Estado: completada. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema ni dependencias nuevas.
+
+Motivo: el backend ya devolvía `problemas` al crear y editar la dirección, pero el frontend no los mostraba y todavía habilitaba Geocodificar/Confirmar con estados que el servidor rechaza. La pantalla de carga tampoco ofrecía un camino directo para corregir una dirección guardada con problemas.
+
+Cambios y archivos:
+- `backend/src/services/PedidoService.js`: `obtener` calcula `problemas` con `validarDireccion` sobre la dirección guardada y los devuelve junto con el pedido; no se persisten ni alteran `estado_validacion`.
+- `backend/test/pedidos.test.js`: dos pruebas nuevas para `obtener` (dirección incompleta y dirección válida), verificando que no se escriben datos.
+- `frontend/src/components/direccion.js`: helpers `tieneCoordenadas`, `motivoGeocodificar` y `motivoConfirmar`.
+- `frontend/src/components/ProblemasDireccion.jsx` (nuevo): lista accesible de problemas, ERROR en rojo y ADVERTENCIA en amarillo.
+- `frontend/src/components/DireccionForm.jsx`: resalta el campo afectado (`campo-error`/`campo-advertencia`) y lo asocia a la lista.
+- `frontend/src/pages/PedidosCargaPage.jsx` y `PedidoRevisionDetallePage.jsx`: muestran los problemas, toman los del alta/edición/lectura, deshabilitan Geocodificar salvo `VALIDA`, exigen `VALIDA` con coordenadas para Confirmar, explican el motivo y, en la carga, agregan "Corregir dirección" hacia `/pedidos/:id/revision`.
+- `frontend/src/pages/Pedidos.css`: estilos de la lista, bordes de campo, motivo y botones deshabilitados con la paleta existente.
+- `frontend/src/api/client.test.js`: prueba del mensaje seguro de un `409`; `mensajeError` ya lo mostraba, no hizo falta cambiar el cliente API.
+- Spec y docs: `frontend/specs/pedidos-carga-revision.md`, `docs/arquitectura.md`, `docs/pantallas.md`, `docs/verificacion.md`.
+
+Evidencia: backend `npm test` 103/103 y lint de frontend OK. `npm test` del frontend y `npm run build` no pudieron ejecutarse porque `vitest` y `react-router-dom` están declarados pero no instalados en `frontend/node_modules`; es una limitación previa del entorno, no de estos cambios.
+
+Límites: no se probó en navegador, contra MySQL/Docker ni con Nominatim. Después de guardar en la carga el formulario sigue bloqueado; la corrección se hace desde el detalle de revisión, ahora con acceso directo.
+
+Siguiente paso: probar el flujo completo en navegador contra los contenedores (carga con problemas → Corregir dirección → corregir → geocodificar → confirmar) y restablecer las dependencias de frontend declaradas para poder correr Vitest y el build.
+
+## Provincias y localidades con Georef (continuación de T04/T05, 20/10/2026)
+
+Estado: completada en backend, frontend y pruebas con Georef simulado. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema ni dependencias nuevas.
+
+Motivo: provincia era texto libre y localidad no tenía ayuda, así que se podían cargar jurisdicciones inexistentes o localidades de otra provincia. Se separó el catálogo de provincias y se agregó una consulta informativa a Georef sin debilitar la regla de oro: nunca bloquea el despacho ni convierte al validador en una llamada de red.
+
+Cambios y archivos:
+- Backend: `src/constants/provincias.js` (24 jurisdicciones, variantes, tabla CPA y `normalizarProvincia`), `src/lib/texto.js` (normalización compartida), `src/georef/localidades.js` (cliente con timeout y errores clasificados), `src/services/LocalidadService.js` (sugerencias y verificación), `src/controllers/localidades.controller.js`, `src/routes/{provincias,localidades}.routes.js`. `ValidadorDireccion` y `NormalizadorDireccion` importan el catálogo nuevo y el validador sigue reexportando `normalizarProvincia`. `PedidoService` suma `LOCALIDAD_NO_ENCONTRADA` / `LOCALIDAD_NO_VERIFICADA` como ADVERTENCIA al crear y editar, con `localidades` opcional para no romper usos existentes. `config/env.js` agrega `georef` (`GEOREF_BASE_URL`, `GEOREF_TIMEOUT_MS`); `container.js` permite inyectar el cliente y `app.js` monta `/api/provincias` y `/api/localidades`.
+- Frontend: `src/api/localidades.js`; `DireccionForm.jsx` con `<select>` de provincias y `<datalist>` de localidades con debounce y descarte de respuestas tardías; `Pedidos.css` con estilos de error/advertencia para `select`; spec `frontend/specs/direcciones-provincia-localidad.md`.
+- Pruebas: `backend/test/localidades.test.js` (cliente, servicio y endpoints con fetch simulado) y `backend/test/pedidos-localidad.test.js` (advertencias sin ERROR).
+- Docs: `arquitectura.md`, `pantallas.md`, `decisiones.md` (D21), este apartado y `verificacion.md`.
+
+Decisiones aceptadas por el usuario: `/api/provincias` público como `/api/estados`; localidades sólo ADMINISTRADOR y OPERADOR; las advertencias se calculan al guardar, no al leer; `localidades` queda opcional en `PedidoService`.
+
+Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 125/125; `npm.cmd --prefix frontend run lint` OK; `npm.cmd --prefix frontend run build` OK (148 módulos). Los tests existentes de validador, normalizador y pedidos pasaron sin cambios.
+
+Límites: no se llamó a Georef real ni se probó contra MySQL/Docker o navegador. No se agregó caché ni límite de uso propio; el timeout es de 3 s por defecto y el navegador nunca consulta Georef. `docker-compose.yml` no reenvía `GEOREF_*`; la configuración se toma de `backend/.env`, igual que las variables de geocodificación actuales.
+
+Siguiente paso: probar en navegador la carga con provincia y sugerencias contra los contenedores y, si hay red, verificar una localidad real de Georef sin datos personales.
