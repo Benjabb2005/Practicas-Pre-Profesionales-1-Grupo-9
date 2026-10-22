@@ -12,6 +12,11 @@ describe('mensajeError', () => {
     expect(mensajeError(error)).toBe('La dirección no tiene coordenadas para confirmar.')
   })
 
+  it('muestra el mensaje de conflicto del backend', () => {
+    const error = { response: { status: 409, data: { error: { codigo: 'CONFLICTO', mensaje: 'Ya existe un cliente con ese DNI.' } } } }
+    expect(mensajeError(error)).toBe('Ya existe un cliente con ese DNI.')
+  })
+
   it('avisa cuando no hubo respuesta del servidor', () => {
     expect(mensajeError({ request: {}, message: 'Network Error' })).toMatch(/no pudimos contactar/i)
   })

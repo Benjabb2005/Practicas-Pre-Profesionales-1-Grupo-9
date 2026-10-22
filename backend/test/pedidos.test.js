@@ -32,7 +32,7 @@ function reposPedidosFalsos({ detalle } = {}) {
     const capturado = { crear: null, actualizarDireccion: null, geocodificacion: null, confirmacion: null };
     return {
         capturado,
-        async detectarDuplicados() {
+        async buscarCandidatosDuplicados() {
             return [];
         },
         async crear(datos) {

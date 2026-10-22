@@ -33,7 +33,12 @@ function createContainer({ db, config, georef } = {}) {
         usuarioService: createUsuarioService({ usuarios }),
         estadoPedidoService: createEstadoPedidoService({ repositorio: createEstadoPedidoRepository(db) }),
         clienteService: createClienteService({ clientes }),
-        pedidoService: createPedidoService({ pedidos, clientes, localidades: localidadService }),
+        pedidoService: createPedidoService({
+            pedidos,
+            clientes,
+            localidades: localidadService,
+            ventanaDuplicadosHoras: config.duplicados?.ventanaHoras,
+        }),
         geocodeService: createGeocodeService({ pedidos, adapter: geocodeAdapter }),
         localidadService,
     };

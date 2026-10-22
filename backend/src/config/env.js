@@ -1,6 +1,6 @@
 // Carga y valida la configuración por entorno. No tiene valores secretos por defecto:
 // si falta algo obligatorio, falla con un mensaje claro antes de arrancar.
-function leerPuerto(valor, porDefecto) {
+function leerEnteroPositivo(valor, porDefecto) {
     const numero = Number(valor ?? porDefecto);
     return Number.isInteger(numero) && numero > 0 ? numero : porDefecto;
 }
@@ -8,10 +8,10 @@ function leerPuerto(valor, porDefecto) {
 function loadEnv(env = process.env) {
     const config = {
         entorno: env.NODE_ENV || "development",
-        puerto: leerPuerto(env.PORT, 3000),
+        puerto: leerEnteroPositivo(env.PORT, 3000),
         db: {
             host: env.DB_HOST,
-            port: leerPuerto(env.DB_PORT, 3306),
+            port: leerEnteroPositivo(env.DB_PORT, 3306),
             user: env.DB_USER,
             password: env.DB_PASSWORD ?? "",
             database: env.DB_NAME,
@@ -24,11 +24,15 @@ function loadEnv(env = process.env) {
             proveedor: env.GEOCODE_PROVIDER || "nominatim",
             baseUrl: env.GEOCODE_BASE_URL || "https://nominatim.openstreetmap.org",
             userAgent: env.GEOCODE_USER_AGENT || "Mandatodo-MVP1",
-            timeoutMs: leerPuerto(env.GEOCODE_TIMEOUT_MS, 5000),
+            timeoutMs: leerEnteroPositivo(env.GEOCODE_TIMEOUT_MS, 5000),
+        },
+        duplicados: {
+            // Ventana usada para avisar pedidos del mismo cliente y dirección.
+            ventanaHoras: leerEnteroPositivo(env.DUPLICADOS_VENTANA_HORAS, 24),
         },
         georef: {
             baseUrl: env.GEOREF_BASE_URL || "https://apis.datos.gob.ar/georef/api",
-            timeoutMs: leerPuerto(env.GEOREF_TIMEOUT_MS, 3000),
+            timeoutMs: leerEnteroPositivo(env.GEOREF_TIMEOUT_MS, 3000),
         },
     };
 

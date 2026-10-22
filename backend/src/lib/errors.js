@@ -6,6 +6,9 @@ class AppError extends Error {
         this.name = "AppError";
         this.statusCode = statusCode;
         this.codigo = codigo;
+        // El middleware usa `mensaje` como texto público; `message` queda para
+        // el registro técnico. Sin esta propiedad la respuesta salía sin texto.
+        this.mensaje = mensaje;
         if (campos) this.campos = campos;
     }
 }
@@ -30,6 +33,14 @@ function conflicto(mensaje) {
     return new AppError(409, "CONFLICTO", mensaje);
 }
 
+// Conflicto que además devuelve los pedidos existentes para que el operador
+// pueda revisarlos antes de confirmar la creación de otro pedido.
+function conflictoDuplicado(mensaje, posiblesDuplicados) {
+    const error = new AppError(409, "DUPLICADO_POTENCIAL", mensaje);
+    error.posiblesDuplicados = posiblesDuplicados;
+    return error;
+}
+
 function servicioNoDisponible(mensaje = "El servicio no está disponible en este entorno.") {
     return new AppError(503, "SERVICIO_NO_DISPONIBLE", mensaje);
 }
@@ -41,5 +52,6 @@ module.exports = {
     noAutorizado,
     noEncontrado,
     conflicto,
+    conflictoDuplicado,
     servicioNoDisponible,
 };

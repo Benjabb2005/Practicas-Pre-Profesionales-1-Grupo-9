@@ -10,6 +10,7 @@ function errorHandler(error, req, res, next) {
     if (error instanceof AppError) {
         const cuerpo = { codigo: error.codigo, mensaje: error.mensaje };
         if (error.campos) cuerpo.campos = error.campos;
+        if (error.posiblesDuplicados) cuerpo.posiblesDuplicados = error.posiblesDuplicados;
         return res.status(error.statusCode).json({ error: cuerpo });
     }
 

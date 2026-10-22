@@ -150,6 +150,181 @@ Límites: no se probó en navegador ni la geocodificación real con Nominatim; e
 
 Siguiente paso: probar en navegador la carga de un pedido con cliente nuevo y geocodificar; retomar T07 cuando D04/D09 se definan.
 
+## Sesión MVP1: ABM de clientes (20/10/2026)
+
+Estado: completada en backend, pantalla y pruebas; con smoke real contra MySQL 8.0 local, sin prueba con Docker ni en navegador. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Alcance: punto 1 del módulo «Clientes, registro de pedidos y detección de duplicados»: ABM de clientes con búsqueda, alta, edición y baja. Se mantuvo separado de la carga de pedido y de la pantalla de frecuentes. No se modificó el esquema ni `database/init.sql`.
+
+Cambios y archivos:
+- Backend: `ClienteRepository` (búsqueda por DNI/teléfono con dígitos normalizados, `actualizar`, `tienePedidos`, `eliminar`); `ClienteService` (normalización de DNI/teléfono/email, DNI duplicado como conflicto, aviso de coincidencias, baja bloqueada por pedidos y traducción de `ER_DUP_ENTRY`/FK); `clientes.controller` (`PUT`/`DELETE`, Zod y validación de id); `clientes.routes` (nuevas rutas con los mismos roles).
+- Corrección posterior: `src/lib/errors.js` no guardaba `mensaje` en `AppError`; el middleware respondía sólo `codigo` y el frontend mostraba el texto genérico. Se agregó la propiedad y pruebas del mensaje público.
+- Frontend: `api/clientes.js` (se movieron las funciones de clientes desde `api/pedidos.js`); `components/ClienteForm.jsx`; `pages/ClientesPage.jsx` y `ClientesPage.css`; `components/cliente.js` (estado y precarga del ABM); `App.jsx` (ruta `/clientes` y ítem de barra lateral); imports actualizados en `ClienteSelector.jsx` y `PedidosCargaPage.jsx`.
+- Pruebas: 9 casos nuevos en `backend/test/clientes.test.js` (14 en total) y 6 en frontend (5 de la API de clientes y 1 del mensaje de conflicto).
+- Documentación: `frontend/specs/abm-clientes.md`, `docs/arquitectura.md`, `docs/pantallas.md`, `docs/decisiones.md` (D07) y este apartado.
+
+Criterios cumplidos: backend 100/100 y frontend 12/12; lint y build de Vite OK; `npm run check` completo (exit 0); búsqueda por nombre, DNI, teléfono y email; DNI normalizado y duplicado rechazado con 409 y mensaje visible; teléfono/email repetido sólo se avisa; baja sin pedidos y conflicto con pedidos; guardas 401/403/400 en HTTP; sin SQL concatenado ni datos personales en logs. Smoke real contra MySQL 8.0 local: health 200, login 200, listado inicial 0, alta 201, DNI repetido 409 con `mensaje`, edición 200, baja 204, listado final 0, baja con pedido 409 con `mensaje`; proxy de Vite 5173 contra backend 3000 con `http` y `db` en `ok`. La base `mandatodo` se creó vacía y se aplicaron migración 001 y seed; los clientes/pedidos de prueba se eliminaron.
+
+No cumplidos / límites: no se probó con Docker ni en navegador; no hay prueba end-to-end de interfaz ni verificación visual responsive. La baja con pedidos se ejecutó contra MySQL real, pero el caso de carrera que dispara `ER_ROW_IS_REFERENCED_2` no se provocó. El borrado es físico y no hay baja lógica. D07 queda implementada localmente por pedido del equipo, pero el alcance académico debe validarse con cliente/docentes. D11 sigue pendiente: no se fusionan clientes. `npm ci` se ejecutó porque faltaban dependencias; `npm audit` reporta vulnerabilidades preexistentes y no se aplicó `npm audit fix`.
+
+Siguiente paso: punto 2, búsqueda de clientes por DNI en el formulario de pedido (el selector de frecuentes ya usa `GET /api/clientes`), y luego punto 3, detección de clientes duplicados.
+
+## Punto 2: búsqueda de clientes en la carga de pedido (20/10/2026)
+
+Estado: completado en frontend y verificado con smoke real contra MySQL 8.0 local; sin cambios de esquema ni del contrato API. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: el punto 2 del módulo pide recuperar rápido un cliente recurrente desde el formulario de pedido buscando por DNI, nombre o teléfono. El backend ya resolvía `GET /api/clientes?busqueda=` y el DNI con puntos; faltaba que la pantalla lo comunicara, mostrara el teléfono en los resultados y dejara evidencia de que elegir un frecuente no crea otro cliente.
+
+Cambios y archivos:
+- `frontend/src/components/ClienteSelector.jsx`: ayuda visible «Buscá por DNI, nombre o teléfono. El DNI puede llevar puntos o guiones», placeholder con ejemplos de DNI, nombre y teléfono, `maxLength` alineado al límite del servidor y estado sin coincidencias que guía al alta. Los resultados y el cliente elegido muestran DNI, teléfono y email.
+- `frontend/src/components/cliente.js`: `contactoDeCliente()` centraliza la línea de contacto y prioriza DNI y teléfono.
+- `frontend/src/components/cliente.test.js`: 3 casos nuevos para la línea de contacto y la precarga de los campos editables del cliente elegido.
+- `frontend/src/pages/PedidosCargaPage.jsx` y `frontend/src/pages/Pedidos.css`: subtítulo y estilo de la ayuda del selector. La selección sigue usando el `id` del cliente y bloquea sus campos; no se modificó la lógica de alta.
+- `frontend/specs/pedidos-carga-revision.md`: alcance, flujo, criterios y estado vacío actualizados.
+- Documentación: `docs/pantallas.md`, `docs/verificacion.md` y este apartado.
+
+Criterios cumplidos: frontend 15/15 y backend 100/100; lint y build de Vite OK; `npm run check` completo (exit 0); `git diff --check` limpio. El smoke real encontró un cliente por DNI con puntos, nombre, teléfono con guiones y DNI parcial; no devolvió resultados para un texto inexistente. Al crear un pedido con el cliente recuperado, el pedido quedó asociado a su `cliente_id` y el conteo de clientes no cambió. Los datos sintéticos se eliminaron.
+
+No cumplidos / límites: no se probó en navegador ni con Docker; no hay prueba de interacción DOM, por lo que la selección y el bloqueo visual se acreditan con revisión de código, pruebas de funciones puras y el smoke de API. No se implementó todavía la detección de clientes duplicados (punto 3) ni el aviso de pedidos duplicados (punto 5). D11 sigue abierto: no se fusionan clientes.
+
+Siguiente paso: punto 3, detección de clientes duplicados por DNI normalizado y aviso por teléfono o email coincidente.
+
+## Punto 3: detección de clientes duplicados (20/10/2026)
+
+Estado: completado en backend y frontend, con smoke real contra MySQL 8.0 local; sin cambios de esquema ni del contrato API. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: el punto 3 pide rechazar un DNI idéntico después de quitar puntos, espacios y guiones, y avisar cuando el teléfono o el email coinciden con otro cliente. El backend ya tenía el rechazo y devolvía `posiblesDuplicados`; faltaba que la normalización no borrara letras u otros caracteres y que la carga de pedido identificara al otro cliente por nombre y DNI, en lugar de mostrar sólo una cantidad.
+
+Cambios y archivos:
+- `backend/src/services/ClienteService.js`: `normalizarDni()` quita únicamente puntos, espacios y guiones y exige que el resto sean dígitos. Un DNI con letras, barras u otros caracteres se rechaza con 400 en vez de recortarse en silencio. El mensaje de validación informa los separadores admitidos.
+- `backend/test/clientes.test.js`: 5 casos nuevos para normalización con los tres formatos, rechazo de letras, DNI repetido con formatos distintos, aviso de coincidencias al actualizar y exclusión del propio cliente en la consulta SQL.
+- `frontend/src/components/cliente.js`: `describirCoincidenciasClientes()` centraliza el aviso, muestra nombre y DNI de cada coincidencia (o «sin DNI») y aclara que no se fusionaron datos.
+- `frontend/src/pages/ClientesPage.jsx` y `frontend/src/pages/PedidosCargaPage.jsx`: usan el helper; el aviso del ABM y el de la carga de pedido ya no dependen de contar clientes.
+- `frontend/src/components/ClienteForm.jsx` y `frontend/src/components/cliente.js`: el placeholder del DNI pasa a «Con o sin puntos».
+- `frontend/src/components/cliente.test.js`: 3 casos nuevos para una coincidencia, varias coincidencias con y sin DNI, y ausencia de aviso.
+- `frontend/specs/abm-clientes.md` y `frontend/specs/pedidos-carga-revision.md`: criterios de normalización, DNI duplicado y aviso con nombre/DNI actualizados.
+- Documentación: `docs/arquitectura.md`, `docs/pantallas.md`, `docs/decisiones.md` (D11), `docs/verificacion.md` y este apartado.
+
+Criterios cumplidos: `20.123.456`, `20 123 456` y `20-123-456` se normalizan a `20123456`; si el DNI ya existe, el alta o la edición responde 409 y no se guarda. Un DNI con letras u otros caracteres se rechaza con 400. Un teléfono o email compartido no bloquea: el alta responde 201, devuelve `posiblesDuplicados` con `nombre` y `dni`, y el aviso visible los muestra sin fusionar datos. En la edición, el propio cliente se excluye de las coincidencias. Backend 105/105, frontend 18/18, lint y build de Vite OK, `npm run check` completo (exit 0) y `git diff --check` limpio.
+
+No cumplidos / límites: no se probó en navegador ni con Docker; no hay prueba de interacción DOM ni verificación visual responsive. El smoke usó MySQL 8.0 local y datos sintéticos, que se eliminaron. El teléfono mantiene la normalización preexistente a dígitos; la validación estricta de separadores se aplicó al DNI. D08 (obligatoriedad del DNI) y D11 (resolución/fusión de duplicados) siguen abiertos; no se fusionan clientes. El aviso de pedidos duplicados (punto 5) no se implementó ni se probó como terminado.
+
+Siguiente paso: punto 4, registro manual de pedidos con elección o alta de cliente, canal de origen, observaciones y estado inicial.
+
+## Punto 4: registro manual de pedidos con canal de origen (20/10/2026)
+
+Estado: completado en backend, frontend y documentación, con smoke real contra MySQL 8.0 local; sin cambios de esquema ni de `database/init.sql`. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: el punto 4 pide que la carga manual elija o cree el cliente, registre el canal de origen y las observaciones, y cree el pedido en el estado inicial. La elección/alta de cliente y las observaciones ya funcionaban; faltaba un canal visible, validado y persistido, y una confirmación de que el estado inicial no puede imponerse desde el cliente.
+
+Cambios y archivos:
+- `backend/src/constants/canales.js`: catálogo único `MANUAL`, `WHATSAPP`, `INSTAGRAM`, `CORREO` y `SISTEMA EXTERNO`, con `CANAL_PREDETERMINADO = MANUAL`.
+- `backend/src/controllers/pedidos.controller.js`: `canal_origen` se valida contra el catálogo con Zod; un valor fuera de la lista responde 400 con el campo afectado. El esquema de alta no acepta `estado`, por lo que un intento de imponer otro estado se descarta antes del servicio.
+- `backend/src/services/PedidoService.js`: usa `CANAL_PREDETERMINADO` en lugar de un string suelto; sigue creando con `ESTADO_INICIAL` (`EN STOCK`).
+- `backend/src/repositories/PedidoRepository.js`: el detalle del pedido devuelve `canal_origen`, útil para confirmar la persistencia y mostrar el resumen.
+- `frontend/src/components/canal.js`: etiquetas visibles del catálogo (`WhatsApp`, `Instagram`, `Correo electrónico`, `Sistema externo`, `Carga manual`) y `etiquetaCanal()` con fallback sin inventar datos.
+- `frontend/src/pages/PedidosCargaPage.jsx`: selector de canal en «Datos del pedido», envío del canal al alta, resumen del canal y del estado `EN STOCK` después de guardar, y reinicio del canal en «Cargar otro pedido».
+- `frontend/src/pages/Pedidos.css`: separación del bloque de datos del pedido y margen del resumen.
+- Pruebas: 4 casos backend nuevos y 1 ampliado (canal y observaciones persistidos, canal predeterminado, estado impuesto ignorado, canal inválido 400, chofer 403) y 4 frontend (catálogo/etiquetas, fallback y contrato del alta).
+- Documentación: `frontend/specs/pedidos-carga-revision.md`, `docs/pantallas.md`, `docs/arquitectura.md`, `docs/decisiones.md` (D22) y este apartado.
+
+Criterios cumplidos: el alta con `canal_origen` válido y observaciones responde 201, devuelve el pedido en `EN STOCK` y la dirección en `PENDIENTE`, y persiste ambos datos en MySQL. El estado enviado por el cliente se ignora y siempre nace `EN STOCK`. Sin canal, se guarda `MANUAL`. Un canal fuera del catálogo responde 400 y no crea pedido; las observaciones de más de 2000 caracteres también se rechazan. Sin token responde 401 y el chofer 403, sin crear pedido. Backend 109/109, frontend 22/22, lint y build de Vite OK. Smoke real: pedido con canal `WHATSAPP` y observaciones persistido; pedido sin canal en `MANUAL`; estado impuesto ignorado; rechazos 400/401/403 sin escrituras; datos sintéticos eliminados.
+
+No cumplidos / límites: no se probó en navegador ni con Docker; no hay prueba de interacción DOM ni verificación visual responsive. El catálogo de canales es una adopción local basada en la operación multicanal del contexto (D22) y debe confirmarse con el cliente. El aviso de pedidos duplicados con confirmación explícita sigue siendo el punto 5; la lista informativa actual no se considera terminada. D08 (obligatoriedad del DNI) y D11 (fusión de clientes) siguen abiertos.
+
+Siguiente paso: punto 5, aviso de pedidos duplicados por mismo cliente y misma dirección normalizada dentro de una ventana configurable, con confirmación explícita antes de continuar.
+
+## Punto 5: aviso de pedidos duplicados (21/10/2026)
+
+Estado: implementado y verificado técnicamente en backend, frontend y documentación, con smoke real contra MySQL 8.0 local; probado y confirmado por el usuario el 21/10/2026. Sin cambios de esquema ni de `database/init.sql`. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: el punto 5 exige avisar cuando el mismo cliente vuelve a cargar la misma dirección normalizada dentro de una ventana configurable, mostrar el pedido existente y exigir confirmación explícita. La implementación previa comparaba calle y altura crudas, no aplicaba ventana y creaba el pedido igual.
+
+Cambios y archivos:
+- `backend/src/services/PedidoService.js`: `claveDireccion` consume `NormalizadorDireccion`, `normalizarTexto` y `normalizarProvincia` (para asimilar CABA y Capital Federal); compara calle (tolera iniciales como «H.» frente a «Hipólito»), altura y, cuando están cargadas en ambos pedidos, localidad y provincia. No compara piso/departamento. Busca candidatos por cliente y ventana; si hay coincidencia sin `confirmar_duplicado: true`, lanza `409 DUPLICADO_POTENCIAL` sin crear; con confirmación crea y devuelve los existentes.
+- `backend/src/repositories/PedidoRepository.js`: `buscarCandidatosDuplicados` filtra por `cliente_id` y `created_at >= NOW() - INTERVAL ? HOUR`, sin excluir estados, y devuelve los datos del pedido y su dirección para mostrarlos.
+- `backend/src/controllers/pedidos.controller.js`: `confirmar_duplicado` es un booleano opcional con predeterminado `false`; un valor no booleano responde `400`.
+- `backend/src/lib/errors.js` y `backend/src/middleware/errorHandler.js`: error específico `DUPLICADO_POTENCIAL` que conserva `posiblesDuplicados` en el cuerpo de la respuesta.
+- `backend/src/config/env.js`, `backend/.env.example`, `.env.example`, `docker-compose.yml` y `backend/src/container.js`: `DUPLICADOS_VENTANA_HORAS` configurable, con 24 horas por defecto, inyectada al servicio y pasada por Compose.
+- `frontend/src/api/pedidos.js`: `pedidosDuplicadosDeError` extrae la lista de pedidos existentes del conflicto, sin confundirlo con otros errores.
+- `frontend/src/pages/PedidosCargaPage.jsx` y `frontend/src/pages/Pedidos.css`: aviso visible con código o id, estado, fecha y dirección de cada pedido existente; acciones «Sí, crear otro pedido» y «Cancelar»; el aviso se descarta al cambiar cliente, dirección, canal u observaciones; el éxito posterior informa que se confirmó la coincidencia.
+- Pruebas: 11 casos backend nuevos (dirección equivalente, confirmación, altura/localidad distintas, sin altura, ventana configurable, comparación normalizada, configuración por entorno, error y middleware, consulta de candidatos, confirmación no booleana) y 2 frontend nuevos (reenvío de la confirmación y extracción del conflicto). Se actualizaron los dobles de prueba del repositorio.
+- Documentación: `frontend/specs/pedidos-carga-revision.md`, `docs/pantallas.md`, `docs/arquitectura.md`, `docs/decisiones.md` (D11) y este apartado.
+
+Criterios cumplidos: con un pedido del mismo cliente y la misma dirección normalizada dentro de la ventana, el alta sin confirmación responde `409 DUPLICADO_POTENCIAL`, no crea el pedido y devuelve los datos del existente. Con `confirmar_duplicado: true` crea exactamente un pedido y devuelve la coincidencia. «Av. H. Yrigoyen» y «Avenida Hipólito Yrigoyen» se reconocen como la misma dirección; altura, localidad, provincia y cliente distintos no generan aviso; sin altura no se arriesga un duplicado; un pedido de hace 3 días queda fuera de la ventana de 24 h. Sin token responde `401` y el chofer `403`, sin escrituras. Backend 120/120, frontend 24/24, lint y build de Vite OK, `npm run check` exit 0 y `git diff --check` sin errores. Smoke real: 409 sin crear, confirmación con 201, reintento posterior sin confirmar con 409, confirmación no booleana con 400 y limpieza de los datos sintéticos.
+
+No cumplidos / límites: no se probó en navegador ni con Docker; no hay prueba de interacción DOM ni verificación visual responsive, así que el aviso y sus botones se acreditan con revisión de código, pruebas de las funciones puras y el smoke de API. La ventana de 24 h es una adopción local configurable, pendiente de confirmación con el cliente. La comparación tolera iniciales y abreviaturas, pero no separa una calle y altura escritas en un solo campo; esa mejora sigue en el alcance de normalización. D11 sigue abierto en la resolución/fusión: no se fusionan pedidos ni clientes. D08 (obligatoriedad del DNI) sigue abierto.
+
+## Punto 6: listado de pedidos con filtros (21/10/2026)
+
+Estado: implementado y verificado técnicamente en backend, frontend y documentación, con smoke real contra MySQL 8.0 local; probado y confirmado por el usuario el 21/10/2026. Sin cambios de esquema ni de `database/init.sql`. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: el punto 6 pide listar los pedidos con filtros por estado, cliente y fecha. El tablero seguía siendo una maqueta con contadores en cero, filtros visuales de estado/chofer y un estado vacío; `GET /api/pedidos` sólo filtraba por estado y estado de validación.
+
+Cambios y archivos:
+- `backend/src/repositories/PedidoRepository.js`: `listar` acepta `cliente`, `fechaDesde` y `fechaHasta`; busca cliente por nombre, DNI, teléfono o email y, si el texto tiene dígitos, también por DNI/teléfono normalizados. Las fechas se comparan por día completo e inclusivo con `created_at >= ?` y `created_at < DATE_ADD(?, INTERVAL 1 DAY)`. El orden pasa a fecha de creación descendente y luego id descendente.
+- `backend/src/controllers/pedidos.controller.js`: `esquemaListar` valida `cliente` (máximo 150), `fecha_desde`/`fecha_hasta` como días `AAAA-MM-DD` reales y rechaza un rango invertido con `400` y el campo afectado. El controlador traslada los filtros al servicio.
+- `frontend/src/pages/PedidosListadoPage.jsx`: reemplaza la maqueta del tablero por el listado real. Muestra contadores sobre el total, filtros de estado/cliente/desde/hasta, tabla con pedido, fecha, cliente, dirección, estado, validación y acción «Ver»/«Revisar», y estados de carga, error, vacío sin pedidos y vacío con filtros.
+- `frontend/src/components/pedidoListado.js`: helpers de presentación para parámetros de filtros, detección de filtros activos, resumen de estados, dirección visible y fecha local. No accede a la API.
+- `frontend/src/pages/PedidosListadoPage.css`: ajustes de filtros y tabla del tablero; reutiliza las clases visuales existentes.
+- `frontend/src/App.jsx`: la ruta `/` usa `PedidosListadoPage`; se retiraron del tablero el filtro de chofer y el botón de agrupamiento de envíos lejanos de la maqueta, porque asignación y agrupamiento pertenecen a otros alcances.
+- Pruebas: 5 casos backend nuevos (consulta por estado/cliente/fechas, listado sin filtros, traslado del controlador, fechas inválidas/rango invertido y HTTP con filtros/400) y 6 frontend nuevos (parámetros, filtros activos, resumen, dirección, fecha y contrato de `listarPedidos`).
+- Documentación: `frontend/specs/listado-pedidos.md`, `docs/pantallas.md`, `docs/arquitectura.md` y este apartado.
+
+Criterios cumplidos: el listado sin filtros devuelve todos los pedidos; los filtros por estado, cliente y rango de fechas se combinan con AND y usan SQL parametrizado. El cliente se encuentra por nombre, DNI con o sin puntos, teléfono o email. El rango es inclusivo por día; una fecha inexistente, con formato inválido o un rango invertido responde `400` con el campo afectado. La pantalla muestra contadores reales sobre el total, tabla y accesos al detalle; los estados vacíos distinguen «sin pedidos» de «sin coincidencias». Sin token responde `401` y el chofer `403`. Backend 125/125, frontend 30/30, lint y build de Vite OK; smoke real: filtros por nombre, DNI con puntos, estado, fechas y combinación, además de 400 y guardas de rol, con limpieza de los datos sintéticos.
+
+No cumplidos / límites: no se probó en navegador ni con Docker; no hay prueba de interacción DOM ni verificación visual responsive, así que la pantalla se acredita con pruebas de funciones puras, lint, build y smoke de API. No hay paginación ni exportación. El filtro de fecha se interpreta en la zona horaria de MySQL/servidor, que no se normaliza en esta tarea. Los contadores «entregados o pagados» agrupan ambos estados sin afirmar que sean equivalentes; la definición de entrega y acreditación de pago sigue en D04/D09. D08 (obligatoriedad del DNI) y D11 (fusión de duplicados) siguen abiertos. El acceso visual a la demo remota sigue pendiente (D15).
+
+Siguiente paso: punto 6 cerrado y aceptado por el usuario. Corregir los hallazgos de presentación de la validación geográfica que surgieron al probarlo (apartado siguiente). No hacer commit, push, merge ni deploy sin pedido explícito.
+
+## Corrección de la validación geográfica en la carga (21/10/2026)
+
+Estado: implementado y verificado técnicamente en frontend, con smoke real contra MySQL 8.0 local y el proveedor Nominatim; probado por el usuario el 21/10/2026, que confirmó que el mapa ya muestra calles y reportó los dos ajustes del apartado siguiente. Sin cambios de esquema, `database/init.sql`, backend ni contrato API. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: al probar el punto 6, el usuario reportó que al guardar un pedido el mapa Leaflet se actualizaba pero no mostraba calles, que no entendía qué hacía «Geocodificar dirección», que «Confirmar ubicación y habilitar despacho» parecía bloqueado aunque los pedidos se creaban, y que «Cargar otro pedido» actualizaba los campos.
+
+Diagnóstico: el defecto visual del mapa estaba en `MapPreview`: convertía `latitud` y `longitud` con `Number()`. Para un pedido recién guardado, ambas columnas son `null`, y `Number(null)` devuelve `0`; el mapa se montaba en el océano (0,0) en lugar de mostrar el estado sin coordenadas. La geocodificación y la confirmación del backend funcionaban: una dirección real devuelve un punto y habilita la confirmación; una dirección inexistente deja el pedido `PENDIENTE` y la confirmación responde `409`. Guardar crea un borrador `EN STOCK` por diseño (D09 pendiente), por eso el pedido existe aunque la dirección no esté confirmada.
+
+Cambios y archivos:
+- `frontend/src/components/mapa.js`: helper `coordenadasDeMapa()` que rechaza `null`, `undefined`, texto vacío, valores no numéricos y coordenadas fuera de rango. Acepta explícitamente `0,0` cuando el dato existe; no confunde el origen con un dato faltante.
+- `frontend/src/components/MapPreview.jsx`: usa el helper, muestra el placeholder «Sin coordenadas todavía» cuando corresponde y recentra el mapa cuando cambian las coordenadas. La URL de teselas pasa a `https://tile.openstreetmap.org/{z}/{x}/{y}.png`.
+- `frontend/src/pages/PedidosCargaPage.jsx`: `puedeConfirmar` se calcula con los estados `VALIDA`/`CON_ADVERTENCIAS` (regla posteriormente restringida a `VALIDA` en la integración final); el panel explica el estado, muestra un bloque de resultado de la búsqueda (preciso, aproximado, sin resultados o error), aclara que la búsqueda no confirma por sí sola, indica que guardar crea un borrador, renombra la acción a «Buscar dirección en el mapa» y ofrece un enlace a la revisión para corregir la dirección. «Cargar otro pedido» remonta `ClienteSelector` para borrar también su búsqueda interna y muestra «Formulario limpio».
+- `frontend/src/pages/PedidoRevisionDetallePage.jsx`: usa la misma etiqueta y ayuda para la búsqueda, y explica por qué la confirmación puede estar deshabilitada.
+- `frontend/src/pages/Pedidos.css`: estilos para la ayuda, el bloque de resultado y la nota de guardado.
+- `frontend/src/components/mapa.test.js`: 4 casos sobre coordenadas faltantes, inválidas, fuera de rango y el origen explícito `0,0`.
+- `frontend/specs/pedidos-carga-revision.md`, `docs/pantallas.md` y `docs/verificacion.md`: criterios y evidencia de la corrección.
+
+Criterios cumplidos: un pedido guardado sin coordenadas muestra el placeholder y no un mapa en (0,0); una búsqueda precisa o aproximada muestra el punto y habilita «Confirmar ubicación y habilitar despacho»; sin resultados o con error no se inventan coordenadas, se muestra el motivo y la confirmación sigue bloqueada; la confirmación humana deja `CONFIRMADA` y `direccion_validada = 1`; «Cargar otro pedido» limpia los campos controlados y la búsqueda del selector. Frontend 34/34, lint y build OK, `npm run check` exit 0; smoke real: borrador `PENDIENTE` sin coordenadas, geocodificación real con punto y confirmación exitosa, y dirección inexistente con `ZERO_RESULTS`, sin coordenadas y confirmación `409`. Tesela de OSM `200 image/png`; Nominatim respondió `OK` para una dirección real y `ZERO_RESULTS` para una inexistente.
+
+No cumplidos / límites: el usuario confirmó visualmente que el mapa ya muestra calles; no se probó visualmente el bloque de resultado, el recentrado ni el viewport móvil. No hay prueba de interacción DOM, así que el mapa y los textos se acreditan con la prueba de la función pura, lint, build, revisión de código y smoke de API. El mapa depende de Internet para cargar teselas y Nominatim tiene límites de uso. La creación de un borrador antes de validar sigue siendo el comportamiento vigente; exigir la geocodificación para crear el pedido sería un cambio de alcance que requiere definición (D09). D08 y D11 siguen abiertos.
+
+Siguiente paso: el usuario confirmó que el mapa ya muestra calles; quedan los ajustes de búsqueda automática y estado visual del botón, registrados a continuación. No hacer commit, push, merge ni deploy sin pedido explícito.
+
+## Ajuste de búsqueda automática y estado del botón de confirmación (21/10/2026, aceptado 22/10/2026)
+
+Estado: implementado y verificado técnicamente en frontend; probado y confirmado por el usuario el 22/10/2026. Sin cambios de esquema, `database/init.sql`, backend ni contrato API. Responsable: Julián (pedido del equipo) sobre la rama `feature/clientes-registro-pedidos-duplicados`. Sin commit, push ni deploy. Verificación en [verificación](verificacion.md).
+
+Motivo: al probar la corrección anterior, el usuario confirmó que el mapa ya muestra las calles, pero reportó que era tedioso tocar «Buscar dirección en el mapa» manualmente después de guardar, y que el botón «Confirmar ubicación y habilitar despacho» seguía viéndose deshabilitado aunque ya se podía clickear y confirmaba correctamente.
+
+Diagnóstico: la búsqueda sólo se disparaba desde el botón; el guardado no la iniciaba. El estado lógico del botón era correcto para la regla de ese momento (`disabled` dependía de `VALIDA`/`CON_ADVERTENCIAS`; la integración final lo restringió a `VALIDA` con coordenadas), pero `App.css` tenía `.confirm-button` con `background: #9bb5f5` y `cursor: not-allowed` para todos los estados. Por eso un botón habilitado conservaba la apariencia de deshabilitado. No era un problema del backend ni de la confirmación.
+
+Cambios y archivos:
+- `frontend/src/pages/PedidosCargaPage.jsx`: la búsqueda se extrajo a `buscarDireccion(id)`. Después de crear el pedido (incluida la creación tras confirmar un duplicado), se ejecuta automáticamente con el id devuelto, sin bloquear el alta: si la búsqueda falla, el pedido ya está guardado y se informa «El pedido se guardó, pero no se pudo buscar la dirección». El botón «Buscar dirección en el mapa» queda para reintentar. Mientras busca, el panel muestra «Buscando la dirección en OpenStreetMap…» y deshabilita las acciones que podrían pisar el resultado.
+- `frontend/src/components/MapPreview.jsx`: acepta `buscando` para mostrar el estado de búsqueda en el placeholder, en lugar de pedir una acción manual mientras la búsqueda automática está en curso.
+- `frontend/src/App.css`: `.confirm-button` ahora se ve azul y con cursor de acción cuando está habilitado; sólo `:disabled` usa el azul claro, el cursor bloqueado y sin sombra. Esto corrige la apariencia sin cambiar la lógica de habilitación.
+- `frontend/src/pages/Pedidos.css`: los botones deshabilitados del panel geográfico se atenúan y muestran cursor bloqueado.
+- `frontend/specs/pedidos-carga-revision.md`, `docs/pantallas.md` y `docs/verificacion.md`: criterios y evidencia del ajuste.
+
+Criterios cumplidos: al guardar un pedido, la búsqueda en OpenStreetMap comienza sin una segunda acción del operador. El botón manual sigue disponible para reintentar. Si el proveedor devuelve un punto, el botón de confirmación se ve azul y habilitado; si no hay punto o hay error, sigue deshabilitado y atenuado. La confirmación sigue siendo humana y no se habilitó el despacho automáticamente. Frontend 34/34, lint y build OK; `npm run check` exit 0 con backend 125/125. La búsqueda automática y el cambio visual se acreditan con revisión de código y build; no hay prueba de interacción DOM.
+
+No cumplidos / límites: el usuario confirmó visualmente el 22/10/2026 que la búsqueda automática y el estado visual del botón funcionan en el flujo de carga. No se probó en viewport móvil. No hay prueba automatizada de que el guardado dispare la búsqueda ni del color computado del botón, porque el proyecto no tiene arnés de componentes ni de estilos. La búsqueda automática depende de Nominatim y de la red; si falla, el pedido permanece guardado como borrador y el botón permite reintentar. D08, D09 y D11 siguen abiertos.
+
+Siguiente paso: módulo de seis puntos cerrado funcionalmente y aceptado en el flujo probado. Quedan las decisiones abiertas D08, D09 y D11 y la verificación visual pendiente de los puntos 1 a 4; no hacer commit, push, merge ni deploy sin pedido explícito.
+
+## Integración con los aportes de MVP-1 (22/10/2026)
+
+Al rebasar la rama sobre origin/MVP-1 se incorporaron los aportes de validación, problemas de dirección y Georef. Los apartados siguientes conservan el registro de ese trabajo y deben leerse junto con la integración final de los seis puntos.
+
 ## Validación y normalización de direcciones en el flujo de pedidos (continuación de T04/T05, 20/10/2026)
 
 Estado: completada en backend y pruebas. Responsable: agente OpenCode. Sin commit, push ni deploy. Sin cambios de esquema.
@@ -166,7 +341,7 @@ Decisión: si un pedido `CONFIRMADA` recibe la misma dirección escrita distinto
 
 Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 101/101; sin pruebas contra MySQL ni el proveedor real.
 
-Límites y observación pendiente: el frontend todavía habilita confirmar con `CON_ADVERTENCIAS` y no muestra la lista `problemas`; se dejó fuera de esta tarea. No se probó el flujo completo contra contenedores.
+Límites y observación pendiente: el frontend todavía habilita confirmar con `CON_ADVERTENCIAS` y no muestra la lista `problemas`; se dejó fuera de esta tarea. Esta limitación quedó resuelta en la integración final: sólo `VALIDA` con coordenadas habilita Geocodificar y Confirmar, y la carga/revisión muestran `problemas`. No se probó el flujo completo contra contenedores.
 
 Siguiente paso: mostrar `problemas` en las pantallas de carga/revisión, habilitar confirmar sólo con `VALIDA` y probar el flujo contra MySQL/Docker.
 
@@ -212,3 +387,21 @@ Evidencia (detalle en `docs/verificacion.md`): `npm.cmd --prefix backend test` 1
 Límites: no se llamó a Georef real ni se probó contra MySQL/Docker o navegador. No se agregó caché ni límite de uso propio; el timeout es de 3 s por defecto y el navegador nunca consulta Georef. `docker-compose.yml` no reenvía `GEOREF_*`; la configuración se toma de `backend/.env`, igual que las variables de geocodificación actuales.
 
 Siguiente paso: probar en navegador la carga con provincia y sugerencias contra los contenedores y, si hay red, verificar una localidad real de Georef sin datos personales.
+
+## Cierre de la integración en la rama (22/10/2026)
+
+Estado: rebase sobre `origin/MVP-1` completado y seis puntos integrados con los aportes de validación/normalización, problemas de dirección, provincias/localidades y Georef. Sin cambios de esquema, `database/init.sql` ni dependencias nuevas. Responsable: agente OpenCode, con autorización del usuario para commit, push y PR.
+
+Cambios de integración:
+- `backend/src/services/PedidoService.js`: combina la validación y normalización del target con canales de origen, problemas de localidad, detección de duplicados y `problemas` al leer. La regla final es la del target: sólo una dirección `VALIDA` permite geocodificar y confirmar; `CON_ADVERTENCIAS` exige corregir primero.
+- `backend/src/container.js` y `backend/src/config/env.js`: inyectan `localidades` y `ventanaDuplicadosHoras`; `GEOREF_TIMEOUT_MS` usa `leerEnteroPositivo` y se conserva la configuración de duplicados.
+- `frontend/src/pages/PedidosCargaPage.jsx`: conserva clientes, canal, duplicados y búsqueda automática, y suma `ProblemasDireccion`, el enlace «Corregir dirección», provincia/localidad y los motivos de los botones deshabilitados. La búsqueda automática sólo se dispara con `VALIDA`.
+- `frontend/src/pages/PedidoRevisionDetallePage.jsx`: usa la versión del target con problemas, provincia/localidad y motivos de los botones.
+- Pruebas: la suite del target queda en `backend/test/pedidos.test.js`; las pruebas propias de los seis puntos quedan en `backend/test/pedidos-modulo.test.js`. Se actualizaron los fakes de `pedidos-localidad.test.js` y `pedidos.test.js` para `buscarCandidatosDuplicados`.
+- Documentación: D21 queda para provincias/localidades y D22 para canales de origen; arquitectura, pantallas, spec de carga/revisión y verificación se combinaron sin revertir ninguno de los dos aportes.
+
+Evidencia ejecutada: `npm run check` desde la raíz exit 0 (contexto y 7 skills OK, sintaxis backend OK, backend 165/165, lint frontend OK, build OK con 157 módulos); `npm --prefix frontend test` 35/35. El build emite el warning preexistente de chunk mayor a 500 kB.
+
+Límites: no se ejecutó MySQL, Docker, navegador, Nominatim real ni Georef real en esta integración; no hay prueba de interacción DOM ni de estilos computados. El PR queda pendiente de abrir contra `MVP-1`; no se hizo merge ni deploy.
+
+Siguiente paso: publicar la rama, abrir el PR contra `MVP-1` y resolver la revisión del equipo. Las decisiones D08, D09 y D11 siguen abiertas.
