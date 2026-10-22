@@ -1,7 +1,8 @@
 import { api } from './client'
 
-// Acceso a pedidos y clientes. El backend valida rol y formato; acá solo se
-// arma la llamada y se devuelve el dato ya desempaquetado.
+// Acceso a pedidos. El backend valida rol y formato; acá solo se arma la
+// llamada y se devuelve el dato ya desempaquetado. Los clientes viven en
+// api/clientes.js.
 export async function listarPedidos(filtros = {}) {
   const { data } = await api.get('/pedidos', { params: filtros })
   return data.pedidos
@@ -17,6 +18,14 @@ export async function crearPedido(cuerpo) {
   return data
 }
 
+// El backend responde 409 cuando el alta coincide con un pedido existente.
+// Devuelve la lista para mostrarla; cualquier otro error queda vacío.
+export function pedidosDuplicadosDeError(error) {
+  const errorApi = error?.response?.data?.error
+  if (errorApi?.codigo !== 'DUPLICADO_POTENCIAL') return []
+  return Array.isArray(errorApi.posiblesDuplicados) ? errorApi.posiblesDuplicados : []
+}
+
 export async function actualizarDireccion(id, direccion) {
   const { data } = await api.put(`/pedidos/${id}/direccion`, direccion)
   return data
@@ -30,14 +39,4 @@ export async function geocodificarPedido(id) {
 export async function confirmarDireccion(id) {
   const { data } = await api.post(`/pedidos/${id}/confirmar-direccion`)
   return data.pedido
-}
-
-export async function listarClientes(busqueda) {
-  const { data } = await api.get('/clientes', { params: busqueda ? { busqueda } : {} })
-  return data.clientes
-}
-
-export async function crearCliente(cuerpo) {
-  const { data } = await api.post('/clientes', cuerpo)
-  return data
 }

@@ -131,7 +131,9 @@
 .address-alert div { display: grid; gap: 3px; }
 .address-alert b { font-size: 7px; }
 .address-alert span { color: #a96b68; font-size: 6px; line-height: 1.4; }
-.confirm-button { width: 100%; margin-top: 8px; background: #9bb5f5; color: #fff; cursor: not-allowed; }
+.confirm-button { width: 100%; margin-top: 8px; background: #2860ed; color: #fff; cursor: pointer; box-shadow: 0 3px 8px #2860ed26; }
+.confirm-button:hover:not(:disabled) { background: #1e53dc; }
+.confirm-button:disabled { background: #9bb5f5; color: #fff; cursor: not-allowed; box-shadow: none; }
 .correct-button { width: 100%; margin-top: 6px; }
 .safe-note { display: flex; align-items: flex-start; gap: 7px; padding: 0 8px; color: #35465d; }
 .safe-note > span { display: grid; flex: 0 0 16px; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #e7f0ff; color: #4280f5; }

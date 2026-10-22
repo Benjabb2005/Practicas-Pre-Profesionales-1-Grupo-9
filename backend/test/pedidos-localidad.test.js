@@ -35,7 +35,7 @@ function reposPedidosFalsos({ detalle = detalleFixture() } = {}) {
     const capturado = { crear: null, actualizarDireccion: null };
     return {
         capturado,
-        async detectarDuplicados() {
+        async buscarCandidatosDuplicados() {
             return [];
         },
         async crear(datos) {

@@ -1,8 +1,11 @@
-const { noEncontrado, errorValidacion } = require("../lib/errors");
+const { noEncontrado, errorValidacion, conflictoDuplicado } = require("../lib/errors");
 const { ESTADO_INICIAL } = require("../constants/estados");
+const { CANAL_PREDETERMINADO } = require("../constants/canales");
 const { normalizarDireccion: normalizarCamposDireccion } = require("./NormalizadorDireccion");
-const { validarDireccion } = require("./ValidadorDireccion");
+const { validarDireccion, normalizarTexto } = require("./ValidadorDireccion");
 const { normalizarProvincia } = require("../constants/provincias");
+
+const VENTANA_DUPLICADOS_HORAS = 24;
 
 const MENSAJES_LOCALIDAD = Object.freeze({
     LOCALIDAD_NO_ENCONTRADA: "La localidad no figura en el listado oficial de esa provincia. Revisá la escritura o la provincia.",
@@ -66,9 +69,82 @@ function prepararDireccion(direccion) {
     };
 }
 
+// Clave de comparación para el aviso de duplicados. Usa el normalizador de
+// direcciones y además quita tildes, mayúsculas y puntuación para que dos formas
+// de escribir la misma dirección coincidan.
+function claveDireccion(direccion = {}) {
+    const normalizada = normalizarCamposDireccion(direccion);
+    return {
+        calle: normalizarTexto(normalizada.calle),
+        altura: normalizarTexto(normalizada.altura),
+        // CABA y Capital Federal son la misma localidad para comparar.
+        localidad: normalizarTexto(normalizarProvincia(normalizada.localidad) || normalizada.localidad),
+        provincia: normalizarTexto(normalizarProvincia(normalizada.provincia) || normalizada.provincia),
+    };
+}
+
+function tokensDeCalle(valor) {
+    return normalizarTexto(valor).split(" ").filter(Boolean);
+}
+
+// Una inicial ("H.") equivale a la palabra completa que empieza con esa letra
+// ("Hipólito"). Así "Av. H. Yrigoyen" y "Avenida Hipólito Yrigoyen" se reconocen
+// como la misma calle. El aviso siempre queda sujeto a confirmación humana.
+function tokensDeCalleEquivalentes(izquierda, derecha) {
+    if (izquierda.length !== derecha.length) return false;
+    return izquierda.every((token, indice) => {
+        const otro = derecha[indice];
+        if (token.length !== 1 && otro.length !== 1) return token === otro;
+        const inicial = token.length === 1 ? token : otro;
+        const palabraCompleta = token.length === 1 ? otro : token;
+        return palabraCompleta.startsWith(inicial);
+    });
+}
+
+// La altura es imprescindible para considerar que hay una dirección repetida.
+// Si localidad o provincia están cargadas en ambos pedidos, también deben coincidir.
+// El piso/departamento no se compara: dos envíos al mismo edificio siguen siendo
+// candidatos a duplicado y el operador decide.
+function direccionEquivalente(izquierda, derecha) {
+    if (!izquierda.calle || !derecha.calle) return false;
+    if (!izquierda.altura || !derecha.altura) return false;
+    if (izquierda.altura !== derecha.altura) return false;
+    if (!tokensDeCalleEquivalentes(tokensDeCalle(izquierda.calle), tokensDeCalle(derecha.calle))) return false;
+    if (izquierda.localidad && derecha.localidad && izquierda.localidad !== derecha.localidad) return false;
+    if (izquierda.provincia && derecha.provincia && izquierda.provincia !== derecha.provincia) return false;
+    return true;
+}
+
+function resumirDuplicado(fila) {
+    return {
+        id: fila.id,
+        codigo: fila.codigo ?? null,
+        estado: fila.estado,
+        created_at: fila.created_at,
+        direccion_original: fila.direccion_original ?? null,
+    };
+}
+
 // Carga manual y revisión de pedidos. El despacho seguro se apoya en direcciones
 // cuya confirmación es siempre humana; acá nunca se marca una dirección CONFIRMADA.
-function createPedidoService({ pedidos, clientes, localidades }) {
+function createPedidoService({
+    pedidos,
+    clientes,
+    localidades,
+    ventanaDuplicadosHoras = VENTANA_DUPLICADOS_HORAS,
+}) {
+    const ventanaHoras = Number.isInteger(ventanaDuplicadosHoras) && ventanaDuplicadosHoras > 0
+        ? ventanaDuplicadosHoras
+        : VENTANA_DUPLICADOS_HORAS;
+
+    async function buscarDuplicados(clienteId, direccion) {
+        const candidatos = await pedidos.buscarCandidatosDuplicados({ clienteId, ventanaHoras });
+        const clave = claveDireccion(direccion);
+        return candidatos
+            .filter((candidato) => direccionEquivalente(clave, claveDireccion(candidato)))
+            .map(resumirDuplicado);
+    }
+
     return {
         async listar(filtros = {}) {
             return pedidos.listar(filtros);
@@ -83,7 +159,7 @@ function createPedidoService({ pedidos, clientes, localidades }) {
             return { ...detalle, problemas };
         },
 
-        async crear({ cliente_id, canal_origen, observaciones, direccion }, usuarioId) {
+        async crear({ cliente_id, canal_origen, observaciones, direccion, confirmar_duplicado }, usuarioId) {
             const cliente = await clientes.buscarPorId(cliente_id);
             if (!cliente) throw errorValidacion({ cliente_id: "El cliente indicado no existe." });
 
@@ -92,16 +168,18 @@ function createPedidoService({ pedidos, clientes, localidades }) {
             const problemasLocalidad = await advertenciasLocalidad(localidades, preparada);
             const direccionValidada = { ...preparada, estado_validacion: estado };
 
-            const posiblesDuplicados = await pedidos.detectarDuplicados({
-                clienteId: cliente_id,
-                calle: direccionValidada.calle,
-                altura: direccionValidada.altura,
-            });
+            const posiblesDuplicados = await buscarDuplicados(cliente_id, preparada);
+            if (posiblesDuplicados.length && confirmar_duplicado !== true) {
+                throw conflictoDuplicado(
+                    "Ya existe un pedido de este cliente con la misma dirección en la ventana configurada. Revisá el pedido existente y confirmá si querés crear otro.",
+                    posiblesDuplicados
+                );
+            }
 
             const pedidoId = await pedidos.crear({
                 codigo: null,
                 clienteId: cliente_id,
-                canalOrigen: canal_origen || "MANUAL",
+                canalOrigen: canal_origen || CANAL_PREDETERMINADO,
                 estado: ESTADO_INICIAL,
                 observaciones: observaciones ?? null,
                 creadoPor: usuarioId ?? null,
@@ -148,4 +226,10 @@ function createPedidoService({ pedidos, clientes, localidades }) {
     };
 }
 
-module.exports = { createPedidoService, componerDireccionOriginal, cambioRelevante };
+module.exports = {
+    createPedidoService,
+    componerDireccionOriginal,
+    cambioRelevante,
+    claveDireccion,
+    direccionEquivalente,
+};

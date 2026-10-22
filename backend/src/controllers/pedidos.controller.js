@@ -2,6 +2,7 @@ const { z } = require("zod");
 const { validar } = require("../lib/validar");
 const { servicioNoDisponible } = require("../lib/errors");
 const { ESTADOS_VALIDOS } = require("../constants/estados");
+const { CANALES_VALIDOS } = require("../constants/canales");
 
 const ESTADOS_VALIDACION = ["PENDIENTE", "CON_ADVERTENCIAS", "VALIDA", "CONFIRMADA"];
 
@@ -19,17 +20,41 @@ const esquemaDireccion = z.object({
 
 const esquemaCrear = z.object({
     cliente_id: z.coerce.number().int().positive("Elegí un cliente."),
-    canal_origen: textoOpcional(30),
+    canal_origen: z.enum(CANALES_VALIDOS, {
+        errorMap: () => ({ message: "Elegí un canal de origen válido." }),
+    }).optional().nullable(),
     observaciones: z.string().trim().max(2000).optional().nullable(),
+    // Sin esta confirmación explícita, un pedido con posible duplicado no se crea.
+    confirmar_duplicado: z.boolean().optional().default(false),
     direccion: esquemaDireccion,
 });
 
 const esquemaId = z.object({ id: z.coerce.number().int().positive() });
 
+// Las fechas del listado son días completos (AAAA-MM-DD). Se valida que exista
+// la fecha del calendario para no aceptar, por ejemplo, 2026-02-30.
+function esFechaCalendario(texto) {
+    const [anio, mes, dia] = texto.split("-").map(Number);
+    const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+    return fecha.getUTCFullYear() === anio
+        && fecha.getUTCMonth() === mes - 1
+        && fecha.getUTCDate() === dia;
+}
+
+const fechaDia = z.string().trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD.")
+    .refine(esFechaCalendario, "La fecha no es válida.");
+
 const esquemaListar = z.object({
     estado: z.enum(ESTADOS_VALIDOS).optional(),
     estado_validacion: z.enum(ESTADOS_VALIDACION).optional(),
-});
+    cliente: z.string().trim().max(150).optional(),
+    fecha_desde: fechaDia.optional(),
+    fecha_hasta: fechaDia.optional(),
+}).refine(
+    (datos) => !datos.fecha_desde || !datos.fecha_hasta || datos.fecha_desde <= datos.fecha_hasta,
+    { message: "La fecha hasta no puede ser anterior a la fecha desde.", path: ["fecha_hasta"] }
+);
 
 function createPedidosController({ pedidoService, geocodeService }) {
     return {
@@ -39,6 +64,9 @@ function createPedidosController({ pedidoService, geocodeService }) {
             const pedidos = await pedidoService.listar({
                 estado: filtros.estado,
                 estadoValidacion: filtros.estado_validacion,
+                cliente: filtros.cliente,
+                fechaDesde: filtros.fecha_desde,
+                fechaHasta: filtros.fecha_hasta,
             });
             res.json({ pedidos });
         },

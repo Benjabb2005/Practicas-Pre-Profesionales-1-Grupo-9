@@ -2,7 +2,7 @@
 // (borradores, invalidación al cambiar dirección, bloqueo de despacho) vive en los
 // servicios; acá solo hay SQL parametrizado y transacciones cortas.
 const SELECT_DETALLE = `
-    SELECT p.id, p.codigo, p.estado, p.direccion_validada, p.observaciones, p.cliente_id,
+    SELECT p.id, p.codigo, p.estado, p.canal_origen, p.direccion_validada, p.observaciones, p.cliente_id,
            p.created_at, p.updated_at,
            c.nombre AS cliente_nombre, c.telefono AS cliente_telefono, c.email AS cliente_email,
            c.dni AS cliente_dni, c.tipo AS cliente_tipo,
@@ -12,6 +12,25 @@ const SELECT_DETALLE = `
     FROM pedidos p
     LEFT JOIN clientes c ON c.id = p.cliente_id
     LEFT JOIN direcciones d ON d.pedido_id = p.id`;
+
+// Búsqueda de cliente para el listado: nombre, DNI, teléfono o email. Si el
+// texto trae dígitos, también se busca por DNI/teléfono sin puntos ni guiones.
+function condicionesCliente(cliente) {
+    const patron = `%${cliente}%`;
+    const condiciones = [
+        "c.nombre LIKE ?",
+        "c.dni LIKE ?",
+        "c.telefono LIKE ?",
+        "c.email LIKE ?",
+    ];
+    const valores = [patron, patron, patron, patron];
+    const digitos = String(cliente).replace(/\D/g, "");
+    if (digitos) {
+        condiciones.push("c.dni LIKE ?", "c.telefono LIKE ?");
+        valores.push(`%${digitos}%`, `%${digitos}%`);
+    }
+    return { condiciones, valores };
+}
 
 function createPedidoRepository(db) {
     return {
@@ -51,7 +70,9 @@ function createPedidoRepository(db) {
             }
         },
 
-        async listar({ estado, estadoValidacion } = {}) {
+        // Filtros del listado: estado del pedido, estado de validación de la
+        // dirección, texto de cliente y rango de fechas inclusivo por día.
+        async listar({ estado, estadoValidacion, cliente, fechaDesde, fechaHasta } = {}) {
             const condiciones = [];
             const valores = [];
             if (estado) {
@@ -62,11 +83,26 @@ function createPedidoRepository(db) {
                 condiciones.push("d.estado_validacion = ?");
                 valores.push(estadoValidacion);
             }
+            if (cliente) {
+                const busqueda = condicionesCliente(cliente);
+                condiciones.push(`(${busqueda.condiciones.join(" OR ")})`);
+                valores.push(...busqueda.valores);
+            }
+            if (fechaDesde) {
+                condiciones.push("p.created_at >= ?");
+                valores.push(fechaDesde);
+            }
+            if (fechaHasta) {
+                // El día "hasta" se incluye completo: se compara contra el
+                // comienzo del día siguiente, sin sumar horas a mano.
+                condiciones.push("p.created_at < DATE_ADD(?, INTERVAL 1 DAY)");
+                valores.push(fechaHasta);
+            }
             const where = condiciones.length ? `WHERE ${condiciones.join(" AND ")}` : "";
             const [filas] = await db.query(
                 `${SELECT_DETALLE}
                  ${where}
-                 ORDER BY p.id DESC`,
+                 ORDER BY p.created_at DESC, p.id DESC`,
                 valores
             );
             return filas;
@@ -91,17 +127,21 @@ function createPedidoRepository(db) {
             return { ...pedido, intentos };
         },
 
-        // Potenciales duplicados: mismo cliente y misma dirección, sin fusionar ni bloquear.
-        async detectarDuplicados({ clienteId, calle, altura, exceptoId = null }) {
-            if (!clienteId || !calle) return [];
+        // Candidatos para detectar pedidos duplicados: mismo cliente y creados dentro
+        // de la ventana configurada. La comparación normalizada se hace en el servicio
+        // porque depende de reglas de texto que conviene mantener fuera del SQL.
+        async buscarCandidatosDuplicados({ clienteId, ventanaHoras, exceptoId = null }) {
+            if (!clienteId) return [];
             const [filas] = await db.query(
-                `SELECT p.id, p.codigo, p.estado
+                `SELECT p.id, p.codigo, p.estado, p.created_at, d.direccion_original,
+                        d.calle, d.altura, d.localidad, d.provincia
                  FROM pedidos p
                  JOIN direcciones d ON d.pedido_id = p.id
-                 WHERE p.cliente_id = ? AND d.calle = ? AND (d.altura <=> ?) AND p.id <> ? AND p.estado <> 'PAGADO'
-                 ORDER BY p.id DESC
-                 LIMIT 5`,
-                [clienteId, calle, altura ?? null, exceptoId ?? 0]
+                 WHERE p.cliente_id = ?
+                   AND p.created_at >= NOW() - INTERVAL ? HOUR
+                   AND p.id <> ?
+                 ORDER BY p.created_at DESC, p.id DESC`,
+                [clienteId, ventanaHoras, exceptoId ?? 0]
             );
             return filas;
         },

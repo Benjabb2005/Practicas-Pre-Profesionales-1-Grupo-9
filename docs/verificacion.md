@@ -172,6 +172,198 @@ El backend del contenedor se reinició (`docker compose restart backend`) para t
 
 Límites: el flujo en navegador y la geocodificación real con Nominatim siguen sin ejecutarse. El aviso de duplicados es informativo y no fusiona (D09/D11 pendientes); el DNI duplicado sí bloquea porque identifica al cliente. El smoke dejó datos de prueba en la base de desarrollo: cliente id 1 (DNI `30111222`) y pedido id 1; no se borraron para no usar operaciones destructivas.
 
+## ABM de clientes (20/10/2026, OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0. No se modificó el esquema ni `database/init.sql`. La verificación combina servicios, contrato HTTP con base vacía simulada, capa API del frontend y un smoke real contra MySQL 8.0 local (base `mandatodo`, migración `001_esquema_inicial.sql` y seed). No se usó Docker en esta sesión.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Instalación reproducible | `npm.cmd ci --prefix backend` y `npm.cmd ci --prefix frontend` | Lockfiles respetados; no se modificaron versiones. `npm audit` reporta 6 vulnerabilidades en backend (5 altas, 1 crítica) y 2 altas en frontend, preexistentes; no se ejecutó `npm audit fix` |
+| Pruebas backend | `npm.cmd --prefix backend test` | 100/100, incluye normalización de DNI/teléfono, conflicto por DNI, aviso de coincidencias sin fusionar, actualización, baja bloqueada por pedidos, baja inexistente, búsqueda por dígitos, mensaje público de `AppError` y guardas 401/403/400 |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 15/15 (Vitest), incluye capa API de clientes, mensaje de conflicto y 3 casos de contacto/precarga del cliente en la carga |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | Sin errores |
+| Build frontend | `npm.cmd --prefix frontend run build` | OK, 150 módulos, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Pasó de punta a punta: contexto y 7 skills, sintaxis backend, 100/100 tests, lint y build de Vite; exit 0 |
+| Preparación MySQL local | `npm.cmd run migrate` y `npm.cmd run seed` en `backend/` | Base `mandatodo` creada vacía; migración `001_esquema_inicial.sql` aplicada; usuarios admin/operador/chofer creados sin imprimir contraseñas |
+| Arranque nativo | `npm.cmd start` en `backend/` | `Servidor funcionando en http://localhost:3000` y `Conexión a MySQL exitosa` |
+| Smoke ABM real | App Express con pool MySQL local en puerto efímero: health, login, listado, alta, DNI repetido, edición y baja | Health 200; login 200; listado inicial 200 con 0 clientes; alta 201; DNI repetido 409; edición 200; baja 204; listado final 200 con 0. Cliente de prueba eliminado |
+| Mensajes 409 reales | Repetición del alta con DNI existente y baja de un cliente con pedido | DNI repetido: `{"codigo":"CONFLICTO","mensaje":"Ya existe un cliente con ese DNI."}`. Baja con pedido: `{"codigo":"CONFLICTO","mensaje":"No se puede eliminar un cliente con pedidos asociados."}`. Se corrigió `AppError`, que no exponía `mensaje`, y se agregaron pruebas |
+| Proxy Vite | `GET http://localhost:5173/api/health` con backend en 3000 y Vite en 5173 | 200; `{"estado":"ok","servicios":{"http":"ok","db":"ok"}}` |
+
+Cobertura de los criterios del ABM: búsqueda por nombre/DNI/teléfono/email, alta y edición con normalización, DNI duplicado como conflicto, teléfono/email repetido como aviso, baja sólo sin pedidos y guardas de rol. El smoke real cubrió health, login, listado, alta, DNI repetido, edición, baja sin pedidos y los mensajes 409 de DNI repetido y baja con pedido. La baja con pedidos se ejecutó contra MySQL real creando y limpiando un pedido de prueba; el caso de carrera que dispara `ER_ROW_IS_REFERENCED_2` no se provocó y queda cubierto sólo por la traducción del servicio.
+
+Límites: no se probó con Docker ni en navegador; no hay prueba end-to-end de interfaz ni verificación visual responsive. La búsqueda SQL, el ABM y los mensajes 409 se probaron contra MySQL 8.0 local, no contra el contenedor 8.4. El error de FK por carrera al borrar no se provocó. D07 queda implementada localmente por pedido del equipo, con validación académica pendiente.
+
+## Búsqueda de clientes en la carga de pedido — punto 2 (20/10/2026, OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0 y MySQL 8.0 local. El backend ya resolvía `GET /api/clientes?busqueda=` por nombre, DNI, teléfono, email y código; esta tarea completó la experiencia visible del selector y su evidencia. No se modificó el esquema, `database/init.sql` ni el contrato de la API.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 15/15 (4 archivos); 3 casos nuevos de `contactoDeCliente` y precarga de `datosDeCliente` |
+| Pruebas backend | `npm.cmd --prefix backend test` | 100/100; incluye la búsqueda por los dígitos del texto para DNI y teléfono |
+| Lint y build | `npm.cmd --prefix frontend run lint` y `npm.cmd --prefix frontend run build` | Sin errores; 150 módulos, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills, sintaxis backend, 100/100 tests, lint y build; exit 0 |
+| Smoke real de búsqueda | App Express con pool MySQL local en puerto efímero: alta de 2 clientes sintéticos y `GET /api/clientes?busqueda=` | DNI sintético formateado con puntos, nombre, teléfono con guiones, DNI parcial y texto inexistente: encontró los clientes esperados y no devolvió resultados para el texto inexistente |
+| Pedido con cliente recuperado | `POST /api/pedidos` con el `cliente_id` del cliente encontrado y una dirección sintética | 201; `pedidos.cliente_id` correcto; el conteo de clientes quedó igual antes y después, sin alta duplicada |
+| Limpieza | `DELETE` del pedido y de los clientes sintéticos | Datos de prueba eliminados; no se tocaron los clientes preexistentes |
+
+Cobertura del punto 2: búsqueda por DNI con puntos, nombre, teléfono con guiones y DNI parcial; selección de un cliente existente para crear el pedido sin un alta adicional; estados de carga, sin coincidencias y error del selector; y precarga de los campos editables del cliente. La lógica visible se acredita con pruebas de las funciones puras y con el smoke de la API; no hay prueba de interacción DOM porque el proyecto no tiene un arnés de componentes React.
+
+Límites: no se probó en navegador ni con Docker; no se verificó visualmente el selector en escritorio ni en móvil. La detección de clientes duplicados (punto 3) y el aviso de pedidos duplicados (punto 5) siguen pendientes y no se probaron como si estuvieran terminados. D11 sigue abierto: no se fusionan clientes.
+
+## Detección de clientes duplicados — punto 3 (20/10/2026, OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0 y MySQL 8.0 local. No se modificó el esquema ni `database/init.sql`. El smoke usó una app Express con el pool local en un puerto efímero y datos sintéticos; no se tocaron clientes preexistentes.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Normalización de DNI | `normalizarDni()` con puntos, espacios y guiones | `20.123.456`, `20 123 456` y `20-123-456` devuelven `20123456`; barras y letras devuelven `null` |
+| Pruebas backend | `npm.cmd --prefix backend test` | 105/105; incluye 5 casos nuevos de normalización, rechazo de letras, DNI repetido con formatos distintos, aviso al actualizar y exclusión del propio cliente |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 18/18 (4 archivos); 3 casos nuevos de `describirCoincidenciasClientes` |
+| Lint y build | `npm.cmd --prefix frontend run lint` y `npm.cmd --prefix frontend run build` | Sin errores; 150 módulos, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills OK; sintaxis backend OK; 105/105 tests; lint y build OK; exit 0 |
+| Alta con DNI con puntos | `POST /api/clientes` con DNI `79.xxx.xxx`, teléfono con guiones y email sintético | 201; DNI y teléfono normalizados a dígitos; `posiblesDuplicados` vacío |
+| Edición del mismo cliente | `PUT /api/clientes/:id` con los mismos datos | 200; el cliente no se avisó a sí mismo como duplicado |
+| Teléfono compartido | `POST /api/clientes` con otro DNI y el mismo teléfono | 201; `posiblesDuplicados` incluye al primer cliente con su `nombre` y `dni`; no se fusionó |
+| Email compartido | `POST /api/clientes` con otro DNI y el mismo email en mayúsculas y con espacios | 201; `posiblesDuplicados` incluye al primer cliente con su `nombre` y `dni`; no se fusionó |
+| DNI repetido con otro formato | `POST /api/clientes` con el DNI del primer cliente escrito con espacios | 409; mensaje `Ya existe un cliente con ese DNI.`; no se creó otro cliente |
+| DNI con letras | `POST /api/clientes` con una letra intercalada en el DNI | 400; el error informa el campo `dni`; no se creó el cliente |
+| Separación de registros | Búsquedas por teléfono y email compartidos | Aparecen los ids de los clientes separados; el primer cliente conserva su email original |
+| Limpieza | `DELETE` de los ids sintéticos y búsqueda por la marca usada | 3 clientes sintéticos eliminados; búsqueda final sin restos; no se borraron datos preexistentes |
+
+Cobertura del punto 3: DNI idéntico tras normalizar, rechazo de caracteres no admitidos, aviso por teléfono y email con nombre y DNI del otro cliente, exclusión del propio cliente en ediciones y ausencia de fusión. La interfaz se acredita con pruebas de las funciones puras, lint, build y el smoke de API; no hay prueba de interacción DOM porque el proyecto no tiene un arnés de componentes React.
+
+Límites: no se probó en navegador ni con Docker; no se verificó visualmente el aviso en escritorio ni en móvil. El teléfono conserva la normalización preexistente que quita todo carácter no numérico; la validación estricta de separadores se aplicó al DNI. D08 (obligatoriedad del DNI) y D11 (resolución/fusión de duplicados) siguen abiertos; no se fusionan clientes. El aviso de pedidos duplicados (punto 5) no se implementó ni se probó como terminado.
+
+## Registro manual de pedidos — punto 4 (20/10/2026, OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0 y MySQL 8.0 local. No se modificó el esquema ni `database/init.sql`. El smoke usó una app Express con el pool local en un puerto efímero, un cliente y pedidos sintéticos, y limpió sólo sus propios registros.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Catálogo y validación | `POST /api/pedidos` con `canal_origen` `WHATSAPP` (smoke) y `CORREO` (prueba del controlador); valor fuera de la lista | Los válidos se aceptan; `PALOMA` responde 400 con `campos.canal_origen` y no crea pedido |
+| Estado impuesto | Alta con `estado: "PAGADO"` en el cuerpo | El pedido se crea igual en `EN STOCK`; el controlador no reenvía `estado` al servicio |
+| Pruebas backend | `npm.cmd --prefix backend test` | 109/109; incluye canal y observaciones persistidos, predeterminado `MANUAL`, estado ignorado, canal inválido 400, chofer 403 |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 22/22 (6 archivos); incluye catálogo/etiquetas, fallback y contrato del alta |
+| Lint y build | `npm.cmd --prefix frontend run lint` y `npm.cmd --prefix frontend run build` | Sin errores; 151 módulos transformados, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills OK; sintaxis backend OK; 109/109 tests; lint y build OK; exit 0 |
+| Pedido con canal y observaciones | Alta real con cliente sintético, `canal_origen: "WHATSAPP"` y observaciones | 201; detalle y fila MySQL con `EN STOCK`, `canal_origen = WHATSAPP`, observaciones y dirección `PENDIENTE`; `direccion_validada = 0` |
+| Pedido sin canal | Alta real sin `canal_origen` | 201; persiste `MANUAL` y sigue en `EN STOCK` |
+| Validaciones de entrada | Canal inválido y observaciones de 2001 caracteres | 400 en ambos casos, campo informado y conteo de pedidos sin cambios |
+| Autorización | Alta sin token y con token de CHOFER | 401 y 403 respectivamente; no se creó pedido |
+| Limpieza | Borrado de los pedidos sintéticos y del cliente de prueba | Conteos finales sin registros de la marca sintética; no se tocaron datos preexistentes |
+
+Cobertura del punto 4: elección o alta de cliente ya existente, canal de origen validado y persistido, observaciones persistidas, estado inicial `EN STOCK` no manipulable desde el cliente, resumen visible del canal y del estado, y guardas de rol. La interfaz se acredita con pruebas de funciones puras, lint, build y el smoke de API; no hay prueba de interacción DOM porque el proyecto no tiene un arnés de componentes React.
+
+Límites: no se probó en navegador ni con Docker; no se verificó visualmente el selector ni el resumen en escritorio o móvil. El catálogo de canales (D22) es una adopción local basada en el contexto y debe confirmarse con el cliente. El punto 5 (aviso de pedidos duplicados con confirmación explícita) sigue pendiente; la lista informativa existente no se considera terminada. D08 y D11 siguen abiertos.
+
+## Aviso de pedidos duplicados — punto 5 (21/10/2026, OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0 y MySQL 8.0 local. No se modificó el esquema ni `database/init.sql`. El smoke usó una app Express con el pool local en un puerto efímero, dos clientes y pedidos sintéticos, y limpió sólo sus propios registros.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` | 120/120; incluye dirección normalizada equivalente, confirmación explícita, altura/localidad distintas, ausencia de altura, ventana configurable, configuración por entorno, error y middleware, consulta de candidatos y confirmación no booleana |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 24/24 (6 archivos); incluye reenvío de `confirmar_duplicado` y extracción de `posiblesDuplicados` del conflicto |
+| Lint y build | `npm.cmd --prefix frontend run lint` y `npm.cmd --prefix frontend run build` | Sin errores; 151 módulos transformados, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills OK; sintaxis backend OK; 120/120 tests; lint y build OK; exit 0 |
+| Configuración de Compose | `docker compose config --quiet` | Parsea correctamente; sólo avisa por variables de entorno no definidas en esta sesión |
+| Configuración | `loadEnv` con `DUPLICADOS_VENTANA_HORAS` ausente, `6` y `0` | 24 h por defecto, 6 h configuradas y vuelta a 24 ante un valor inválido |
+| Comparación normalizada | `claveDireccion` y `direccionEquivalente` | «Av. H. Yrigoyen» y «Avenida Hipólito Yrigoyen» coinciden; 1234 y 1235 no; CABA y Capital Federal se asimilan |
+| Consulta de candidatos | Repositorio con `db.query` falso | Filtra por `cliente_id` y `INTERVAL ? HOUR`; no excluye `PAGADO`; devuelve dirección y fecha |
+| Aviso sin crear | `POST /api/pedidos` con dirección equivalente dentro de la ventana | `409 DUPLICADO_POTENCIAL`; `posiblesDuplicados` con el pedido existente; conteo del cliente sin cambios |
+| Confirmación explícita | Mismo alta con `confirmar_duplicado: true` | `201`; crea exactamente un pedido y devuelve la coincidencia |
+| Casos que no avisan | Otra altura, otro cliente, otra localidad, sin altura | `201` con `posiblesDuplicados: []` en cada caso |
+| Ventana | Pedido actualizado a `NOW() - INTERVAL 3 DAY`, luego alta equivalente | `201` sin aviso, porque queda fuera de las 24 h |
+| Reintento y validación | Alta equivalente sin confirmar después de crear; `confirmar_duplicado: "true"` | `409` sin escritura; `400` por confirmación no booleana |
+| Autorización | Alta sin token y con token de CHOFER | `401` y `403`, respectivamente; sin escrituras |
+| Limpieza | Borrado de los pedidos y clientes sintéticos, y verificación por marca | Sin restos; no se tocaron datos preexistentes |
+
+Cobertura del punto 5: mismo cliente y dirección normalizada dentro de una ventana configurable, aviso con el pedido existente, bloqueo del alta hasta la confirmación explícita, confirmación que crea el pedido, descarte del aviso al cambiar datos y exclusión de casos que no son el mismo domicilio. La interfaz se acredita con pruebas de las funciones puras, lint, build y smoke de API; no hay prueba de interacción DOM porque el proyecto no tiene un arnés de componentes React.
+
+Límites: no se probó en navegador ni con Docker; no se verificó visualmente el aviso ni sus botones en escritorio o móvil. La ventana de 24 h es configurable y queda pendiente de confirmación con el cliente. La comparación tolera iniciales y abreviaturas, pero no separa calle y altura escritas en un solo campo. D11 sigue abierto en la resolución/fusión: no se fusionan pedidos ni clientes. D08 sigue abierto.
+
+## Listado de pedidos — punto 6 (21/10/2026, OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0 y MySQL 8.0 local. No se modificó el esquema ni `database/init.sql`. El smoke usó una app Express con el pool local en un puerto efímero, un cliente y dos pedidos sintéticos, y limpió sólo sus propios registros.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas backend | `npm.cmd --prefix backend test` | 125/125; incluye consulta de listado con estado/cliente/fechas, listado sin filtros, traslado del controlador, fechas inválidas/rango invertido y HTTP con filtros/400 |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 30/30 (7 archivos); incluye parámetros de filtros, filtros activos, resumen por estado, dirección/fecha y contrato de `listarPedidos` |
+| Lint y build | `npm.cmd --prefix frontend run lint` y `npm.cmd --prefix frontend run build` | Sin errores; 154 módulos transformados, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills OK; sintaxis backend OK; 125/125 tests; lint y build OK; exit 0. Las pruebas de frontend se ejecutaron aparte con 30/30 |
+| Formato del diff | `git diff --check` | Sin errores; sólo avisos preexistentes de finales de línea CRLF en archivos ya tocados |
+| Consulta del repositorio | `db.query` falso con estado, cliente `20.123`, desde y hasta | SQL parametrizado con `p.estado`, `c.nombre`/`c.dni`/`c.telefono`/`c.email`, dígitos normalizados, `p.created_at >= ?` y `p.created_at < DATE_ADD(?, INTERVAL 1 DAY)`; orden por fecha e id descendente |
+| Listado sin filtros | Repositorio con `db.query` falso | No agrega `WHERE`; valores vacíos |
+| Traslado del controlador | `GET` simulado con cliente `"  Juan Pérez  "` y fechas | El servicio recibe `cliente: "Juan Pérez"`, `fechaDesde` y `fechaHasta` en camelCase |
+| Fechas inválidas | `2026-02-30` y rango `2026-10-21` → `2026-10-20` | `400 DATOS_INVALIDOS` con `campos.fecha_desde` y `campos.fecha_hasta`, respectivamente |
+| Listado HTTP | Admin autenticado con estado, cliente y rango de fechas | `200`; la consulta SQL recibe los filtros; rango invertido `400` |
+| Filtro por nombre | Pedidos sintéticos de un cliente con nombre único | Devuelve los dos pedidos, sin pedidos de otros clientes |
+| Filtro por DNI | Mismo cliente buscado con puntos (`76.123.456`) | Encuentra los pedidos porque la consulta también usa los dígitos |
+| Filtro por estado | `EN PREPARACIÓN` sobre los pedidos sintéticos | Devuelve sólo el pedido en ese estado |
+| Filtro por fecha | Día actual y hace dos días, rango inclusivo | Cada rango devuelve sólo el pedido correspondiente; no se mezclan |
+| Filtros combinados | Cliente con DNI, estado `EN STOCK` y fecha de hace dos días | Devuelve sólo el pedido esperado |
+| Fechas rechazadas en smoke | Rango invertido y `2026-02-30` | `400` con el campo afectado; no se muestran resultados como éxito |
+| Autorización | Listado sin token y con token de CHOFER | `401` y `403`, respectivamente |
+| Limpieza | Borrado de pedidos y cliente sintéticos y verificación por marca | Sin restos; no se tocaron datos preexistentes |
+
+Cobertura del punto 6: listado real en el tablero, filtros combinables por estado, cliente y rango de fechas, búsqueda de cliente por nombre/DNI/teléfono/email, contadores sobre el total, estados de carga/error/vacío y acceso al detalle. La interfaz se acredita con pruebas de funciones puras, lint, build y smoke de API; no hay prueba de interacción DOM porque el proyecto no tiene un arnés de componentes React. El usuario confirmó el punto 6 el 21/10/2026 y reportó los hallazgos de validación geográfica corregidos en el apartado siguiente.
+
+Límites: no se probó en navegador ni con Docker; no se verificó visualmente el tablero, los filtros ni la tabla en escritorio o móvil. No hay paginación ni exportación. El rango de fechas se interpreta con la zona horaria de MySQL/servidor y no se normaliza en esta tarea. La etiqueta «entregados o pagados» agrupa ambos estados sin afirmar equivalencia; la definición de entrega y acreditación de pago sigue en D04/D09. D08 (obligatoriedad del DNI) y D11 (fusión de duplicados) siguen abiertos. El smoke está en `temp/smoke-punto6.cjs`, que está ignorado por Git.
+
+## Corrección de la validación geográfica — 21/10/2026 (OpenCode)
+
+Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node v24.21.0 y MySQL 8.0 local. No se modificó el esquema, `database/init.sql`, el backend ni el contrato API. El smoke creó un cliente y dos pedidos sintéticos, usó el proveedor real Nominatim y limpió sólo sus propios registros.
+
+Diagnóstico: en `frontend/src/components/MapPreview.jsx`, `Number(null)` devuelve `0`. Un pedido recién guardado tiene `latitud` y `longitud` nulas, por lo que el mapa se montaba en (0,0) en lugar de mostrar el placeholder. No era un fallo de las teselas ni del proveedor: OpenStreetMap y Nominatim respondieron correctamente.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 34/34 (8 archivos); incluye 4 casos de `coordenadasDeMapa` con `null`, `undefined`, vacío, texto inválido, fuera de rango y `0,0` explícito |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | Sin errores |
+| Build frontend | `npm.cmd --prefix frontend run build` | OK, 155 módulos transformados, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills OK; sintaxis backend OK; backend 125/125; lint y build frontend OK; exit 0 |
+| Tesela de OpenStreetMap | `https://tile.openstreetmap.org/16/22179/36414.png` | `200 image/png`, 4890 bytes |
+| Nominatim, dirección real | `Av. Corrientes 1234, CABA, Argentina` | `OK` con latitud/longitud y confianza `ALTO` |
+| Nominatim, dirección inexistente | `Calle Falsa 99999, CABA, Argentina` | `ZERO_RESULTS`, sin coordenadas |
+| Borrador real | `POST /api/pedidos` con dirección válida | `201`; `latitud`/`longitud` nulas, `PENDIENTE`, `direccion_validada = 0` |
+| Búsqueda real | `POST /api/pedidos/:id/geocodificar` | `200`; `OK` con punto y `estado_validacion` `VALIDA`, condición que habilita el botón de confirmación |
+| Confirmación humana | `POST /api/pedidos/:id/confirmar-direccion` | `200`; `CONFIRMADA` y `direccion_validada` habilitado |
+| Sin resultados | Alta y geocodificación de una dirección inexistente | `ZERO_RESULTS`; sin coordenadas, `PENDIENTE`; confirmar responde `409` |
+| Limpieza | Borrado de pedidos y cliente sintéticos y verificación por marca | Sin restos; no se tocaron datos preexistentes |
+
+Cobertura de la corrección: el mapa no se abre sin coordenadas; el resultado de la búsqueda se informa con un bloque visible y un estado de accesibilidad; sólo un resultado con punto habilita la confirmación; la confirmación sigue siendo humana; «Cargar otro pedido» limpia los campos controlados y remonta el selector para borrar su búsqueda interna. La interfaz se acredita con la prueba de la función pura, lint, build, revisión de código y smoke de API.
+
+Límites: el usuario confirmó visualmente que el mapa ya muestra calles. El ajuste posterior confirmó el flujo de búsqueda automática y el estado del botón; no se verificó específicamente el recentrado ni el viewport móvil, y no hay prueba de interacción DOM. El mapa depende de Internet para las teselas y Nominatim tiene límites de uso; el smoke respetó una pausa entre consultas. Guardar un pedido sigue creando un borrador `EN STOCK` sin exigir geocodificación; cambiarlo requiere una definición de alcance (D09). D08 y D11 siguen abiertos. El smoke está en `temp/smoke-geo-validacion.cjs`, ignorado por Git.
+
+## Ajuste de búsqueda automática y estado visual del botón — 21/10/2026, aceptado 22/10/2026 (OpenCode)
+
+El usuario probó la corrección anterior y confirmó que el mapa ya muestra las calles. Reportó que la búsqueda manual seguía siendo un paso extra y que el botón de confirmación se veía deshabilitado aunque ya estuviera habilitado. No se modificó backend, esquema ni contrato API.
+
+Diagnóstico:
+- La búsqueda sólo se ejecutaba desde el botón; después de `POST /api/pedidos` no había una llamada automática a `POST /api/pedidos/:id/geocodificar`.
+- `App.css` definía `.confirm-button` con `background: #9bb5f5` y `cursor: not-allowed` para todos los estados. El atributo `disabled` y la condición `puedeConfirmar` eran correctos, pero el estilo no distinguía habilitado de deshabilitado. Por eso el botón se podía clickear aunque pareciera bloqueado.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Pruebas frontend | `npm.cmd --prefix frontend test` | 34/34 (8 archivos) |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | Sin errores |
+| Build frontend | `npm.cmd --prefix frontend run build` | OK, 155 módulos transformados, Vite 8.2.2 |
+| Verificación completa | `npm run check` desde la raíz | Contexto y 7 skills OK; backend 125/125; lint y build frontend OK; exit 0 |
+| Revisión de código | `PedidosCargaPage.jsx` | Tras `crearPedido`, se llama `buscarDireccion(data.pedido.id)`; la función también atiende el botón manual y captura sus propios errores sin revertir el alta |
+| Revisión de estilos | `App.css` y CSS compilado | `.confirm-button` habilitado usa azul y cursor normal; `:disabled` usa azul claro, cursor bloqueado y sin sombra. El CSS de `frontend/dist` contiene ambas reglas |
+| Revisión del placeholder | `MapPreview.jsx` | Mientras `buscando` es verdadero muestra «Buscando la dirección en OpenStreetMap…» |
+
+Cobertura del ajuste: el guardado dispara la búsqueda automática cuando la dirección queda `VALIDA`; el botón manual queda como reintento; la búsqueda no bloquea el alta y un fallo informa que el pedido ya quedó guardado; el estado visual del botón ahora coincide con el atributo `disabled`. En la integración final se adoptó la regla del target: sólo `VALIDA` con coordenadas habilita Geocodificar y Confirmar, y la confirmación sigue siendo humana.
+
+El usuario confirmó visualmente el 22/10/2026 que la búsqueda automática y el estado visual del botón funcionan en el flujo de carga. Límites: no se probó en viewport móvil; no hay prueba de interacción DOM ni de estilos computados. La búsqueda automática y el color del botón se acreditan con esa prueba manual, revisión de código, lint, build y la verificación completa. No se repitió el smoke de API porque el backend no cambió; sus resultados de la sección anterior siguen vigentes. La búsqueda automática depende de Nominatim y de la red; si falla, el pedido queda guardado y el botón permite reintentar. D08, D09 y D11 siguen abiertos.
+
+## Integración con los aportes de MVP-1 (22/10/2026, OpenCode)
+
+Al rebasar sobre origin/MVP-1 se incorporaron la validación/normalización, la visualización de problemas y las provincias/localidades con Georef. Las verificaciones siguientes son las del target y se conservan como antecedente; la verificación final de la rama integrada se registra al cierre.
+
 ## Validación y normalización en pedidos (20/10/2026, OpenCode)
 
 Ejecutado sin base de datos ni proveedor real, con repositorios y adaptadores falsos en las pruebas.
@@ -212,3 +404,19 @@ Verificación ejecutada sobre el checkout local. Georef se reemplazó por un `fe
 Casos cubiertos con proveedor simulado: respuesta válida recortada a 10, HTTP 503, fallo de red, timeout (`AbortError`), respuesta con forma inesperada, provincia canónica en la consulta, deduplicación de sugerencias, `EXISTE`/`NO_EXISTE`/`NO_VERIFICADO`, CABA y Capital Federal, y roles 401/403/200 en `/api/localidades`. También que una localidad inexistente o no verificada queda como ADVERTENCIA y conserva `estado_validacion: VALIDA`, y que no se consulta Georef si la provincia ya es inválida.
 
 Límites de esta verificación: no se probó con MySQL/Docker ni en navegador; no se validó la disponibilidad ni la latencia real de Georef; no se agregó caché ni control de cuota propio.
+
+## Integración final de la rama (22/10/2026, OpenCode)
+
+Verificación ejecutada sobre el checkout rebasado en `origin/MVP-1`, sin base de datos ni proveedores reales.
+
+| Verificación | Comando / método | Resultado |
+| --- | --- | --- |
+| Verificación coordinada | `npm run check` desde la raíz | Exit 0: contexto y 7 skills OK, sintaxis backend OK, backend 165/165, lint frontend OK y build OK |
+| Pruebas frontend | `npm --prefix frontend test` | 35/35 (8 archivos) |
+| Build frontend | incluido en `npm run check` | Vite 8.2.2, 157 módulos transformados; warning de chunk JS de 501,12 kB (>500 kB), sin error |
+| Integridad del diff | `git diff --check origin/MVP-1...HEAD` | OK, sin errores de espacios ni marcadores de conflicto |
+| Proveedores reales | - | No ejecutado: sin MySQL/Docker, sin Nominatim real y sin Georef real |
+
+Cobertura de la integración: las pruebas del target conservan validación, normalización, problemas, provincias/localidades, bloqueo de geocodificación fuera de `VALIDA`, confirmación sólo con `VALIDA` y coordenadas, e invalidación de coordenadas al corregir. Las pruebas propias conservan clientes, búsqueda, detección de duplicados, canal, aviso de duplicados, listado y la corrección de la búsqueda automática. Los fakes se ajustaron para el nuevo método `buscarCandidatosDuplicados`.
+
+Límites: no se probó el flujo real en navegador, MySQL/Docker, Nominatim ni Georef; no hay prueba de interacción DOM ni de estilos computados. El PR y el push quedan como paso posterior a este registro.
