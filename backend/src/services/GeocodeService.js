@@ -14,7 +14,7 @@ function createGeocodeService({ pedidos, adapter }) {
     return {
         proveedor: adapter.nombre,
 
-        async geocodificar(pedidoId, usuarioId) {
+        async geocodificar(pedidoId, usuarioId, indiceCandidato = null) {
             const detalle = await cargarDetalle(pedidoId);
             if (detalle.estado_validacion === "PENDIENTE") {
                 throw conflicto("Esta dirección todavía no fue revisada. Guardala de nuevo para validarla antes de buscarla en el mapa.");
@@ -44,10 +44,21 @@ function createGeocodeService({ pedidos, adapter }) {
             let nivelConfianza = null;
             let latitud = null;
             let longitud = null;
-            if (salida.resultado === "OK" || salida.resultado === "APPROXIMATE") {
-                nivelConfianza = salida.nivelConfianza || (salida.resultado === "OK" ? "ALTO" : "MEDIO");
-                latitud = salida.latitud;
-                longitud = salida.longitud;
+            const candidatos = salida.candidatos || (
+                Number.isFinite(Number(salida.latitud)) && Number.isFinite(Number(salida.longitud))
+                    ? [{ indice: 0, latitud: Number(salida.latitud), longitud: Number(salida.longitud), nivelConfianza: salida.nivelConfianza || (salida.resultado === "OK" ? "ALTO" : "MEDIO"), direccion: salida.direccion_normalizada || direccionEnviada }]
+                    : []
+            );
+            const seleccionado = indiceCandidato === null
+                ? (candidatos.length === 1 ? candidatos[0] : null)
+                : candidatos.find((candidato) => candidato.indice === indiceCandidato);
+            if (indiceCandidato !== null && !seleccionado) {
+                throw conflicto("La opción elegida ya no está disponible. Volvé a buscar la dirección.");
+            }
+            if (seleccionado) {
+                nivelConfianza = seleccionado.nivelConfianza;
+                latitud = seleccionado.latitud;
+                longitud = seleccionado.longitud;
             }
 
             await pedidos.registrarGeocodificacion({
@@ -59,14 +70,25 @@ function createGeocodeService({ pedidos, adapter }) {
                 longitud,
                 nivelConfianza,
                 usuarioId: usuarioId ?? null,
+                accionOperador: indiceCandidato === null ? null : "CORRIGIO",
             });
 
             return {
                 resultado: salida.resultado,
                 motivo: salida.motivo ?? null,
                 proveedor: adapter.nombre,
+                candidatos: candidatos.length > 1 && !seleccionado ? candidatos : [],
+                ambiguo: candidatos.length > 1 && !seleccionado,
                 pedido: await pedidos.obtenerDetalle(pedidoId),
             };
+        },
+
+        async rechazar(pedidoId, usuarioId) {
+            const detalle = await cargarDetalle(pedidoId);
+            if (detalle.estado_validacion === "CONFIRMADA") throw conflicto("La dirección ya está confirmada.");
+            if (detalle.latitud === null || detalle.latitud === undefined) throw conflicto("Primero buscá la dirección en el mapa.");
+            await pedidos.registrarAccionGeolocalizacion({ direccionId: detalle.direccion_id, usuarioId: usuarioId ?? null, accionOperador: "RECHAZO" });
+            return pedidos.obtenerDetalle(pedidoId);
         },
 
         async confirmar(pedidoId, usuarioId) {

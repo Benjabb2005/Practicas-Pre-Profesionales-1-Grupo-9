@@ -31,9 +31,14 @@ export async function actualizarDireccion(id, direccion) {
   return data
 }
 
-export async function geocodificarPedido(id) {
-  const { data } = await api.post(`/pedidos/${id}/geocodificar`)
+export async function geocodificarPedido(id, indiceCandidato) {
+  const { data } = await api.post(`/pedidos/${id}/geocodificar`, indiceCandidato === undefined ? {} : { indice_candidato: indiceCandidato })
   return data
+}
+
+export async function rechazarUbicacion(id) {
+  const { data } = await api.post(`/pedidos/${id}/rechazar-ubicacion`)
+  return data.pedido
 }
 
 export async function confirmarDireccion(id) {
