@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import DireccionForm from '../components/DireccionForm.jsx'
@@ -7,7 +7,7 @@ import MapPreview from '../components/MapPreview.jsx'
 import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
 import { motivoConfirmar, motivoGeocodificar, tieneCoordenadas } from '../components/direccion.js'
 import { mensajeError } from '../api/client'
-import { actualizarDireccion, confirmarDireccion, geocodificarPedido, obtenerPedido } from '../api/pedidos'
+import { actualizarDireccion, confirmarDireccion, geocodificarPedido, obtenerPedido, rechazarUbicacion } from '../api/pedidos'
 import './Pedidos.css'
 
 function direccionDesdePedido(pedido) {
@@ -31,6 +31,9 @@ function PedidoRevisionDetallePage() {
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [candidatos, setCandidatos] = useState([])
+  const [indiceCandidato, setIndiceCandidato] = useState(null)
+  const formularioRef = useRef(null)
 
   useEffect(() => {
     let vigente = true
@@ -75,6 +78,8 @@ function PedidoRevisionDetallePage() {
       setPedido(data.pedido)
       setProblemas(data.problemas || [])
       setDireccion(direccionDesdePedido(data.pedido))
+      setCandidatos([])
+      setIndiceCandidato(null)
       setAviso(data.invalidada ? 'La dirección cambió: se invalidó la confirmación previa.' : 'Dirección actualizada.')
     } catch (fallo) {
       setError(mensajeError(fallo))
@@ -90,10 +95,41 @@ function PedidoRevisionDetallePage() {
     return geocodificarPedido(id)
       .then((data) => {
         setPedido(data.pedido)
+        setCandidatos(data.candidatos || [])
+        setIndiceCandidato(null)
         setAviso(data.motivo || 'Geocodificación registrada.')
       })
       .catch((fallo) => setError(mensajeError(fallo)))
       .finally(() => setOcupado(false))
+  }
+
+  const usarCandidato = async () => {
+    if (indiceCandidato === null) return
+    setOcupado(true)
+    setError('')
+    try {
+      const data = await geocodificarPedido(id, indiceCandidato)
+      setPedido(data.pedido)
+      setCandidatos([])
+      setIndiceCandidato(null)
+      setAviso('Ubicación seleccionada. Revisala en el mapa y confirmala si es correcta.')
+    } catch (fallo) {
+      setError(mensajeError(fallo))
+    } finally { setOcupado(false) }
+  }
+
+  const corregirUbicacion = async () => {
+    setOcupado(true)
+    setError('')
+    try {
+      const actualizado = await rechazarUbicacion(id)
+      setPedido(actualizado)
+      setCandidatos([])
+      setIndiceCandidato(null)
+      setAviso('Marcaste la ubicación como incorrecta. Corregí la dirección y guardá para validarla de nuevo.')
+      formularioRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } catch (fallo) { setError(mensajeError(fallo)) }
+    finally { setOcupado(false) }
   }
 
   const confirmar = () => ejecutar(
@@ -114,6 +150,7 @@ function PedidoRevisionDetallePage() {
 
   const motivoGeo = motivoGeocodificar(pedido, ocupado)
   const motivoConf = motivoConfirmar(pedido, ocupado)
+  const candidatoElegido = candidatos.find((candidato) => candidato.indice === indiceCandidato)
 
   return <main className="main-content revision-page">
     <header className="page-header">
@@ -125,7 +162,7 @@ function PedidoRevisionDetallePage() {
     {aviso && <p className="users-ok" role="status">{aviso}</p>}
 
     <div className="order-layout">
-      <section className="panel order-panel">
+      <section className="panel order-panel" ref={formularioRef}>
         <div className="section-heading"><span className="step-number">1</span><div><h2>Datos del cliente y dirección</h2><p>Corregí lo que haga falta y guardá los cambios.</p></div></div>
         <dl className="detalle-datos">
           <div><dt>Cliente</dt><dd>{pedido.cliente_nombre || 'Sin cliente'}</dd></div>
@@ -146,11 +183,13 @@ function PedidoRevisionDetallePage() {
         {pedido.intentos?.length
           ? <div className="users-table-wrap">
               <table className="users-table">
-                <thead><tr><th scope="col">Fecha</th><th scope="col">Resultado</th><th scope="col">Confianza</th><th scope="col">Acción</th></tr></thead>
+                <thead><tr><th scope="col">Fecha</th><th scope="col">Dirección enviada</th><th scope="col">Resultado</th><th scope="col">Coordenadas</th><th scope="col">Confianza</th><th scope="col">Acción</th></tr></thead>
                 <tbody>
                   {pedido.intentos.map((intento) => <tr key={intento.id}>
                     <td>{intento.fecha ? new Date(intento.fecha).toLocaleString('es-AR') : '—'}</td>
+                    <td>{intento.direccion_enviada || '—'}</td>
                     <td>{intento.resultado}</td>
+                    <td>{intento.latitud == null || intento.longitud == null ? '—' : `${intento.latitud}, ${intento.longitud}`}</td>
                     <td>{intento.nivel_confianza || '—'}</td>
                     <td>{intento.accion_operador || 'Automático'}</td>
                   </tr>)}
@@ -163,12 +202,22 @@ function PedidoRevisionDetallePage() {
       <aside className="validation-column">
         <section className="panel geo-panel">
           <div className="section-heading"><span className="step-number">2</span><div><h2>Validación Geográfica</h2><p>La confirmación final siempre es humana.</p></div></div>
-          <MapPreview latitud={pedido.latitud} longitud={pedido.longitud} etiqueta={pedido.direccion_original}/>
+          <MapPreview latitud={candidatoElegido?.latitud ?? pedido.latitud} longitud={candidatoElegido?.longitud ?? pedido.longitud} etiqueta={candidatoElegido?.direccion || pedido.direccion_original}/>
+          <p className="geo-direccion-enviada"><b>Dirección enviada:</b> {pedido.direccion_original || 'Sin texto original'}</p>
           <div className="validacion-estado"><span>Estado de la dirección</span><EstadoValidacionBadge estado={pedido.estado_validacion}/></div>
-          {pedido.nivel_confianza && <p className="geo-nota">Confianza del proveedor: <b>{pedido.nivel_confianza}</b>.</p>}
+          {(candidatoElegido?.nivelConfianza || pedido.nivel_confianza) && <p className="geo-nota">Confianza del proveedor: <b>{candidatoElegido?.nivelConfianza || pedido.nivel_confianza}</b>.</p>}
           <button type="button" className="button button-outline" onClick={geocodificar} disabled={ocupado || pedido.estado_validacion !== 'VALIDA'}><Icon name="pin" size={14}/> Geocodificar dirección</button>
           {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
-          <button type="button" className="button confirm-button" onClick={confirmar} disabled={ocupado || pedido.estado_validacion !== 'VALIDA' || !tieneCoordenadas(pedido)}><Icon name="check" size={14}/> Confirmar ubicación y habilitar despacho</button>
+          {candidatos.length > 1 && <fieldset className="geo-candidatos">
+            <legend>Encontramos varias ubicaciones. Elegí la correcta:</legend>
+            {candidatos.map((candidato) => <label key={candidato.indice}>
+              <input type="radio" name="candidato-geo" checked={indiceCandidato === candidato.indice} onChange={() => setIndiceCandidato(candidato.indice)}/>
+              <span>{candidato.direccion}<small>Confianza: {candidato.nivelConfianza || 'BAJO'}</small></span>
+            </label>)}
+            <button className="button button-outline" type="button" disabled={ocupado || indiceCandidato === null} onClick={usarCandidato}>Usar ubicación seleccionada</button>
+          </fieldset>}
+          {tieneCoordenadas(pedido) && pedido.estado_validacion !== 'CONFIRMADA' && <button type="button" className="button button-outline" onClick={corregirUbicacion} disabled={ocupado}>No es correcta</button>}
+          <button type="button" className="button confirm-button" onClick={confirmar} disabled={ocupado || pedido.estado_validacion !== 'VALIDA' || !tieneCoordenadas(pedido)}><Icon name="check" size={14}/> Confirmar ubicación</button>
           {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
         </section>
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Cambiar calle o altura invalida la confirmación anterior.</small></div></div>

@@ -192,7 +192,7 @@ function createPedidoRepository(db) {
         },
 
         // Guarda el resultado de un intento de geocodificación y su historial en una transacción.
-        async registrarGeocodificacion({ pedidoId, direccionId, direccionEnviada, resultado, latitud, longitud, nivelConfianza, usuarioId }) {
+        async registrarGeocodificacion({ pedidoId, direccionId, direccionEnviada, resultado, latitud, longitud, nivelConfianza, usuarioId, accionOperador }) {
             const conexion = await db.getConnection();
             try {
                 await conexion.beginTransaction();
@@ -202,9 +202,9 @@ function createPedidoRepository(db) {
                 );
                 await conexion.query(
                     `INSERT INTO historial_geolocalizacion
-                        (direccion_id, usuario_id, direccion_enviada, resultado, latitud, longitud, nivel_confianza)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [direccionId, usuarioId ?? null, direccionEnviada, resultado, latitud, longitud, nivelConfianza]
+                        (direccion_id, usuario_id, direccion_enviada, resultado, latitud, longitud, nivel_confianza, accion_operador)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [direccionId, usuarioId ?? null, direccionEnviada, resultado, latitud, longitud, nivelConfianza, accionOperador ?? null]
                 );
                 await conexion.commit();
             } catch (error) {
@@ -213,6 +213,16 @@ function createPedidoRepository(db) {
             } finally {
                 conexion.release();
             }
+        },
+
+        async registrarAccionGeolocalizacion({ direccionId, usuarioId, accionOperador }) {
+            await db.query(
+                `UPDATE historial_geolocalizacion
+                 SET accion_operador = ?, usuario_id = ?
+                 WHERE direccion_id = ? AND accion_operador IS NULL
+                 ORDER BY id DESC LIMIT 1`,
+                [accionOperador, usuarioId ?? null, direccionId]
+            );
         },
 
         // Confirmación humana: única vía para dejar la dirección en CONFIRMADA y habilitar despacho.

@@ -18,6 +18,7 @@ function createPedidosRouter(container = {}) {
     router.get("/:id", controller.obtener);
     router.put("/:id/direccion", controller.actualizarDireccion);
     router.post("/:id/geocodificar", controller.geocodificar);
+    router.post("/:id/rechazar-ubicacion", controller.rechazarUbicacion);
     router.post("/:id/confirmar-direccion", controller.confirmarDireccion);
 
     return router;

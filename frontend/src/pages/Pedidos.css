@@ -84,6 +84,14 @@
 
 .geo-nota { margin: 8px 0 0; color: #66748a; font-size: 7px; line-height: 1.5; }
 .geo-nota b { color: #26364d; }
+.geo-direccion-enviada { margin: 8px 0 0; color: #66748a; font-size: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+.geo-direccion-enviada b { color: #26364d; }
+.geo-candidatos { display: grid; gap: 7px; margin: 10px 0 0; padding: 9px; border: 1px solid #dce3ec; border-radius: 6px; }
+.geo-candidatos legend { padding: 0 4px; color: #35465d; font-size: 8px; font-weight: 700; }
+.geo-candidatos label { display: flex; align-items: flex-start; gap: 7px; color: #35465d; font-size: 8px; line-height: 1.4; cursor: pointer; }
+.geo-candidatos input { margin-top: 2px; accent-color: #1d4ed8; }
+.geo-candidatos small { display: block; color: #66748a; font-size: 7px; }
+.geo-candidatos .button { margin-top: 2px; }
 
 .geo-motivo { margin: 5px 0 0; color: #66748a; font-size: 7px; line-height: 1.45; }
 

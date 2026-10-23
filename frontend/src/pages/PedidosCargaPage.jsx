@@ -36,7 +36,7 @@ function tonoResultado(resultado) {
 }
 
 function ayudaValidacion(pedido, buscando = false) {
-  if (buscando) return 'Buscando la dirección en OpenStreetMap…'
+  if (buscando) return 'Buscando la dirección en Georef…'
   if (!pedido) return 'Guardá el borrador para buscar el punto en el mapa y confirmar la ubicación.'
   if (pedido.estado_validacion === 'CONFIRMADA') return 'La ubicación ya está confirmada y el despacho está habilitado.'
   if (pedido.estado_validacion === 'VALIDA') {
@@ -65,6 +65,7 @@ function PedidosCargaPage() {
   const [pedido, setPedido] = useState(null)
   const [problemas, setProblemas] = useState([])
   const [resultado, setResultado] = useState(null)
+  const [indiceCandidato, setIndiceCandidato] = useState(null)
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState('')
   const [duplicados, setDuplicados] = useState([])
@@ -167,15 +168,30 @@ function PedidosCargaPage() {
     setGeocodificando(true)
     setError('')
     setResultado(null)
+    setIndiceCandidato(null)
     try {
       const data = await geocodificarPedido(id)
       setPedido(data.pedido)
       setResultado(data)
+      setIndiceCandidato(null)
     } catch (fallo) {
       setError(`El pedido se guardó, pero no se pudo buscar la dirección. ${mensajeError(fallo)}`)
     } finally {
       setGeocodificando(false)
     }
+  }
+
+  async function usarCandidato() {
+    if (!pedido || indiceCandidato === null) return
+    setGeocodificando(true)
+    setError('')
+    try {
+      const data = await geocodificarPedido(pedido.id, indiceCandidato)
+      setPedido(data.pedido)
+      setResultado(data)
+      setIndiceCandidato(null)
+    } catch (fallo) { setError(mensajeError(fallo)) }
+    finally { setGeocodificando(false) }
   }
 
   function geocodificar() {
@@ -209,6 +225,7 @@ function PedidosCargaPage() {
     setPedido(null)
     setProblemas([])
     setResultado(null)
+    setIndiceCandidato(null)
     setError('')
     setAviso('Formulario limpio. Cargá el próximo pedido.')
     setDuplicados([])
@@ -293,13 +310,21 @@ function PedidosCargaPage() {
             <b>{ETIQUETAS_RESULTADO[resultado.resultado] || 'Búsqueda registrada'}</b>
             <span>{RESULTADOS[resultado.resultado] || resultado.motivo || 'Búsqueda registrada.'}</span>
           </div>}
-          {pedido?.nivel_confianza && <p className="geo-nota">Confianza del proveedor: <b>{pedido.nivel_confianza}</b> ({resultado?.proveedor || 'nominatim'}).</p>}
+          {pedido?.nivel_confianza && <p className="geo-nota">Confianza del proveedor: <b>{pedido.nivel_confianza}</b> ({resultado?.proveedor || 'georef'}).</p>}
+          {resultado?.candidatos?.length > 1 && <fieldset className="geo-candidatos">
+            <legend>Encontramos varias ubicaciones. Elegí la correcta:</legend>
+            {resultado.candidatos.map((candidato) => <label key={candidato.indice}>
+              <input type="radio" name="candidato-geo-carga" checked={indiceCandidato === candidato.indice} onChange={() => setIndiceCandidato(candidato.indice)}/>
+              <span>{candidato.direccion}<small>Confianza: {candidato.nivelConfianza || 'BAJO'}</small></span>
+            </label>)}
+            <button className="button button-outline" type="button" disabled={ocupado || indiceCandidato === null} onClick={usarCandidato}>Usar ubicación seleccionada</button>
+          </fieldset>}
 
           <p className="geo-ayuda" id="geo-ayuda">{ayudaValidacion(pedido, geocodificando)}</p>
           {pedido && <p className="geo-ayuda">Si el punto no es correcto, <Link to={`/pedidos/${pedido.id}/revision`}>corregí la dirección en la revisión</Link>.</p>}
-          <button type="button" className="button button-outline" onClick={geocodificar} disabled={!puedeGeocodificar || ocupado} aria-describedby="geo-ayuda" title="Consulta OpenStreetMap y marca el punto; no confirma la ubicación"><Icon name="pin" size={14}/> {geocodificando ? 'Buscando en el mapa…' : 'Buscar dirección en el mapa'}</button>
+          <button type="button" className="button button-outline" onClick={geocodificar} disabled={!puedeGeocodificar || ocupado} aria-describedby="geo-ayuda" title="Consulta Georef y marca el punto; no confirma la ubicación"><Icon name="pin" size={14}/> {geocodificando ? 'Buscando en el mapa…' : 'Buscar dirección en el mapa'}</button>
           {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
-          <button type="button" className="button confirm-button" onClick={confirmar} disabled={!puedeConfirmar || ocupado} aria-describedby="geo-ayuda" title={motivoConf || undefined}><Icon name="check" size={14}/> {confirmando ? 'Confirmando…' : 'Confirmar ubicación y habilitar despacho'}</button>
+          <button type="button" className="button confirm-button" onClick={confirmar} disabled={!puedeConfirmar || ocupado} aria-describedby="geo-ayuda" title={motivoConf || undefined}><Icon name="check" size={14}/> {confirmando ? 'Confirmando…' : 'Confirmar ubicación'}</button>
           {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
           {pedido && <button type="button" className="button button-outline correct-button" onClick={nuevaCarga} disabled={ocupado} title="Limpia el formulario para cargar un pedido nuevo">Cargar otro pedido</button>}
         </section>

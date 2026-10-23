@@ -30,6 +30,7 @@ const esquemaCrear = z.object({
 });
 
 const esquemaId = z.object({ id: z.coerce.number().int().positive() });
+const esquemaGeocodificar = z.object({ indice_candidato: z.coerce.number().int().nonnegative().optional() }).optional();
 
 // Las fechas del listado son días completos (AAAA-MM-DD). Se valida que exista
 // la fecha del calendario para no aceptar, por ejemplo, 2026-02-30.
@@ -94,7 +95,14 @@ function createPedidosController({ pedidoService, geocodeService }) {
         async geocodificar(req, res) {
             if (!geocodeService) throw servicioNoDisponible();
             const { id } = validar(esquemaId, req.params);
-            res.json(await geocodeService.geocodificar(id, req.usuario?.id));
+            const datos = validar(esquemaGeocodificar, req.body ?? {}) || {};
+            res.json(await geocodeService.geocodificar(id, req.usuario?.id, datos.indice_candidato ?? null));
+        },
+
+        async rechazarUbicacion(req, res) {
+            if (!geocodeService) throw servicioNoDisponible();
+            const { id } = validar(esquemaId, req.params);
+            res.json({ pedido: await geocodeService.rechazar(id, req.usuario?.id) });
         },
 
         async confirmarDireccion(req, res) {
