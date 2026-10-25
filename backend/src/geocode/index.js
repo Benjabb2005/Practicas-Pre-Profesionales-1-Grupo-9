@@ -1,17 +1,12 @@
-// Fábrica del adaptador de geocodificación. Hoy solo Nominatim; agregar otro
-// proveedor implica sumar un módulo acá sin tocar el servicio ni las rutas.
-const { createNominatimAdapter } = require("./nominatim");
+// Interfaz común para los proveedores de geocodificación.
+const { createGeorefProvider } = require("./georef");
 
 function createGeocodeAdapter(config = {}) {
-    const proveedor = (config.proveedor || "nominatim").toLowerCase();
-    if (proveedor === "nominatim") {
-        return createNominatimAdapter({
-            baseUrl: config.baseUrl,
-            userAgent: config.userAgent,
-            timeoutMs: config.timeoutMs,
-        });
-    }
-    throw new Error(`Proveedor de geocodificación no soportado: ${config.proveedor}`);
+    const proveedor = (config.proveedor || "georef").toLowerCase();
+    const opciones = { timeoutMs: config.timeoutMs, fetchImpl: config.fetchImpl };
+    if (proveedor === "georef") return createGeorefProvider({ ...opciones, baseUrl: config.baseUrl });
+    if (proveedor === "google") throw new Error("Google Geocoding queda deshabilitado hasta contar con mapa de Google y borrado automático de coordenadas a los 30 días.");
+    throw new Error(`Proveedor de geocodificación no soportado: ${proveedor}`);
 }
 
 module.exports = { createGeocodeAdapter };

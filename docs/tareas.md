@@ -405,3 +405,18 @@ Evidencia ejecutada: `npm run check` desde la raíz exit 0 (contexto y 7 skills 
 Límites: no se ejecutó MySQL, Docker, navegador, Nominatim real ni Georef real en esta integración; no hay prueba de interacción DOM ni de estilos computados. El PR queda pendiente de abrir contra `MVP-1`; no se hizo merge ni deploy.
 
 Siguiente paso: publicar la rama, abrir el PR contra `MVP-1` y resolver la revisión del equipo. Las decisiones D08, D09 y D11 siguen abiertas.
+
+## Geolocalización, confirmación y corrección (módulo Sabrina, 23/10/2026)
+
+Estado: implementado en la rama `feature/sabrina-geolocalizacion`, basada en `origin/MVP-1`.
+
+- Georef se selecciona por `GEOCODER_PROVIDER` (valor inicial `georef`), con timeout configurable, caché de consultas iguales por cinco minutos, hasta diez candidatos, y manejo de sin resultados, timeout, límite HTTP 429 y otros errores.
+- `GoogleProvider` queda preparado, pero la fábrica rechaza activarlo: la pantalla actual dibuja resultados sobre Leaflet/OpenStreetMap y guarda coordenadas en MySQL; los términos vigentes de Google prohíben usar sus resultados con mapas no Google y limitan la retención. Ver D06 y la spec `frontend/specs/geolocalizacion-confirmacion.md`.
+- `POST /api/pedidos/:id/geocodificar` admite `indice_candidato`; primero muestra candidatos, y solo guarda la opción seleccionada como coordenada revisable. Historial conserva cada consulta.
+- `POST /api/pedidos/:id/rechazar-ubicacion` registra el rechazo del operador y vuelve al formulario de dirección. Guardar cambios vuelve a normalizar/validar y descarta coordenadas viejas; se permiten reintentos sin límite.
+- La pantalla muestra la dirección enviada, confianza, mapa, elección de candidato e historial. `Confirmar ubicación` mantiene la única vía a `CONFIRMADA` y `direccion_validada = true`. `EstadoPedidoService.puedeDespacharse` sigue bloqueando `EN ENVÍO` sin `CONFIRMADA`.
+- `S:\Proyectos\ppp\Practicas-Pre-Profesionales-1-Grupo-9` ya tenía un checkout Git; se creó una rama de trabajo separada de la rama de prototipo y se basó en MVP-1.
+
+Verificación local: `npm run context:check`, la comprobación de sintaxis del backend, `git diff --check` y el lint del frontend pasaron. Los tests del backend no iniciaron seis archivos porque faltan paquetes locales (`bcryptjs`, `jsonwebtoken`, `express`); el frontend build se detuvo al resolver `react-router-dom`, también ausente. Falta probar Georef real, MySQL y el flujo visual. No se modificó el esquema y no existe endpoint de asignación a choferes (pertenece al módulo de Benjamín); todo cambio a `EN ENVÍO` que pase por el servicio de estados sí aplica el bloqueo.
+
+Próximo paso: revisión del PR por el equipo. Acordar si Google queda fuera del MVP1 o si se incorpora mapa Google con política de borrado a 30 días.

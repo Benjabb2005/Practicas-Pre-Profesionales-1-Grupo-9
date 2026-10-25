@@ -21,10 +21,9 @@ function loadEnv(env = process.env) {
             expiraEn: env.JWT_EXPIRES_IN || "8h",
         },
         geocode: {
-            proveedor: env.GEOCODE_PROVIDER || "nominatim",
-            baseUrl: env.GEOCODE_BASE_URL || "https://nominatim.openstreetmap.org",
-            userAgent: env.GEOCODE_USER_AGENT || "Mandatodo-MVP1",
+            proveedor: env.GEOCODER_PROVIDER || "georef",
             timeoutMs: leerEnteroPositivo(env.GEOCODE_TIMEOUT_MS, 5000),
+            baseUrl: env.GEOREF_BASE_URL || "https://apis.datos.gob.ar/georef/api",
         },
         duplicados: {
             // Ventana usada para avisar pedidos del mismo cliente y dirección.
