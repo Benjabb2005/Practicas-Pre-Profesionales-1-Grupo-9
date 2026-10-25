@@ -14,7 +14,8 @@ function LoginPage() {
   const [enviando, setEnviando] = useState(false)
 
   if (usuario) {
-    return <Navigate to={ubicacion.state?.desde || '/'} replace/>
+    const destino = usuario.rol === 'CHOFER' ? '/chofer' : (ubicacion.state?.desde === '/chofer' ? '/' : (ubicacion.state?.desde || '/'))
+    return <Navigate to={destino} replace/>
   }
 
   async function handleSubmit(event) {
@@ -23,7 +24,7 @@ function LoginPage() {
     setError('')
     try {
       const autenticado = await login(email.trim(), password)
-      const destino = autenticado.rol === 'CHOFER' ? '/chofer' : (ubicacion.state?.desde || '/')
+      const destino = autenticado.rol === 'CHOFER' ? '/chofer' : (ubicacion.state?.desde === '/chofer' ? '/' : (ubicacion.state?.desde || '/'))
       navegar(destino, { replace: true })
     } catch (fallo) {
       setError(errorLogin(fallo))

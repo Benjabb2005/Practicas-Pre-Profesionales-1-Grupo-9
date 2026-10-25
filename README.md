@@ -22,6 +22,25 @@ Para Claude Code: `npm run skills:sync`. Después de editar una skill, volver a 
 
 ## Arranque Docker
 
+### Base compatible con MVP-1 (22/10/2026)
+
+Esta rama requiere el esquema de `database/migrations/001_esquema_inicial.sql`.
+Cambiar de rama no modifica las tablas del volumen MySQL. No reutilizar una base
+con otro esquema ni reaplicar `init.sql`: conservarla y preparar una base separada.
+En el entorno local reparado se usa `mandatodo_mvp1`; las cuentas se conservaron,
+pero los clientes y pedidos anteriores permanecen en la base anterior.
+
+Compose monta las migraciones en solo lectura. Sobre una base nueva configurada
+y accesible al usuario de aplicación, ejecutar:
+
+```powershell
+docker compose exec -T backend npm run migrate
+docker compose exec -T backend npm run seed
+```
+
+El runner rechaza bases heredadas sin historial. No borrar volúmenes para resolverlo.
+Detalle de reparación, verificación y recuperación en `docs/tareas.md` (22/10/2026).
+
 Crear .env desde .env.example **solo si no existe**, completar credenciales locales sin subirlas. No sobrescribir un .env existente.
 
 ```powershell

@@ -16,7 +16,7 @@ function ProtectedRoute({ roles, children }) {
   }
 
   if (roles && !roles.includes(usuario.rol)) {
-    return <Navigate to="/" replace/>
+    return <Navigate to={usuario.rol === 'CHOFER' ? '/chofer' : '/'} replace/>
   }
 
   return children
