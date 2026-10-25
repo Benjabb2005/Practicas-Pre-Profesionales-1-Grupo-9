@@ -12,6 +12,8 @@ const { createLocalidadService } = require("./services/LocalidadService");
 const { createGeocodeAdapter } = require("./geocode");
 const { createGeorefClient } = require("./georef/localidades");
 const { createAuthMiddleware } = require("./middleware/auth");
+const { createAsignacionRepository } = require('./repositories/AsignacionRepository');
+const { createAsignacionService } = require('./services/AsignacionService');
 
 // Construye los servicios a partir de la base inyectada. Sin base (pruebas HTTP)
 // devuelve un objeto vacío y las rutas responden 503 en vez de romper.
@@ -27,6 +29,7 @@ function createContainer({ db, config, georef } = {}) {
     const localidadService = createLocalidadService({ cliente: georefClient });
 
     return {
+        asignacionService: createAsignacionService({ repositorio: createAsignacionRepository(db) }),
         config,
         auth: createAuthMiddleware({ config }),
         authService: createAuthService({ usuarios, jwt: config.jwt }),

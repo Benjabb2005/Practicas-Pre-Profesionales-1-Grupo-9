@@ -10,6 +10,7 @@ const { createProvinciasRouter } = require("./src/routes/provincias.routes");
 const { createLocalidadesRouter } = require("./src/routes/localidades.routes");
 const { notFound } = require("./src/middleware/notFound");
 const { errorHandler } = require("./src/middleware/errorHandler");
+const { createAsignacionesRouter, createChoferRouter } = require('./src/routes/asignaciones.routes');
 
 // Separar la aplicación del arranque permite probar HTTP sin abrir MySQL.
 // Las dependencias (db, config) se inyectan para poder sustituirlas en las pruebas.
@@ -26,6 +27,8 @@ function createApp(deps = {}) {
 
     app.use("/api", createHealthRouter(deps));
     app.use("/api/auth", createAuthRouter(container));
+    app.use('/api/asignaciones', createAsignacionesRouter(container));
+    app.use('/api/chofer', createChoferRouter(container));
     app.use("/api/usuarios", createUsuariosRouter(container));
     app.use("/api/estados", createEstadosRouter());
     app.use("/api/pedidos", createPedidosRouter(container));

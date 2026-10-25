@@ -1,7 +1,8 @@
 import { NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import './App.css'
 import Icon from './components/Icon.jsx'
-import DriverApp from './DriverApp.jsx'
+import ChoferPedidosPage from './pages/ChoferPedidosPage.jsx'
+import AsignacionesPage from './pages/AsignacionesPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 import PedidosCargaPage from './pages/PedidosCargaPage.jsx'
@@ -27,6 +28,7 @@ function Sidebar({ rol, onLogout }) {
     { to: '/', label: 'Tablero de Envíos', icon: 'grid', end: true },
     { to: '/form', label: 'Cargar Pedido', icon: 'plus' },
     { to: '/pedidos/revision', label: 'Revisión de Direcciones', icon: 'eye' },
+    { to: '/asignaciones', label: 'Asignar choferes', icon: 'truck' },
     { label: 'Rutas', icon: 'route', soon: true },
     { to: '/clientes', label: 'Clientes', icon: 'users' },
   ]
@@ -58,7 +60,7 @@ function OperatorLayout() {
 function ChoferRuta() {
   const { logout } = useAuth()
   const navegar = useNavigate()
-  return <DriverApp onLogout={() => { logout(); navegar('/login', { replace: true }) }}/>
+  return <ChoferPedidosPage onLogout={() => { logout(); navegar('/login', { replace: true }) }}/>
 }
 
 function App() {
@@ -67,6 +69,7 @@ function App() {
     <Route element={<ProtectedRoute roles={['ADMINISTRADOR', 'OPERADOR']}><OperatorLayout/></ProtectedRoute>}>
       <Route index element={<PedidosListadoPage/>}/>
       <Route path="form" element={<PedidosCargaPage/>}/>
+      <Route path="asignaciones" element={<AsignacionesPage/>}/>
       <Route path="pedidos/revision" element={<PedidosRevisionPage/>}/>
       <Route path="pedidos/:id/revision" element={<PedidoRevisionDetallePage/>}/>
       <Route path="clientes" element={<ClientesPage/>}/>

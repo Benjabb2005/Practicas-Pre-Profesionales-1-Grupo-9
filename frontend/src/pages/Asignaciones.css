@@ -1,0 +1,41 @@
+.asignaciones-page .page-header { gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.asignaciones-page .page-header p { margin: 6px 0 0; color: #6a788b; font-size: 12px; line-height: 1.5; }
+.asignaciones-resumen { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 12px 0; border-block: 1px solid #dfe5ed; }
+.asignaciones-resumen p { margin: 0; font-size: 12px; color: #6a788b; }
+.asignaciones-resumen strong { color: #26364d; font-weight: 600; margin-right: 3px; }
+.asignaciones-filtro { display: flex; align-items: center; gap: 7px; margin: 14px 0; font-size: 12px; color: #536176; }
+.asignaciones-filtro input { margin: 0; accent-color: #2860ed; }
+.asignaciones-grid { display: grid; gap: 8px; }
+.asignacion-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 210px) auto; align-items: center; gap: 12px 20px; padding: 14px 16px; min-width: 0; box-shadow: none; overflow-wrap: anywhere; }
+.asignacion-info { min-width: 0; }
+.asignacion-titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 5px; }
+.asignacion-card h2 { margin: 0; font-size: 13px; font-weight: 600; color: #24334a; }
+.asignacion-card p { margin: 3px 0; font-size: 12px; line-height: 1.45; color: #68778b; }
+.asignacion-card .asignacion-cliente { color: #34445c; }
+.asignacion-card .asignacion-estado { font-size: 10px; letter-spacing: .2px; }
+.asignacion-badge { display: inline-block; font-size: 10px; padding: 3px 7px; border-radius: 4px; }
+.asignacion-badge.lista { background: #edf6f0; color: #316748; }
+.asignacion-badge.bloqueada { background: #fff4e5; color: #805012; }
+.asignacion-card .asignacion-motivo { color: #805012; font-size: 11px; }
+.asignacion-card .form-field { gap: 4px; font-size: 11px; font-weight: 400; }
+.asignacion-card .form-field select { height: 32px; font-size: 12px; }
+.asignacion-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; max-width: 190px; }
+.asignaciones-page .button { min-height: 32px; font-size: 11px; padding-inline: 11px; box-shadow: none; }
+.asignaciones-page .button:disabled { opacity: .45; cursor: not-allowed; }
+.asignacion-revisar { border: 0; background: none; font: inherit; color: #4267ab; font-size: 11px; padding: 6px 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.asignacion-detalle-modal { width: min(1100px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 12px; color: #24334a; background: #f5f7fb; box-shadow: 0 24px 80px #0005; }
+.asignacion-detalle-modal::backdrop { background: #101a2bcc; }
+.asignacion-detalle-header { position: sticky; top: 0; z-index: 1100; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #dfe5ed; background: white; }
+.asignacion-detalle-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.asignacion-detalle-modal .revision-page { padding: 16px; }
+@media (max-width: 1000px) {
+  .asignacion-card { grid-template-columns: minmax(0, 1fr) minmax(150px, 190px); }
+  .asignacion-actions { grid-column: 2; max-width: none; }
+  .asignacion-info { grid-row: span 2; }
+}
+@media (max-width: 600px) {
+  .asignacion-card { grid-template-columns: minmax(0, 1fr); padding: 12px; gap: 10px; }
+  .asignacion-info { grid-row: auto; }
+  .asignacion-actions { grid-column: auto; }
+  .asignaciones-page .button, .asignacion-card .form-field select { min-height: 36px; }
+}

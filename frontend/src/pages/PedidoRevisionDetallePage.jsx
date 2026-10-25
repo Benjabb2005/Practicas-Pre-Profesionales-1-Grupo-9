@@ -22,8 +22,10 @@ function direccionDesdePedido(pedido) {
   }
 }
 
-function PedidoRevisionDetallePage() {
-  const { id } = useParams()
+function PedidoRevisionDetallePage({ pedidoId } = {}) {
+  const { id: idRuta } = useParams()
+  const id = pedidoId ?? idRuta
+  const Contenedor = pedidoId == null ? 'main' : 'div'
   const [pedido, setPedido] = useState(null)
   const [problemas, setProblemas] = useState([])
   const [direccion, setDireccion] = useState(null)
@@ -138,25 +140,25 @@ function PedidoRevisionDetallePage() {
   )
 
   if (cargando) {
-    return <main className="main-content revision-page"><p className="users-state" role="status">Cargando pedido…</p></main>
+    return <Contenedor className="main-content revision-page"><p className="users-state" role="status">Cargando pedido…</p></Contenedor>
   }
   if (!pedido) {
-    return <main className="main-content revision-page">
+    return <Contenedor className="main-content revision-page">
       {error && <p className="users-alert" role="alert">{error}</p>}
       <p className="users-state">No se pudo cargar el pedido.</p>
-      <Link className="button button-outline" to="/pedidos/revision">Volver a la bandeja</Link>
-    </main>
+      {pedidoId == null && <Link className="button button-outline" to="/pedidos/revision">Volver a la bandeja</Link>}
+    </Contenedor>
   }
 
   const motivoGeo = motivoGeocodificar(pedido, ocupado)
   const motivoConf = motivoConfirmar(pedido, ocupado)
   const candidatoElegido = candidatos.find((candidato) => candidato.indice === indiceCandidato)
 
-  return <main className="main-content revision-page">
-    <header className="page-header">
+  return <Contenedor className="main-content revision-page">
+    {pedidoId == null && <header className="page-header">
       <div><p className="eyebrow">Revisión de dirección</p><h1>Pedido #{pedido.id}</h1><p className="subtitle">{pedido.cliente_nombre || 'Sin cliente'} · {pedido.codigo || 'Sin código interno'}</p></div>
       <Link className="button button-outline header-action" to="/pedidos/revision">Volver a la bandeja</Link>
-    </header>
+    </header>}
 
     {error && <p className="users-alert" role="alert">{error}</p>}
     {aviso && <p className="users-ok" role="status">{aviso}</p>}
@@ -223,7 +225,7 @@ function PedidoRevisionDetallePage() {
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Cambiar calle o altura invalida la confirmación anterior.</small></div></div>
       </aside>
     </div>
-  </main>
+  </Contenedor>
 }
 
 export default PedidoRevisionDetallePage

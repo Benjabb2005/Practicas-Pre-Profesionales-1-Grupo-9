@@ -420,3 +420,85 @@ Verificación ejecutada sobre el checkout rebasado en `origin/MVP-1`, sin base d
 Cobertura de la integración: las pruebas del target conservan validación, normalización, problemas, provincias/localidades, bloqueo de geocodificación fuera de `VALIDA`, confirmación sólo con `VALIDA` y coordenadas, e invalidación de coordenadas al corregir. Las pruebas propias conservan clientes, búsqueda, detección de duplicados, canal, aviso de duplicados, listado y la corrección de la búsqueda automática. Los fakes se ajustaron para el nuevo método `buscarCandidatosDuplicados`.
 
 Límites: no se probó el flujo real en navegador, MySQL/Docker, Nominatim ni Georef; no hay prueba de interacción DOM ni de estilos computados. El PR y el push quedan como paso posterior a este registro.
+## Reparación de base local para MVP-1 (22/10/2026)
+
+Estado: completada. El error al abrir Cliente frecuente se debía a que el backend de MVP-1 consultaba una base con otro esquema: faltaban codigo_origen/domicilio en clientes y varias columnas/estados de pedidos y direcciones.
+
+Se creó la base separada `mandatodo_mvp1` en el MySQL existente, se aplicó `001_esquema_inicial.sql` y se ejecutó el seed. Se copiaron las cuentas compatibles existentes (nombre, email, hash, rol y activo), conservando sus accesos. No se importaron clientes ni pedidos anteriores: requieren un mapeo explícito. La base anterior y el volumen permanecen intactos.
+
+Cambios: `.env` y `backend/.env` locales apuntan a la base nueva; sus copias previas están en `temp/env-antes-mvp1.txt` y `temp/backend-env-antes-mvp1.txt`, ignoradas por Git y con secretos: no compartirlas. `docker-compose.yml` monta `./database:/database:ro` para que el runner encuentre las migraciones desde `/app/scripts`. No hay commit, push ni cambio de init.sql.
+
+Recuperación: restaurar los archivos de entorno desde esas copias y recrear solamente el backend con `docker compose up -d --no-deps backend` vuelve a conectar con la base anterior, cuyo esquema seguirá siendo incompatible con esta rama. No borrar bases ni volúmenes. Cambiar de rama no cambia el esquema MySQL.
+
+Aceptación: HTTP real autenticado, GET clientes 200; POST cliente sintético 201; POST pedido 201 con estado de dirección VALIDA; GET detalle y listado de pedidos 200. Quedan cliente y pedido sintéticos (pedido id 1). Pruebas en Docker: backend 125/125, frontend 7/7, lint y build OK. El token de prueba fue generado internamente con una cuenta activa: no se verificó login desde navegador, ni geocodificación/confirmación real.
+
+Límites: el check raíz en host sigue bloqueado por copias de skills desactualizadas; las dependencias del host están incompletas. Se verificó dentro de los contenedores con sus dependencias instaladas. El tablero sigue siendo maqueta y no acredita los pedidos guardados; consultarlos en Revisión de direcciones. Próximo paso: recargar navegador y probar con una cuenta habitual.
+
+## Recuperación del acceso administrador (22/10/2026)
+
+Pedido explícito del usuario: restablecer solo la contraseña de admin@mandatodo.com usando SEED_ADMIN_PASSWORD del entorno local. Se actualizó el hash de una cuenta activa ADMINISTRADOR en mandatodo_mvp1; sin modificar otras cuentas ni la base anterior. No se registran secretos.
+
+Corregido backend/src/middleware/errorHandler.js: AppError hereda message de Error; devolver error.mensaje omitía el texto y la UI mostraba un error genérico. Se agregó una aserción HTTP en backend/test/auth.test.js para exigir el mensaje de credenciales incorrectas. Backend reiniciado; npm test dentro de Docker: 125/125. No se verificó visualmente en navegador.
+
+## Navegación del chofer (22/10/2026)
+Verificación ejecutada en Docker: frontend 11/11 pruebas, lint y build OK; git diff --check OK. Incluye cuatro regresiones de navegación/renderizado con redirección simulada; no acredita navegación real de navegador. Recargar /chofer para comprobar visualmente.
+
+## Corrección de caché Vite en Docker Desktop (22/10/2026)
+Verificado en navegador: se reprodujo el blanco al entrar como chofer antes del reinicio; después, recargar la sesión existente y hacer un login nuevo llevan a /chofer con la pantalla visible. Abrir / con sesión de chofer redirige a /chofer sin errores de consola. GET del módulo de guarda confirma código actualizado. Docker: 11/11 tests frontend, lint y build OK. Los pedidos mostrados siguen siendo de maqueta.
+
+## T07 — asignación y consulta propia (24/10/2026)
+Ver evidencia y comandos en el apartado de Benjamín de tareas.md: 134 tests backend, 14 frontend, integración MySQL aislada 1/1, sintaxis host y lint/build OK. Prueba de navegador con cuentas reales locales para lecturas, sin modificar pedidos existentes. Check raíz bloqueado por sincronización de skills preexistente; check backend en Docker requiere script raíz no montado.
+
+## Pull y planificación (25/10/2026)
+
+Pull --ff-only de de12d0e a f87f6e1: PR #6 (Julián) y #7 (Sabrina). Cambios locales respaldados en stash codex-respaldo-antes-pull-mvp1-20261025 y restaurados, conservando ambos registros en conflictos documentales. Sin commit ni push; no se implementó ninguna tarea nueva de Benjamín.
+
+Planificación actualizada a Georef y evidencias nuevas, sin inferir actividad ni aceptación: 44 Pendiente hasta confirmación de responsables. Q/X son propuestas a validar. Primera tarea B01: revisar asignación versus despacho con Santiago, CONFIRMADA y transiciones existentes.
+
+Verificación: git diff --check, sintaxis backend y lint frontend pasan. Check raíz detenido por copia Claude ppp1-mvp1 desactualizada. Docker apagado. Backend host: 70 pasan, 7 archivos fallan por dependencias ausentes (bcryptjs), 1 omitida. Frontend test no inicia por vitest ausente y build falla por react-router-dom ausente. Sin prueba de MySQL, proveedor real ni flujo visual; no se acredita regresión del merge con estos fallos de entorno.
+
+## Auditoría para cierre técnico de tareas (25/10/2026)
+
+El usuario autoriza marcar Hecho por comprobación de implementación completa y funcionando, sin inferir actividad actual de compañeros. Se revisa checkout f87f6e1 con reparaciones/borradores locales conservados. No se implementó producto nuevo ni se aprobaron B01–B06.
+
+Resultado: 22 Hecho, 22 Pendiente, 0 En progreso. Hecho: S02, S03, S05, S07, J01, J02, J03, J04, J05, J06, T01, T02, T03, T04, T05, T06, R01, R02, R04, R05, R06, R07.
+
+Evidencias ejecutadas: Docker Compose levantado sin borrar datos/volúmenes; MySQL mandatodo_mvp1 disponible, 8 tablas y 1 migración registrada. Backend npm test: 174 pasan, 0 fallan, 1 integración opt-in omitida. Frontend npm test: 42/42; lint y build pasan (warning chunk mayor de 500 kB). Logs locales ignorados: temp/pruebas-backend-auditoria.log y temp/pruebas-frontend-auditoria.log.
+
+Auditoría HTTP/MySQL: temp/auditoria-mvp1.cjs, ejecutada por stdin dentro de backend, base fija mandatodo_test_asignaciones. Crea usuarios/clientes/pedidos sintéticos y limpia exclusivamente sus IDs. Verifica usuarios alta/edición/listado; login correcto/incorrecto/me y 403 chofer; clientes CRUD/búsqueda/DNI repetido/advertencias/baja restringida; pedidos guardados/recarga/duplicados con confirmación/listado filtrado; Georef real, rechazo, confirmación humana, edición equivalente conserva confirmación, cambio de altura descarta coordenadas y confirmación, reintento y registros CONFIRMO/RECHAZO asociados al usuario. No toca datos de negocio de desarrollo.
+
+Proveedor: dirección pública Av. Corrientes 1234, CABA, respondió APPROXIMATE con confianza MEDIO. Además auditoría en memoria del adaptador Georef: caché de consulta idéntica, dos candidatos, HTTP 429/503, ZERO_RESULTS y timeout pasan. Son pruebas del adaptador activo, distintas de geocode.test.js que todavía prueba Nominatim anterior.
+
+Navegador: login de administrador, tablero real con pedidos, formulario de carga y mapa Leaflet con punto e historial de un pedido confirmado; lecturas sin modificar pedidos existentes. No se publican datos personales ni capturas de esas pantallas en GitHub. S02/S07 también se apoyan en evidencia previa documentada de migración/seed e importación real idempotente (apartados 13/10), no reejecutada sobre desarrollo.
+
+No cerradas: S01 requiere consolidar reparaciones locales y arranque reproducible para equipo; S04 permisos de entrega/pago aún sin flujo completo; S06 decisiones de transición y operaciones completas pendientes; R03 falta verificar selección múltiple/corrección de ubicación de punta a punta en UI; R08 no tiene integración final con despacho/asignación. B01–B06 conservan borrador previo no aprobado, faltan acciones reales de despacho/entrega/pago y prueba móvil integral. Q01–Q04 y X01–X07 siguen propuestas/decisiones/pruebas de integrantes pendientes; esta auditoría del asistente no acredita pruebas cruzadas realizadas por ellos.
+
+Límite adicional: check raíz sigue bloqueado por copia Claude ppp1-mvp1 desactualizada; sintaxis backend, suites, lint/build se verificaron por separado. No commit ni push.
+
+## B01 — Asignación manual autorizada y verificada (25/10/2026)
+
+Pedido explícito de Benjamín: implementar pantalla y API de asignación manual y explicar cómo ver los cambios. Se revisó y completó el borrador previo sobre MVP-1 f87f6e1; B01 queda Hecho localmente. B02–B06 siguen pendientes y no se acredita su implementación completa.
+
+Backend: AsignacionRepository conserva SQL parametrizado, selección de choferes activos y transacción con bloqueo de pedido/dirección/chofer. AsignacionService devuelve puede_asignar, motivo_bloqueo y puede_quitar en listado y guardado, usando CONFIRMADA y estados previos al despacho. El PUT vuelve a validar aunque se eluda UI; asigna sin adelantar estado y registra historial una sola vez por cambio. Endpoints GET /api/asignaciones, GET /api/asignaciones/choferes, PUT /api/asignaciones/:id para administrador/operador. Sin cambios de esquema ni nueva máquina de estados.
+
+Frontend: /asignaciones, menú «Asignar choferes», tarjetas con pedido/cliente/dirección/estado/chofer, indicadores habilitados/bloqueados/choferes activos y filtro. Motivos de bloqueo y enlace a revisar dirección. Guardar requiere elección válida y cambio real; controles bloqueados durante escritura, éxito tras respuesta del servidor y error con reintento. Se conserva quitar/reasignar del borrador antes del despacho, sin cerrar B02. Contrato actualizado en frontend/specs/asignacion-chofer.md.
+
+Verificación real: backend 175/175 y una MySQL opt-in omitida por defecto; frontend 42/42, lint y build OK (warning chunk >500 kB). Sintaxis backend y git diff --check pasan. MySQL opt-in ejecutada aparte: 1/1, persistencia/concurrencia/idempotencia/rollback; se añadió limpieza limitada a fixtures de esa ejecución. Auditoría HTTP real temp/b01-http-mysql.cjs en mandatodo_test_asignaciones: flags, asignación, nueva lectura persistida, historial sin duplicados, 403 chofer, 409 dirección sin confirmar, rechazo de otro rol/inactivo y exclusión del catálogo. Fixtures propios limpiados, desarrollo intacto. Logs temp/b01-backend.log y temp/b01-frontend.log.
+
+Navegador real: /asignaciones carga 4 pedidos (2 habilitados/2 bloqueados) y 2 choferes activos del entorno. Filtro reduce a los habilitados; elegir chofer habilita Guardar. Se restableció selección sin escribir sobre pedidos existentes. Revisado a viewport angosto (319 px): tarjetas/controles caben en layout mínimo global de 320 px. No se acredita prueba exhaustiva de todos los estados visuales ni prueba poblada de /chofer.
+
+Límite preexistente: npm run check raíz detenido por copia Claude ppp1-mvp1 desactualizada; verificaciones técnicas se ejecutaron por separado. No commit, push ni cambios de datos del usuario. Para ver: iniciar como administrador/operador → menú Asignar choferes → elegir uno de los pedidos con dirección confirmada y chofer activo → Guardar asignación → Actualizar/recargar comprueba persistencia. Asignar no despacha.
+
+## Vista compacta de asignaciones (25/10/2026)
+
+A pedido de Benjamín se mantiene el apartado independiente y se compacta su presentación. AsignacionesPage agrupa datos del pedido con etiqueta discreta y acciones breves (Asignar/Ver dirección); Asignaciones.css usa filas con datos, selector y acciones en escritorio, adaptación apilada en móvil, espacios menores, tipografía jerarquizada, contadores en una línea y controles bloqueados atenuados. Sin cambiar API ni reglas de asignación.
+
+Lint y build frontend en Docker pasan (warning preexistente de chunk >500 kB). Revisión visual real del navegador angosto de 319 px: resumen y tarjetas compactos; filtro y selección siguen operativos, sin escribir en pedidos existentes. Vista de escritorio no revisada visualmente en esta sesión; CSS usa tres columnas y adapta a dos/una. No se agregan pruebas de negocio por ser cambio visual.
+
+## Modal de dirección y publicación del módulo Benjamín (25/10/2026)
+
+Pedido explícito: reutilizar el patrón modal de branch-benjamin-1, crear branch con nombre coherente al equipo y publicar cambios. Referencia leída: frontend/src/Orders.jsx (DetailModal nativo con showModal) y Orders.css de origin/branch-benjamin-1. Ver dirección ahora abre dialog dentro de /asignaciones; reutiliza PedidoRevisionDetallePage con pedidoId opcional, manteniendo su ruta independiente. Botón de cierre, Escape y fondo; foco devuelto al disparador, scroll de fondo bloqueado/restaurado y recarga de asignaciones al cerrar. Sin copiar contratos antiguos ni cambiar API de geolocalización.
+
+Verificación: 42 pruebas frontend, lint y build Docker pasan; warning de chunk grande preexistente. Navegador real: abrir pedidos confirmados/no confirmados, cerrar con Escape y botón, URL /asignaciones estable y foco devuelto al botón correcto. No se modificaron pedidos existentes. Persistencia/API de B01 conservan verificación previa. Cierre por fondo implementado, no probado por clic en esta sesión; escritorio no revisado visualmente.
+
+Branch creada desde MVP-1 f87f6e1: feature/benjamin-asignacion-entregas; nombre cubre próximas entregas del módulo sin exigir branch por tarjeta. Publicación autorizada por el usuario, sin merge a MVP-1. Se separan reparaciones locales de acceso/entorno y asignación/documentación. Se conserva la base local de consulta propia del chofer; B02–B06 siguen pendientes, no se acreditan entrega/pago ni el cierre de B03 por incluir ese borrador. No se incluyen .env, contraseñas, respaldos ni archivos temporales.
