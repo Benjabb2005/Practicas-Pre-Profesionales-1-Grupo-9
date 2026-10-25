@@ -79,7 +79,7 @@ Fuente: reparto de .agents/skills/ppp1-mvp1/SKILL.md y documentación. Pull hast
 | ID | Tarea | Estado por confirmar | Depende de |
 | --- | --- | --- | --- |
 | [B01](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/35) | Pantalla y API de asignación manual | Hecho | J06, S04, R08 |
-| [B02](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/36) | Despacho, reasignación y desasignación | Pendiente | B01, S06, Q01 |
+| [B02](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/36) | Despacho, reasignación y desasignación | Hecho | B01, S06, Q01 |
 | [B03](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/37) | Vista móvil del chofer con pedidos propios | Pendiente | B02, S04 |
 | [B04](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/38) | Confirmación de entrega e historial | Pendiente | B03, S06 |
 | [B05](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39) | Registro de pago y prevención de doble cobro | Pendiente | B04, Q02 |
@@ -275,3 +275,7 @@ El usuario pidió cerrar lo que ya está completo y funcionando: **22 Hecho / 22
 ## Actualización B01
 
 B01 autorizada, implementada y verificada el 25/10/2026. Resultado actual: **23 Hecho / 21 Pendiente / 0 En progreso**. B02–B06 siguen pendientes; se supera la referencia histórica a B01 como borrador no aprobado. Ver evidencias específicas en docs/verificacion.md.
+
+## Actualización B02
+
+B02 implementada y probada el 25/10/2026. **24 Hecho / 20 Pendiente / 0 En progreso**. B03–B06 siguen pendientes, Q01 mantiene coordinación del equipo pendiente. Evidencias y límites en docs/verificacion.md. Cambios de este corte locales, no pusheados.

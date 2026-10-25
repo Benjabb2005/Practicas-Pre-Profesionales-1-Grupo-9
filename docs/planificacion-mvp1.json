@@ -540,20 +540,21 @@
       "id": "B02",
       "owner": "Benjamín",
       "title": "Despacho, reasignación y desasignación",
-      "status": "Pendiente",
+      "status": "Hecho",
       "deps": [
         "B01",
         "S06",
         "Q01"
       ],
       "acceptance": "Guardar chofer_id y despachar mediante transiciones acordadas; definir hasta cuándo se puede reasignar/quitar.",
-      "evidence": "Conflicto entre asignar→EN ENVÍO y secuencia EN PREPARACIÓN pendiente de acordar. Borrador local no aceptado.",
+      "evidence": "Preparación/despacho con transacciones e historial, chofer activo y CONFIRMADA; reasignación/quitar antes de despacho. Backend178, frontend47 y MySQL1/1, concurrencia/rollback y flujo HTTP aislado. Cierre documentado en docs/entrega-b02.md para publicación en feature/benjamin-asignacion-entregas; mutación de despacho por UI no probada con pedido sintético.",
       "issueNumber": 36,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/36",
       "previousInferredStatus": "Pendiente",
-      "statusConfirmed": false,
+      "statusConfirmed": true,
       "planningSource": "Reparto documentado",
-      "statusBasis": "Sin cierre completo acreditado"
+      "statusBasis": "Implementación autorizada, pruebas HTTP y MySQL reales; no aprobación de decisiones pendientes del equipo",
+      "verifiedAt": "2026-10-25"
     },
     {
       "id": "B03",
@@ -565,7 +566,7 @@
         "S04"
       ],
       "acceptance": "Pedidos reales propios, teléfono, dirección/entre calles/notas y acceso al mapa confirmado; vacío/error/reintento.",
-      "evidence": "Maqueta integrada; hay borrador real local no aprobado. No se presenta como entregado.",
+      "evidence": "Existe base publicada de API propia y ChoferPedidosPage. Pendiente revisar/completar presentación móvil, estados de pantalla y pruebas con dos choferes; no se acredita como terminada.",
       "issueNumber": 37,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/37",
       "previousInferredStatus": "Pendiente",

@@ -51,13 +51,13 @@ docker compose ps
 docker compose logs --tail 100 backend
 ```
 
-Frontend: http://localhost:5173 · backend: http://localhost:3000 · MySQL: localhost:3306. Para detener sin eliminar datos: `docker compose stop`. No borrar volúmenes.
+Frontend: http://localhost:5173 · backend: http://localhost:3000 · MySQL: localhost:3307 (configurable con MYSQL_HOST_PORT en .env). Para detener sin eliminar datos: `docker compose stop`. No borrar volúmenes.
 
 **Importante:** Compose no monta database/init.sql; iniciar MySQL no crea esas tablas. El script inicial no es una migración y no debe reaplicarse sobre datos existentes. Resolver T02 antes de habilitar persistencia.
 
 ## Ejecución nativa opcional
 
-MySQL debe estar disponible. Copiar backend/.env.example a backend/.env solo si falta; completar con los valores de la misma base. Para Node en host, DB_HOST=127.0.0.1; Compose usa mysql.
+MySQL debe estar disponible. Copiar backend/.env.example a backend/.env solo si falta; completar con los valores de la misma base. Para Node en host contra MySQL de Docker: DB_HOST=127.0.0.1 y DB_PORT=3307 (o el MYSQL_HOST_PORT elegido); Compose usa mysql:3306 internamente.
 
 En terminales separadas:
 ```powershell
