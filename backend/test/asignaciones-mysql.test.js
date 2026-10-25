@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const mysql = require('mysql2/promise');
 const { createAsignacionRepository } = require('../src/repositories/AsignacionRepository');
-const { validarAsignacion } = require('../src/services/AsignacionService');
+const { validarAsignacion, validarDespacho } = require('../src/services/AsignacionService');
 
 // Opt-in: nunca corre sobre la base de desarrollo ni sobre datos del cliente.
 test('MySQL real: persistencia, historial, concurrencia, aislamiento y rollback', {
@@ -50,13 +50,30 @@ test('MySQL real: persistencia, historial, concurrencia, aislamiento y rollback'
             };
         } });
         await assert.rejects(() => fallando.asignar(id, ids[2], ids[0], validarAsignacion), /fallo inyectado/);
+        await assert.rejects(() => fallando.cambiarEstado(id, 'EN PREPARACIÓN', ids[0], validarDespacho), /fallo inyectado/);
+        const [[sinCambio]] = await db.query('SELECT estado FROM pedidos WHERE id=?', [id]);
+        assert.equal(sinCambio.estado, 'EN STOCK');
         [[fila]] = await db.query('SELECT chofer_id FROM pedidos WHERE id=?', [id]);
         assert.equal(fila.chofer_id, ids[1]);
         await repo.asignar(id, ids[2], ids[0], validarAsignacion);
         await repo.asignar(id, null, ids[0], validarAsignacion);
         await repo.asignar(id, ids[1], ids[0], validarAsignacion);
-        // Fixture de despacho: sólo en esta base de prueba, no es una API de negocio.
-        await db.query('UPDATE pedidos SET estado=? WHERE id=?', ['EN ENVÍO', id]);
+        await assert.rejects(() => repo.cambiarEstado(id, 'EN ENVÍO', ids[0], validarDespacho), e => e.codigo === 'CONFLICTO');
+        const preparaciones = await Promise.allSettled([1, 2].map(() => repo.cambiarEstado(id, 'EN PREPARACIÓN', ids[0], validarDespacho)));
+        assert.equal(preparaciones.filter(r => r.status === 'fulfilled').length, 1);
+        await repo.asignar(id, null, ids[0], validarAsignacion);
+        await assert.rejects(() => repo.cambiarEstado(id, 'EN ENVÍO', ids[0], validarDespacho), e => e.codigo === 'CONFLICTO');
+        await repo.asignar(id, ids[1], ids[0], validarAsignacion);
+        await db.query('UPDATE usuarios SET activo=0 WHERE id=?', [ids[1]]);
+        await assert.rejects(() => repo.cambiarEstado(id, 'EN ENVÍO', ids[0], validarDespacho), e => e.codigo === 'CONFLICTO');
+        await db.query('UPDATE usuarios SET activo=1 WHERE id=?', [ids[1]]);
+        await db.query('UPDATE direcciones SET estado_validacion=? WHERE pedido_id=?', ['VALIDA', id]);
+        await assert.rejects(() => repo.cambiarEstado(id, 'EN ENVÍO', ids[0], validarDespacho), e => e.codigo === 'CONFLICTO');
+        await db.query('UPDATE direcciones SET estado_validacion=? WHERE pedido_id=?', ['CONFIRMADA', id]);
+        const despachos = await Promise.allSettled([1, 2].map(() => repo.cambiarEstado(id, 'EN ENVÍO', ids[0], validarDespacho)));
+        assert.equal(despachos.filter(r => r.status === 'fulfilled').length, 1);
+        const [[salidas]] = await db.query('SELECT COUNT(*) cantidad FROM historial_estados WHERE pedido_id=? AND estado_nuevo=?', [id, 'EN ENVÍO']);
+        assert.equal(salidas.cantidad, 1);
         assert.equal((await repo.propios(ids[1])).some(p => p.id === id), true);
         assert.equal(await repo.propio(id, ids[2]), null);
         await assert.rejects(() => repo.asignar(id, ids[2], ids[0], validarAsignacion), e => e.codigo === 'CONFLICTO');

@@ -1,9 +1,15 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { asignarChofer, listarChoferes, misPedidos } from './asignaciones'
+import { asignarChofer, listarChoferes, misPedidos, cambiarEstadoPedido } from './asignaciones'
 import { api } from './client'
 
 vi.mock('./client', () => ({ api: { get: vi.fn(), put: vi.fn() } }))
 beforeEach(() => vi.resetAllMocks())
+
+it('envía el cambio de estado por la operación protegida de asignaciones', async () => {
+  api.put.mockResolvedValue({ data: { pedido: { id: 7, estado: 'EN PREPARACIÓN' } } })
+  expect(await cambiarEstadoPedido(7, 'EN PREPARACIÓN')).toEqual({ id: 7, estado: 'EN PREPARACIÓN' })
+  expect(api.put).toHaveBeenCalledWith('/asignaciones/7/estado', { estado: 'EN PREPARACIÓN' })
+})
 
 it('consulta pedidos propios sin enviar una identidad de chofer desde el cliente', async () => {
   api.get.mockResolvedValue({ data: { pedidos: [{ id: 7 }] } })

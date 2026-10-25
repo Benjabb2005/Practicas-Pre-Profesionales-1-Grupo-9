@@ -9,6 +9,9 @@ export async function listarChoferes() {
 export async function asignarChofer(id, choferId) {
   return (await api.put(`/asignaciones/${id}`, { chofer_id: choferId })).data.pedido
 }
+export async function cambiarEstadoPedido(id, estado) {
+  return (await api.put(`/asignaciones/${id}/estado`, { estado })).data.pedido
+}
 export async function misPedidos() {
   return (await api.get('/chofer/pedidos')).data.pedidos
 }

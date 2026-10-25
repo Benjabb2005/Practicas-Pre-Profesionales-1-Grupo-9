@@ -15,7 +15,8 @@
 .asignacion-card .asignacion-estado { font-size: 10px; letter-spacing: .2px; }
 .asignacion-badge { display: inline-block; font-size: 10px; padding: 3px 7px; border-radius: 4px; }
 .asignacion-badge.lista { background: #edf6f0; color: #316748; }
-.asignacion-badge.bloqueada { background: #fff4e5; color: #805012; }
+.asignacion-badge.bloqueada { background: #fcebea; color: #a52a26; }
+.asignacion-badge.en-envio { background: #e8efff; color: #2857b7; }
 .asignacion-card .asignacion-motivo { color: #805012; font-size: 11px; }
 .asignacion-card .form-field { gap: 4px; font-size: 11px; font-weight: 400; }
 .asignacion-card .form-field select { height: 32px; font-size: 12px; }
@@ -46,3 +47,6 @@
   .asignacion-actions { grid-column: auto; }
   .asignaciones-page .button, .asignacion-card .form-field select { min-height: 36px; }
 }
+
+.asignaciones-estados { color: var(--theme-muted, #68778b); font-size: 11px; line-height: 1.6; }
+.asignacion-confirmar-acciones { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }

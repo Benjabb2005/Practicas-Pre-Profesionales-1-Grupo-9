@@ -6,6 +6,7 @@ const { requiereRol } = require('../middleware/roles');
 
 const idSchema = z.object({ id: z.coerce.number().int().positive() });
 const cuerpoSchema = z.object({ chofer_id: z.number().int().positive().nullable() }).strict();
+const estadoSchema = z.object({ estado: z.enum(['EN PREPARACIÓN', 'EN ENVÍO']) }).strict();
 
 function createAsignacionesRouter(container = {}) {
     const router = express.Router();
@@ -14,6 +15,11 @@ function createAsignacionesRouter(container = {}) {
     router.use(requiereRol('ADMINISTRADOR', 'OPERADOR'));
     router.get('/', async (req, res) => res.json({ pedidos: await servicio.listar() }));
     router.get('/choferes', async (req, res) => res.json({ choferes: await servicio.choferes() }));
+    router.put('/:id/estado', async (req, res) => {
+        const { id } = validar(idSchema, req.params);
+        const { estado } = validar(estadoSchema, req.body);
+        res.json({ pedido: await servicio.cambiarEstado(id, estado, req.usuario.id) });
+    });
     router.put('/:id', async (req, res) => {
         const { id } = validar(idSchema, req.params);
         const { chofer_id } = validar(cuerpoSchema, req.body);

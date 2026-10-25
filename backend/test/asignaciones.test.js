@@ -2,12 +2,45 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const jwt = require('jsonwebtoken');
-const { validarAsignacion, createAsignacionService } = require('../src/services/AsignacionService');
+const { validarAsignacion, createAsignacionService, validarDespacho } = require('../src/services/AsignacionService');
 const { createAsignacionRepository } = require('../src/repositories/AsignacionRepository');
 const createApp = require('../app');
 
 const base = { id: 10, estado: 'EN STOCK', chofer_id: null, estado_validacion: 'CONFIRMADA' };
 const chofer = { id: 3, rol: 'CHOFER', activo: 1 };
+
+test('despacho: secuencia, dirección y chofer vigentes son obligatorios', () => {
+    validarDespacho(base, 'EN PREPARACIÓN');
+    const preparado = { ...base, estado: 'EN PREPARACIÓN', chofer_id: 3 };
+    validarDespacho(preparado, 'EN ENVÍO', chofer);
+    for (const usuario of [null, { ...chofer, activo: 0 }, { ...chofer, rol: 'OPERADOR' }]) {
+        assert.throws(() => validarDespacho(preparado, 'EN ENVÍO', usuario), e => e.codigo === 'CONFLICTO');
+    }
+    assert.throws(() => validarDespacho(base, 'EN ENVÍO', chofer), e => e.codigo === 'CONFLICTO');
+    assert.throws(() => validarDespacho({ ...preparado, estado_validacion: 'VALIDA' }, 'EN ENVÍO', chofer), e => e.codigo === 'CONFLICTO');
+    assert.throws(() => validarDespacho(preparado, 'ENTREGADO', chofer), e => e.codigo === 'DATOS_INVALIDOS');
+    assert.throws(() => validarDespacho(null, 'EN PREPARACIÓN'), e => e.codigo === 'NO_ENCONTRADO');
+    assert.throws(() => validarDespacho({ ...preparado, estado: 'EN ENVÍO' }, 'EN ENVÍO', chofer), e => e.codigo === 'CONFLICTO');
+});
+
+test('listado: distingue preparar de despachar y muestra el requisito que falta', async () => {
+    const filas = [base, { ...base, estado: 'EN PREPARACIÓN' },
+        { ...base, estado: 'EN PREPARACIÓN', chofer_id: 3, chofer_rol: 'CHOFER', chofer_activo: 1 }];
+    const servicio = createAsignacionService({ repositorio: { listar: async () => filas } });
+    const [stock, sinChofer, listo] = await servicio.listar();
+    assert.equal(stock.puede_preparar, true);
+    assert.equal(stock.puede_despachar, false);
+    assert.match(sinChofer.motivo_despacho, /chofer activo/);
+    assert.equal(listo.puede_despachar, true);
+    assert.equal(listo.motivo_despacho, null);
+});
+
+test('fallo de historial al preparar revierte y libera la conexión', async () => {
+    const db = dbTransaccion({ fallaHistorial: true });
+    await assert.rejects(() => createAsignacionRepository(db).cambiarEstado(10, 'EN PREPARACIÓN', 1, validarDespacho));
+    assert.ok(!db.llamadas.includes('commit'));
+    assert.deepEqual(db.llamadas.slice(-2), ['rollback', 'release']);
+});
 
 test('listado: informa habilitación y motivos coherentes con las reglas del servidor', async () => {
     const filas = [base, { ...base, id: 11, estado_validacion: 'VALIDA', chofer_id: 3 },
@@ -126,6 +159,13 @@ test('HTTP: permisos, validación de cuerpo y aislamiento por identidad del chof
         }
         assert.equal((await pedir('/asignaciones/10', 'OPERADOR', 'PUT', { chofer_id: 3 })).status, 200);
         assert.equal((await pedir('/asignaciones/10', 'ADMINISTRADOR', 'PUT', { chofer_id: null })).status, 200);
+        assert.equal((await pedir('/asignaciones/10/estado', null, 'PUT', { estado: 'EN PREPARACIÓN' })).status, 401);
+        assert.equal((await pedir('/asignaciones/10/estado', 'CHOFER', 'PUT', { estado: 'EN PREPARACIÓN' })).status, 403);
+        for (const body of [{}, { estado: 'PAGADO' }, { estado: 'EN PREPARACIÓN', usuario_id: 4 }]) {
+            assert.equal((await pedir('/asignaciones/10/estado', 'OPERADOR', 'PUT', body)).status, 400);
+        }
+        assert.equal((await pedir('/asignaciones/10/estado', 'OPERADOR', 'PUT', { estado: 'EN ENVÍO' })).status, 409);
+        assert.equal((await pedir('/asignaciones/10/estado', 'ADMINISTRADOR', 'PUT', { estado: 'EN PREPARACIÓN' })).status, 200);
         const consulta = consultas.find(q => q.sql.includes('p.chofer_id=?'));
         assert.ok(consulta.sql.includes("p.estado='EN ENVÍO'"));
         assert.ok(consulta.sql.includes("d.estado_validacion='CONFIRMADA'"));
