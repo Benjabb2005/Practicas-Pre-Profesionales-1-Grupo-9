@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import './App.css'
 import Icon from './components/Icon.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 import ChoferPedidosPage from './pages/ChoferPedidosPage.jsx'
 import AsignacionesPage from './pages/AsignacionesPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -37,7 +38,7 @@ function Sidebar({ rol, onLogout }) {
   }
 
   return <aside className="sidebar">
-    <Brand/>
+    <div className="sidebar-brand-row"><Brand/><ThemeToggle/></div>
     <nav className="navigation" aria-label="Navegación principal">
       {items.map((item) => item.soon
         ? <button key={item.label} className="nav-item" disabled><Icon name={item.icon}/><span>{item.label}</span><small>PRÓX.</small></button>

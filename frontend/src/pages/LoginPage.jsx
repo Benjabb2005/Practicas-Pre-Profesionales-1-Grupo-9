@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
+import ThemeToggle from '../ThemeToggle.jsx'
 import { useAuth } from '../auth/useAuth'
 
 function LoginPage() {
@@ -44,6 +45,7 @@ function LoginPage() {
       <div className="login-rings" aria-hidden="true"><i/><i/><i/></div>
     </section>
     <section className="login-panel" aria-labelledby="login-heading">
+      <ThemeToggle/>
       <div className="login-form-wrap">
         <p className="login-eyebrow">Bienvenido</p>
         <h2 id="login-heading">Iniciar sesión</h2>

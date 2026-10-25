@@ -18,5 +18,6 @@ PUT /api/asignaciones/:id, JSON { chofer_id: entero positivo|null } → { pedido
 ## Límites del borrador conservado
 El borrador ya permitía quitar/reasignar antes del despacho y consultar pedidos propios en /chofer. Se conserva ese comportamiento, pero no se acredita B02/B03 completas: faltan despacho, revisión integral móvil y acuerdo de reglas. No se implementan entrega, pago, acreditación, rutas optimizadas ni nuevas decisiones de negocio en B01.
 
-## Detalle dentro de la pantalla
-Ver dirección abre un dialog modal nativo, como DetailModal de branch-benjamin-1: fondo oscurecido, cierre con botón/Escape/fondo y retorno del foco. Reutiliza la revisión actual con dirección, mapa e historial; no navega a otra ruta. Al cerrar vuelve a consultar asignaciones para reflejar cambios de confirmación. La ruta independiente de revisión sigue disponible desde el resto de la aplicación.
+## Consultas separadas dentro de asignaciones
+
+Ver mapa abre un dialog de consulta con mapa, dirección y estado de confirmación. Más información abre otro dialog con cliente, DNI/contacto, dirección completa, estado, canal y observaciones, sin cargar Leaflet. Ambos consultan GET /api/pedidos/:id, muestran carga/error/reintento y cierran con botón/Escape/fondo sin navegar. No editan datos ni confirman ubicación: la gestión sigue en Revisión de Direcciones. Patrón tomado de OrderMapLink/OrderMapModal y DetailModal de branch-benjamin-1.

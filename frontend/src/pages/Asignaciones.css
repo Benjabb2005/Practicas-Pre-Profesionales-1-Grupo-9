@@ -23,11 +23,18 @@
 .asignaciones-page .button { min-height: 32px; font-size: 11px; padding-inline: 11px; box-shadow: none; }
 .asignaciones-page .button:disabled { opacity: .45; cursor: not-allowed; }
 .asignacion-revisar { border: 0; background: none; font: inherit; color: #4267ab; font-size: 11px; padding: 6px 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.asignacion-detalle-modal { width: min(1100px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 12px; color: #24334a; background: #f5f7fb; box-shadow: 0 24px 80px #0005; }
+.asignacion-detalle-modal { width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 12px; color: #24334a; background: #f5f7fb; box-shadow: 0 24px 80px #0005; }
 .asignacion-detalle-modal::backdrop { background: #101a2bcc; }
 .asignacion-detalle-header { position: sticky; top: 0; z-index: 1100; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #dfe5ed; background: white; }
 .asignacion-detalle-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
 .asignacion-detalle-modal .revision-page { padding: 16px; }
+.asignacion-detalle-contenido { padding: 18px; font-size: 12px; }
+.asignacion-solo-mapa .map-preview, .asignacion-solo-mapa .map-placeholder { height: min(380px, 55dvh); min-height: 220px; border-radius: 8px; overflow: hidden; }
+.asignacion-detalle-nota { color: #68778b; font-size: 11px; }
+.asignacion-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px 24px; margin: 0; }
+.asignacion-datos div { min-width: 0; overflow-wrap: anywhere; }
+.asignacion-datos dt { color: #68778b; font-size: 11px; margin-bottom: 4px; }
+.asignacion-datos dd { margin: 0; line-height: 1.5; }
 @media (max-width: 1000px) {
   .asignacion-card { grid-template-columns: minmax(0, 1fr) minmax(150px, 190px); }
   .asignacion-actions { grid-column: 2; max-width: none; }

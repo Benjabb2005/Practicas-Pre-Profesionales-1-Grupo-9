@@ -1,0 +1,77 @@
+:root { --theme-background: #f4f6fa; --theme-surface: #fff; --theme-raised: #f8faff; --theme-text: #172a45; --theme-muted: #718094; --theme-border: #dce4ef; --theme-link: #3159d5; }
+:root[data-theme="dark"] { --theme-background: #17191e; --theme-surface: #22252b; --theme-raised: #292d34; --theme-text: #edf0f4; --theme-muted: #a6adb9; --theme-border: #383d46; --theme-link: #9dbaff; background: var(--theme-background); color: var(--theme-text); --muted: #a6adb9; }
+.theme-toggle { display:inline-flex; flex-shrink:0; align-items:center; justify-content:center; width:32px; height:32px; padding:6px; border:0; border-radius:8px; background:transparent; color:var(--theme-muted); cursor:pointer; }
+.theme-toggle:hover { background:var(--theme-raised); color:var(--theme-text); }
+.theme-toggle:focus-visible { outline:2px solid var(--theme-link); outline-offset:3px; }
+.sidebar-brand-row { display:flex; align-items:center; justify-content:space-between; gap:2px; }
+.sidebar-brand-row .brand { padding-inline:3px; }
+.sidebar .nav-item { text-decoration: none; }
+.sidebar .theme-toggle { color:#aeb8c7; width:28px; height:28px; }
+.sidebar .theme-toggle:hover { background:#ffffff12; color:#fff; }
+.login-panel { position:relative; }
+.login-panel > .theme-toggle { position:absolute; top:16px; right:16px; }
+.driver-header-actions { display:flex; align-items:center; gap:8px; }
+:root[data-theme="dark"] .login-brand { background:#20242c; }
+:root[data-theme="dark"] :is(.login-shell, .operator-app, .workspace, .driver-page, .session-loading) { background: var(--theme-background); color: var(--theme-text); }
+:root[data-theme="dark"] :is(.panel, .shipments-card, .stat-card, .driver-stop, .driver-progress, .driver-payment-dialog, .order-detail-card, .order-detail-modal, .order-map-modal, .delivery-modal, .live-driver-empty, .demo-credentials) { background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(.filters, .order-detail-header, .order-detail-original, .order-detail-notes, .live-driver-notes, .live-driver-tabs, .driver-details-address, .location-placeholder, .form-divider span, .show-password:hover) { background: var(--theme-raised); border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(h1, h2, h3, h4, label, legend, b, strong, dt, dd, .order-detail-name, .driver-stop-detail strong, .form-field, .driver-brand-copy strong) { color: var(--theme-text); }
+:root[data-theme="dark"] :is(p, small, .subtitle, .driver-eyebrow, .driver-logout, .driver-stop-detail span, .login-secure, .order-detail-original > span, .order-detail-card dt, .live-driver-locality, .live-driver-code, .form-divider span, .driver-brand-copy small, .candidate-list small) { color: var(--theme-muted); }
+:root[data-theme="dark"] :is(input:not([type="radio"]):not([type="checkbox"]), select, textarea) { background: var(--theme-background); color: var(--theme-text); border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(input, textarea)::placeholder { color: #929ba9; }
+:root[data-theme="dark"] input:-webkit-autofill { -webkit-text-fill-color: var(--theme-text); box-shadow: 0 0 0 1000px var(--theme-background) inset; }
+:root[data-theme="dark"] :is(input, select, textarea):disabled { background: var(--theme-raised); color: var(--theme-muted); }
+:root[data-theme="dark"] :is(.order-table th, .order-table td, .order-table tr, .form-divider, .location-review, .candidate-list li, .driver-header, .order-detail-header, .delivery-history article) { border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(.button-outline, .driver-map-button, .order-map-close, .driver-cancel-payment, .show-password) { background: var(--theme-raised); color: var(--theme-text); border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(.button-outline, .driver-map-button, .order-map-close, .driver-cancel-payment):hover { background: #343a44; }
+:root[data-theme="dark"] :is(.order-detail-card a, .live-driver-phone, .driver-details-address a, .login-eyebrow, .eyebrow, .location-review h3) { color: var(--theme-link); }
+:root[data-theme="dark"] :is(.driver-avatar, .order-detail-icon, .driver-stop-number, .live-driver-summary-icon, .live-driver-empty-icon, .step-number) { background: #2c3b52; color: #c4d5ee; border-color: #41516a; }
+:root[data-theme="dark"] .order-detail-card > h3 > span { background: #30343c; color: var(--theme-muted); }
+:root[data-theme="dark"] .prototype-notice { background: #352b19; color: #ead09b; border-color: #594627; }
+:root[data-theme="dark"] :is(.login-error, .delivery-error, .field-error, .order-row-error) { color: #ffb5ad; }
+:root[data-theme="dark"] .login-error { background: #40242c; }
+:root[data-theme="dark"] .driver-online { color: #8cdfad; }
+:root[data-theme="dark"] .driver-online span { background: #6ad392; }
+:root[data-theme="dark"] .address-alert { background: #40242c; color: #ffb5ad; border-color: #70404b; }
+:root[data-theme="dark"] .live-driver-tabs button { color: var(--theme-muted); }
+:root[data-theme="dark"] .live-driver-tabs button[aria-pressed="true"] { background: #3a414d; color: var(--theme-text); }
+:root[data-theme="dark"] .live-driver-counts strong { color: var(--theme-text); }
+:root[data-theme="dark"] :is(.live-driver-counts, .driver-progress-heading strong span) { color: var(--theme-muted); }
+:root[data-theme="dark"] .order-state-badge { background: #343943; color: #d1d7e0; }
+:root[data-theme="dark"] :is(.order-state-badge.en_camino, .driver-stop-status.next) { background: #2c3b52; color: #c4d5ee; }
+:root[data-theme="dark"] .order-state-badge.en_preparacion { background: #473b25; color: #f2d09b; }
+:root[data-theme="dark"] :is(.order-state-badge.entregado, .driver-stop-status.completed) { background: #1b4236; color: #b1e2ca; }
+:root[data-theme="dark"] :is(.order-state-badge.fallido, .driver-stop-status.failed) { background: #492932; color: #ffb5ad; }
+:root[data-theme="dark"] .driver-stop-status.queued { background: #343943; color: #d1d7e0; }
+:root[data-theme="dark"] .driver-progress progress { background: #383d46; }
+:root[data-theme="dark"] .driver-progress progress::-webkit-progress-bar { background: #383d46; }
+:root[data-theme="dark"] :is(.driver-payment-options label, .delivery-payment-options label) { background: var(--theme-background); border-color: var(--theme-border); }
+:root[data-theme="dark"] .delivery-payment-options label:has(input:checked) { background: #1b4236; color: #b1e2ca; border-color: #4a9876; }
+:root[data-theme="dark"] :is(.driver-payment-options strong, .driver-payment-options small) { color: var(--theme-text); }
+:root[data-theme="dark"] .driver-delivery-button:disabled { background: #1b4236; color: #b1e2ca; border-color: #4a9876; }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) saturate(.75); }
+:root[data-theme="dark"] .leaflet-container { background: #22252b; }
+:root[data-theme="dark"] :is(.leaflet-control-attribution, .leaflet-bar a) { background: #22252b; color: #edf0f4; border-color: #383d46; }
+:root[data-theme="dark"] .leaflet-control-attribution a { color: #9dbaff; }
+:root[data-theme="dark"] :is(.order-detail-modal, .order-map-modal, .delivery-modal)::backdrop { background: #090b10c9; }
+
+
+/* Pantallas actuales de MVP-1: misma paleta de branch-benjamin-1. */
+:root[data-theme="dark"] body { background: var(--theme-background); color: var(--theme-text); }
+:root[data-theme="dark"] :is(.login-panel, .route-loading, .asignacion-detalle-modal, .asignacion-detalle-header, .users-form-panel, .clientes-form-panel) { background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(.users-table, .clientes-table, .shipments-table, .listado-table) { color: var(--theme-text); }
+:root[data-theme="dark"] :is(th, td, .users-table-wrap, .clientes-table-wrap, .asignaciones-resumen, .asignacion-card, .geo-candidatos, .cliente-lista, .cliente-lista li, .detalle-datos, .listado-filtros) { border-color: var(--theme-border); }
+:root[data-theme="dark"] :is(th, .users-table thead, .clientes-table thead, .cliente-lista, .cliente-lista li button, .cliente-elegido, .map-placeholder, .map-grid) { background: var(--theme-raised); color: var(--theme-text); }
+:root[data-theme="dark"] :is(tr:hover, .cliente-lista li button:hover) { background: var(--theme-raised); }
+:root[data-theme="dark"] :is(.asignacion-revisar, .users-edit, .clientes-edit, .users-table a, .clientes-table a) { color: var(--theme-link); }
+:root[data-theme="dark"] .asignacion-card .form-field select { background: var(--theme-background); color: var(--theme-text); border-color: var(--theme-border); }
+:root[data-theme="dark"] .asignacion-card .form-field select:disabled { background: var(--theme-raised); color: var(--theme-muted); }
+:root[data-theme="dark"] :is(.asignacion-badge.lista, .validacion-badge.green, .users-status.active, .users-ok) { background: #1b4236; color: #b1e2ca; border-color: #4a9876; }
+:root[data-theme="dark"] :is(.asignacion-badge.bloqueada, .validacion-badge.amber) { background: #473b25; color: #f2d09b; }
+:root[data-theme="dark"] .asignacion-card .asignacion-motivo { color: #f2d09b; }
+:root[data-theme="dark"] :is(.validacion-badge.blue, .stat-icon.blue) { background: #2c3b52; color: #c4d5ee; }
+:root[data-theme="dark"] .validacion-badge.gris { background: #343943; color: #d1d7e0; }
+:root[data-theme="dark"] :is(.users-alert, .clientes-alert, .problemas-direccion) { background: #40242c; color: #ffb5ad; border-color: #70404b; }
+:root[data-theme="dark"] .asignacion-detalle-modal::backdrop { background: #090b10c9; }
+:root[data-theme="dark"] :is(.sidebar, .login-brand) { color: #edf0f4; }
+@media (max-width: 640px) { .sidebar-brand-row { width: 100%; } }

@@ -1,10 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
-import PedidoRevisionDetallePage from './PedidoRevisionDetallePage.jsx'
+import MapPreview from '../components/MapPreview.jsx'
+import { obtenerPedido } from '../api/pedidos'
 import { listarAsignaciones, listarChoferes, asignarChofer } from '../api/asignaciones'
 import { mensajeError } from '../api/client'
 import './Asignaciones.css'
 
-function DetalleDireccion({ pedidoId, onClose }) {
+function ContenidoDetalle({ pedidoId, tipo }) {
+  const [pedido, setPedido] = useState(null)
+  const [error, setError] = useState('')
+  const [intento, setIntento] = useState(0)
+  useEffect(() => {
+    let vigente = true
+    obtenerPedido(pedidoId).then(p => { if (vigente) setPedido(p) })
+      .catch(e => { if (vigente) setError(mensajeError(e)) })
+    return () => { vigente = false }
+  }, [pedidoId, intento])
+  if (error) return <div className="asignacion-detalle-contenido"><p role="alert">{error}</p><button className="button button-outline" onClick={() => { setError(''); setIntento(i => i + 1) }}>Reintentar</button></div>
+  if (!pedido) return <p className="asignacion-detalle-contenido" role="status">Cargando pedido…</p>
+  const direccion = [pedido.calle, pedido.altura, pedido.localidad, pedido.provincia].filter(Boolean).join(' ')
+  if (tipo === 'mapa') return <div className="asignacion-detalle-contenido asignacion-solo-mapa">
+    <MapPreview latitud={pedido.latitud} longitud={pedido.longitud} etiqueta={direccion}/>
+    <p>{direccion || 'Sin dirección registrada'}</p>
+    <p className="asignacion-detalle-nota">{pedido.estado_validacion === 'CONFIRMADA' ? 'Ubicación confirmada.' : 'Ubicación pendiente de confirmación humana.'}</p>
+  </div>
+  const datos = [
+    ['Cliente', pedido.cliente_nombre], ['DNI', pedido.cliente_dni],
+    ['Teléfono', pedido.cliente_telefono], ['Email', pedido.cliente_email],
+    ['Dirección', direccion], ['Piso / Depto', pedido.piso_depto],
+    ['Código postal', pedido.codigo_postal], ['Entre calles', pedido.entre_calles],
+    ['Estado del pedido', pedido.estado], ['Validación', pedido.estado_validacion],
+    ['Canal de origen', pedido.canal_origen], ['Observaciones', pedido.observaciones],
+  ]
+  return <div className="asignacion-detalle-contenido"><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl></div>
+}
+
+function DetalleDireccion({ pedidoId, tipo, onClose }) {
   const dialogoRef = useRef(null)
   useEffect(() => {
     const dialogo = dialogoRef.current
@@ -22,8 +52,8 @@ function DetalleDireccion({ pedidoId, onClose }) {
       const rect = event.currentTarget.getBoundingClientRect()
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) event.currentTarget.close()
     }}>
-    <header className="asignacion-detalle-header"><h2 id="asignacion-detalle-titulo">Dirección del pedido #{pedidoId}</h2><button type="button" className="button button-outline" onClick={() => dialogoRef.current.close()}>Cerrar detalle</button></header>
-    <PedidoRevisionDetallePage pedidoId={pedidoId}/>
+    <header className="asignacion-detalle-header"><h2 id="asignacion-detalle-titulo">{tipo === 'mapa' ? 'Mapa' : 'Información'} del pedido #{pedidoId}</h2><button type="button" className="button button-outline" onClick={() => dialogoRef.current.close()}>Cerrar detalle</button></header>
+    <ContenidoDetalle pedidoId={pedidoId} tipo={tipo}/>
   </dialog>
 }
 
@@ -50,7 +80,8 @@ function FilaAsignacion({ pedido, choferes, onGuardar, onVerDireccion, ocupado }
     <div className="asignacion-actions">
       <button className="button button-primary" disabled={ocupado || !pedido.puede_asignar || !seleccionadoDisponible || !cambio} onClick={() => onGuardar(pedido.id, Number(choferId))}>Asignar</button>
       {pedido.puede_quitar && <button className="button button-outline" disabled={ocupado} onClick={() => onGuardar(pedido.id, null)}>Quitar chofer</button>}
-      <button type="button" className="asignacion-revisar" disabled={ocupado} aria-label={`Ver dirección del pedido #${pedido.id}`} onClick={() => onVerDireccion(pedido.id)}>Ver dirección</button>
+      <button type="button" className="asignacion-revisar" disabled={ocupado} aria-label={`Ver mapa del pedido #${pedido.id}`} onClick={() => onVerDireccion({ id: pedido.id, tipo: 'mapa' })}>Ver mapa</button>
+      <button type="button" className="asignacion-revisar" disabled={ocupado} aria-label={`Más información del pedido #${pedido.id}`} onClick={() => onVerDireccion({ id: pedido.id, tipo: 'informacion' })}>Más información</button>
     </div>
   </article>
 }
@@ -96,6 +127,6 @@ export default function AsignacionesPage() {
       {soloHabilitados && !visibles.length && <p>No hay pedidos habilitados. Revisá y confirmá las direcciones de los pedidos bloqueados.</p>}
     </>}
     <section className="asignaciones-grid" aria-label="Pedidos para asignar">{visibles.map(p => <FilaAsignacion key={`${p.id}-${p.chofer_id}`} pedido={p} choferes={datos.choferes} ocupado={ocupado} onGuardar={guardar} onVerDireccion={setDetalleId}/>)}</section>
-    {detalleId !== null && <DetalleDireccion pedidoId={detalleId} onClose={() => { setDetalleId(null); setVersion(v => v + 1) }}/>}
+    {detalleId !== null && <DetalleDireccion pedidoId={detalleId.id} tipo={detalleId.tipo} onClose={() => setDetalleId(null)}/>}
   </main>
 }

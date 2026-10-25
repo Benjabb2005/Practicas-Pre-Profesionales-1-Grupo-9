@@ -502,3 +502,17 @@ Pedido explícito: reutilizar el patrón modal de branch-benjamin-1, crear branc
 Verificación: 42 pruebas frontend, lint y build Docker pasan; warning de chunk grande preexistente. Navegador real: abrir pedidos confirmados/no confirmados, cerrar con Escape y botón, URL /asignaciones estable y foco devuelto al botón correcto. No se modificaron pedidos existentes. Persistencia/API de B01 conservan verificación previa. Cierre por fondo implementado, no probado por clic en esta sesión; escritorio no revisado visualmente.
 
 Branch creada desde MVP-1 f87f6e1: feature/benjamin-asignacion-entregas; nombre cubre próximas entregas del módulo sin exigir branch por tarjeta. Publicación autorizada por el usuario, sin merge a MVP-1. Se separan reparaciones locales de acceso/entorno y asignación/documentación. Se conserva la base local de consulta propia del chofer; B02–B06 siguen pendientes, no se acreditan entrega/pago ni el cierre de B03 por incluir ese borrador. No se incluyen .env, contraseñas, respaldos ni archivos temporales.
+
+## Separación de mapa e información (25/10/2026)
+
+A pedido de Benjamín se reemplaza Ver dirección por Ver mapa y Más información, según el patrón OrderMapLink y DetailModal de branch-benjamin-1. Modales de consulta independientes: mapa/estado de confirmación por un lado; cliente, contacto, dirección, estado, canal y notas por otro. Ambos usan obtenerPedido y contemplan carga/error/reintento. Sin cambios de backend ni escritura; editar/confirmar continúa en Revisión de Direcciones.
+
+Lint y build Docker pasan, con warning preexistente de chunk grande. Navegador real: Información contiene 12 campos y ningún mapa; Mapa contiene un Leaflet y ningún campo del detalle; URL /asignaciones estable, cierre por botón y Escape. Sin cambios de pedidos. Esta modificación queda local sobre feature/benjamin-asignacion-entregas; no se hizo un nuevo commit/push en este pedido.
+
+## Tema oscuro y menú sin subrayado (25/10/2026)
+
+Autorizado por Benjamín: recuperar tema de branch-benjamin-1 y pushear todo a feature/benjamin-asignacion-entregas. Se copiaron theme.js, ThemeToggle.jsx y Theme.css desde origin/branch-benjamin-1, adaptando selectores para MVP-1. Conserva paleta, luna/sol, localStorage mandatodo-theme, preferencia del sistema, aplicación antes de render y sincronización storage entre pestañas. Fallback sin window/matchMedia y tolerancia a storage bloqueado. Selector en lateral, login y cabecera chofer. Menú lateral sin subrayados conservando estado activo.
+
+Adaptados formularios, tablas y modales actuales, incluidos Ver mapa y Más información. Esta publicación incluye esa separación pendiente del pedido anterior. Sin cambios de API ni datos de negocio. Spec frontend/specs/tema.md.
+
+Verificación: 46 pruebas frontend (4 nuevas de tema) aprobadas, lint y build Docker pasan (warning preexistente de chunk >500 kB). Navegador real: alternancia claro/oscuro y persistencia al recargar; tarjeta/modal con fondo RGB 34,37,43 y texto 237,240,244; los seis enlaces laterales devuelven textDecorationLine none. Probado modal de información en oscuro y retorno al listado, sin escribir pedidos. No se acredita prueba visual exhaustiva de todas las pantallas/desktop. Se conserva límite preexistente del check raíz por copia Claude ppp1-mvp1 desactualizada.

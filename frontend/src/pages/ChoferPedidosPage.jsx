@@ -3,6 +3,7 @@ import { useAuth } from '../auth/useAuth'
 import { misPedidos } from '../api/asignaciones'
 import { mensajeError } from '../api/client'
 import '../DriverApp.css'
+import ThemeToggle from '../ThemeToggle.jsx'
 
 function mapa(pedido) {
   if (pedido.estado_validacion !== 'CONFIRMADA' || pedido.latitud == null || pedido.longitud == null) return null
@@ -23,7 +24,7 @@ export default function ChoferPedidosPage({ onLogout }) {
     return () => { vigente = false }
   }, [version])
   return <main className="driver-page"><div className="driver-shell">
-    <header className="driver-header"><strong>MandáTodo</strong><button className="driver-logout" onClick={onLogout}>Cerrar sesión</button></header>
+    <header className="driver-header"><strong>MandáTodo</strong><div className="driver-header-actions"><ThemeToggle/><button className="driver-logout" onClick={onLogout}>Cerrar sesión</button></div></header>
     <section className="driver-intro"><div><p>Mis entregas</p><h1>{usuario.nombre}</h1><p>Pedidos despachados a tu nombre.</p></div></section>
     <button className="button button-outline" onClick={() => { setPedidos(null); setError(''); setVersion(v => v + 1) }}>Actualizar</button>
     {error && <p role="alert" className="users-alert">{error}</p>}
