@@ -595,3 +595,18 @@ Pedido de Benjamín: clientes guardados poco legibles y login con paleta distint
 ## Publicación del cierre B02 (25/10/2026)
 
 Benjamín autoriza pushear B02 con información de cambios y actualizar la tabla; luego explicar B03 sin implementarla. Resumen de entrega y verificaciones/límites en docs/entrega-b02.md. Se publican B02 y ajustes solicitados de puerto/colores/sesión/contraste en feature/benjamin-asignacion-entregas, separados en commits revisables. Las notas anteriores de cambios locales quedan superadas una vez verificado el push. B02 Hecho y B03–B06 Pendiente; Q01 conserva coordinación del equipo pendiente.
+
+## Vinculación de commits y tickets (25/10/2026)
+
+Por pedido de Benjamín, se actualizaron los mensajes de los seis commits publicados para incluir (#35) o (#36), Refs y el enlace al ticket. Se preservaron los árboles de archivos, autoría y fechas; cambian los identificadores. Respaldo local: backup/benjamin-antes-vincular-tickets-20261025. Push con force-with-lease contra el SHA remoto esperado, no se sobrescribieron cambios ajenos. Descripciones de #35/#36 contienen enlaces directos a sus commits; GitHub muestra enlaces al ticket dentro de cada commit.
+
+| Anterior | Actual | Ticket |
+| --- | --- | --- |
+| 3ff0823 | 8c6c987 | #35 |
+| ed317b9 | e0b7eff | #35 |
+| ee02d46 | cc2cd7a | #35 |
+| f2763ef | 164807b | #36 |
+| c6653b9 | 3e241c7 | #36 |
+| a9d0576 | a58901a | #36 |
+
+Los SHA anteriores en registros históricos de esta documentación están superados por esta tabla. Para las próximas tareas, incluir el ticket correspondiente en cada mensaje de commit y actualizar los enlaces del ticket al publicar; no usar Closes hasta que se pretenda cerrar por merge. No se implementa B03 en esta tarea.

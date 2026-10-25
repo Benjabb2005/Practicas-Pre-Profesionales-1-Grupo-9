@@ -39,3 +39,9 @@ Bloqueado se muestra rojo, En envío azul y habilitados/estados finales verde, e
 ## Siguiente tarea: B03, pendiente de plan
 
 Ya existe una base de consulta propia y pantalla de chofer. Falta revisarla como entrega móvil: diseño compacto, datos completos, teléfono y ubicación confirmada, carga/vacío/error/reintento y comprobación con dos choferes. B03 no incluye registrar entrega ni cobro. No se implementa B03 en este cierre.
+
+## Enlaces directos
+
+[Ticket B02 #36](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/36) ↔ [Commit principal 164807b](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/commit/164807b2e8a5226d1421919aa252397b3f44d17f).
+
+[Ticket B01 #35](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/35) ↔ [Commit principal e0b7eff](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/commit/e0b7effbd60fba66334fdf5eafb3dee1c4dac240). Los mensajes y descripciones contienen enlaces en ambos sentidos. Tabla de SHA anteriores/actuales en docs/tareas.md.
