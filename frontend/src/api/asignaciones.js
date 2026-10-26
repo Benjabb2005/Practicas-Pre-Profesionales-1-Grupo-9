@@ -15,3 +15,7 @@ export async function cambiarEstadoPedido(id, estado) {
 export async function misPedidos() {
   return (await api.get('/chofer/pedidos')).data.pedidos
 }
+
+export async function obtenerMiPedido(id) {
+  return (await api.get(`/chofer/pedidos/${id}`)).data.pedido
+}

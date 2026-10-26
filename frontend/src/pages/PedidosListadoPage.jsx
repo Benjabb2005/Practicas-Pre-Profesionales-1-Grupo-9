@@ -1,3 +1,5 @@
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
@@ -52,6 +54,8 @@ function PedidosListadoPage() {
   const [resumen, setResumen] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+
+  const paginado = usePagination(pedidos, JSON.stringify(filtrosAplicados))
 
   // El resumen usa el total de pedidos; la tabla consulta al servidor cada vez
   // que cambian los filtros. Así los contadores no quedan limitados al filtro.
@@ -203,7 +207,7 @@ function PedidosListadoPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pedidos.map((pedido) => <tr key={pedido.id}>
+                    {paginado.items.map((pedido) => <tr key={pedido.id}>
                       <td>
                         <b className="pedido-id">#{pedido.id}</b>
                         {pedido.codigo && <small className="pedido-dato">{pedido.codigo}</small>}
@@ -229,6 +233,8 @@ function PedidosListadoPage() {
                   </tbody>
                 </table>
               </div>}
+
+    <Paginacion datos={paginado} nombre="pedidos" disabled={cargando}/>
     </section>
   </main>
 }

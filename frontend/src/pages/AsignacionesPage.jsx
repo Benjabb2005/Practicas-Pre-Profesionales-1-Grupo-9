@@ -1,3 +1,5 @@
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import { useEffect, useRef, useState } from 'react'
 import MapPreview from '../components/MapPreview.jsx'
 import { obtenerPedido } from '../api/pedidos'
@@ -149,6 +151,8 @@ export default function AsignacionesPage() {
   const cargando = !datos && !error
   const habilitados = datos?.pedidos.filter(p => p.puede_asignar).length ?? 0
   const visibles = datos?.pedidos.filter(p => !soloHabilitados || p.puede_asignar) ?? []
+  const paginado = usePagination(visibles, String(soloHabilitados))
+
   return <main className="main-content asignaciones-page">
     <header className="page-header"><div><h1>Asignación y despacho</h1><p>Asigná un chofer, prepará el pedido y confirmá su salida.</p></div>
       <button className="button button-outline" disabled={ocupado || cargando} onClick={() => { setDatos(null); setError(''); setAviso(''); setVersion(v => v + 1) }}>{error && !datos ? 'Reintentar' : 'Actualizar'}</button></header>
@@ -163,7 +167,9 @@ export default function AsignacionesPage() {
       <label className="asignaciones-filtro"><input type="checkbox" checked={soloHabilitados} onChange={e => setSoloHabilitados(e.target.checked)}/> Mostrar solo pedidos habilitados</label>
       {soloHabilitados && !visibles.length && <p>No hay pedidos habilitados. Revisá y confirmá las direcciones de los pedidos bloqueados.</p>}
     </>}
-    <section className="asignaciones-grid" aria-label="Pedidos para asignar">{visibles.map(p => <FilaAsignacion key={`${p.id}-${p.chofer_id}`} pedido={p} choferes={datos.choferes} ocupado={ocupado} onGuardar={guardar} onVerDireccion={setDetalleId} onEstado={cambiarEstado} onDespachar={p => { setError(''); setDespacho(p) }}/>)}</section>
+    <section className="asignaciones-grid" aria-label="Pedidos para asignar">{paginado.items.map(p => <FilaAsignacion key={`${p.id}-${p.chofer_id}`} pedido={p} choferes={datos.choferes} ocupado={ocupado} onGuardar={guardar} onVerDireccion={setDetalleId} onEstado={cambiarEstado} onDespachar={p => { setError(''); setDespacho(p) }}/>)}</section>
+
+    <Paginacion datos={paginado} nombre="asignaciones" disabled={ocupado || cargando}/>
     {detalleId !== null && <DetalleDireccion pedidoId={detalleId.id} tipo={detalleId.tipo} onClose={() => setDetalleId(null)}/>}
     {despacho && <ConfirmarDespacho pedido={despacho} ocupado={ocupado} error={error} onCancelar={() => setDespacho(null)} onConfirmar={() => cambiarEstado(despacho.id, 'EN ENVÍO')}/>}
   </main>

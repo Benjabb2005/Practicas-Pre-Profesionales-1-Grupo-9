@@ -1,3 +1,5 @@
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
@@ -34,6 +36,8 @@ function PedidosRevisionPage() {
     return pedidos.filter((pedido) => pedido.estado_validacion === filtro)
   }, [pedidos, filtro])
 
+  const paginado = usePagination(visibles, filtro)
+
   return <main className="main-content revision-page">
     <header className="page-header">
       <div><p className="eyebrow">Despacho seguro</p><h1>Revisión de direcciones</h1><p className="subtitle">Pedidos que todavía no tienen la ubicación confirmada por una persona.</p></div>
@@ -60,7 +64,7 @@ function PedidosRevisionPage() {
               <table className="users-table">
                 <thead><tr><th scope="col">Pedido</th><th scope="col">Cliente</th><th scope="col">Dirección</th><th scope="col">Validación</th><th scope="col">Estado</th><th scope="col"><span className="sr-only">Acciones</span></th></tr></thead>
                 <tbody>
-                  {visibles.map((pedido) => <tr key={pedido.id}>
+                  {paginado.items.map((pedido) => <tr key={pedido.id}>
                     <td>#{pedido.id}</td>
                     <td>{pedido.cliente_nombre || 'Sin cliente'}</td>
                     <td>{pedido.direccion_original || [pedido.calle, pedido.altura].filter(Boolean).join(' ') || 'Sin dirección'}</td>
@@ -71,6 +75,8 @@ function PedidosRevisionPage() {
                 </tbody>
               </table>
             </div>}
+
+    <Paginacion datos={paginado} nombre="direcciones a revisar" disabled={cargando}/>
     </section>
   </main>
 }

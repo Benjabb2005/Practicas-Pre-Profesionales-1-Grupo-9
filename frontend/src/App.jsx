@@ -60,7 +60,7 @@ function OperatorLayout() {
     logout()
     navegar('/login', { replace: true })
   }
-  return <div className="operator-app"><Sidebar usuario={usuario} onLogout={salir}/><div className="workspace"><Outlet/></div></div>
+  return <><Sidebar usuario={usuario} onLogout={salir}/><div className="operator-app"><div className="workspace"><Outlet/></div></div></>
 }
 
 function ChoferRuta() {

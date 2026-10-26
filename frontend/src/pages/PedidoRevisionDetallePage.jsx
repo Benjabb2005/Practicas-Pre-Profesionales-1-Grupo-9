@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import Icon from '../components/Icon.jsx'
 import DireccionForm from '../components/DireccionForm.jsx'
 import ProblemasDireccion from '../components/ProblemasDireccion.jsx'
@@ -35,6 +37,8 @@ function PedidoRevisionDetallePage({ pedidoId } = {}) {
   const [ocupado, setOcupado] = useState(false)
   const [candidatos, setCandidatos] = useState([])
   const [indiceCandidato, setIndiceCandidato] = useState(null)
+  const historialPaginado = usePagination(pedido?.intentos ?? [], String(id))
+  const candidatosPaginados = usePagination(candidatos, String(id), 5)
   const formularioRef = useRef(null)
 
   useEffect(() => {
@@ -181,13 +185,14 @@ function PedidoRevisionDetallePage({ pedidoId } = {}) {
           <button className="button button-primary" type="button" onClick={guardarCambios} disabled={ocupado}>Guardar cambios</button>
         </div>
 
+        <Paginacion datos={historialPaginado} nombre="historial de geocodificación" disabled={ocupado}/>
         <div className="form-divider"><span>Historial de geocodificación</span></div>
         {pedido.intentos?.length
           ? <div className="users-table-wrap">
               <table className="users-table">
                 <thead><tr><th scope="col">Fecha</th><th scope="col">Dirección enviada</th><th scope="col">Resultado</th><th scope="col">Coordenadas</th><th scope="col">Confianza</th><th scope="col">Acción</th></tr></thead>
                 <tbody>
-                  {pedido.intentos.map((intento) => <tr key={intento.id}>
+                  {historialPaginado.items.map((intento) => <tr key={intento.id}>
                     <td>{intento.fecha ? new Date(intento.fecha).toLocaleString('es-AR') : '—'}</td>
                     <td>{intento.direccion_enviada || '—'}</td>
                     <td>{intento.resultado}</td>
@@ -212,10 +217,11 @@ function PedidoRevisionDetallePage({ pedidoId } = {}) {
           {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
           {candidatos.length > 1 && <fieldset className="geo-candidatos">
             <legend>Encontramos varias ubicaciones. Elegí la correcta:</legend>
-            {candidatos.map((candidato) => <label key={candidato.indice}>
+            {candidatosPaginados.items.map((candidato) => <label key={candidato.indice}>
               <input type="radio" name="candidato-geo" checked={indiceCandidato === candidato.indice} onChange={() => setIndiceCandidato(candidato.indice)}/>
               <span>{candidato.direccion}<small>Confianza: {candidato.nivelConfianza || 'BAJO'}</small></span>
             </label>)}
+            <Paginacion datos={candidatosPaginados} nombre="ubicaciones candidatas" disabled={ocupado}/>
             <button className="button button-outline" type="button" disabled={ocupado || indiceCandidato === null} onClick={usarCandidato}>Usar ubicación seleccionada</button>
           </fieldset>}
           {tieneCoordenadas(pedido) && pedido.estado_validacion !== 'CONFIRMADA' && <button type="button" className="button button-outline" onClick={corregirUbicacion} disabled={ocupado}>No es correcta</button>}

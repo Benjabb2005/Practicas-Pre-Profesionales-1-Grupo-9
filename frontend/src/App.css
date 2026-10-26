@@ -161,7 +161,23 @@
 }
 @media (min-width: 1024px) {
   .operator-app { width: 66.666667%; min-height: 66.666667vh; transform: scale(1.5); transform-origin: top left; }
-  .operator-app .sidebar { height: calc(100dvh / 1.5); }
+  /* Fuera del contenedor escalado: fijo al viewport, también al hacer scroll. */
+  .sidebar { width:246px; height:100dvh; padding:0 13.5px 12px; overflow-y:auto; }
+  .sidebar .brand { gap:12px; min-height:96px; padding:0 9px; }
+  .sidebar .brand-badge { width:37.5px; height:37.5px; flex-basis:37.5px; border-radius:10px; }
+  .sidebar .brand-badge svg { width:30px; height:30px; }
+  .sidebar .brand b { font-size:16.5px; }
+  .sidebar .brand small { margin-top:3px; font-size:10.5px; }
+  .sidebar .navigation { gap:4.5px; padding-top:19.5px; }
+  .sidebar .nav-item { gap:13.5px; min-height:49.5px; padding:0 12px; font-size:13.5px; }
+  .sidebar .nav-item svg { width:21px; height:21px; }
+  .sidebar .nav-item small { font-size:9px; }
+  .sidebar .profile { gap:10.5px; padding:15px 9px 6px; }
+  .sidebar .avatar { width:33px; height:33px; flex-shrink:0; font-size:13.5px; }
+  .sidebar .profile b { font-size:12px; }
+  .sidebar .profile small { margin-top:3px; font-size:10.5px; }
+  .sidebar .logout { width:42px; height:42px; flex-basis:42px; }
+  .sidebar .logout svg { width:21px; height:21px; }
   .operator-app .workspace { min-height: 66.666667vh; }
   .operator-app .order-layout { grid-template-columns: minmax(0, 1.62fr) minmax(240px, .96fr); }
 }

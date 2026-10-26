@@ -1,9 +1,18 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { asignarChofer, listarChoferes, misPedidos, cambiarEstadoPedido } from './asignaciones'
+import { asignarChofer, listarChoferes, misPedidos, obtenerMiPedido, cambiarEstadoPedido } from './asignaciones'
 import { api } from './client'
 
 vi.mock('./client', () => ({ api: { get: vi.fn(), put: vi.fn() } }))
 beforeEach(() => vi.resetAllMocks())
+
+it('el mapa consulta el detalle protegido del chofer y propaga un pedido no disponible', async () => {
+  api.get.mockResolvedValueOnce({ data: { pedido: { id: 7, estado_validacion: 'CONFIRMADA' } } })
+  expect(await obtenerMiPedido(7)).toMatchObject({ id: 7 })
+  expect(api.get).toHaveBeenCalledWith('/chofer/pedidos/7')
+  const rechazo = new Error('El pedido no está disponible.')
+  api.get.mockRejectedValueOnce(rechazo)
+  await expect(obtenerMiPedido(8)).rejects.toBe(rechazo)
+})
 
 it('envía el cambio de estado por la operación protegida de asignaciones', async () => {
   api.put.mockResolvedValue({ data: { pedido: { id: 7, estado: 'EN PREPARACIÓN' } } })

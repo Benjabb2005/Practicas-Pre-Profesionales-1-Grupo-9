@@ -610,3 +610,44 @@ Por pedido de Benjamín, se actualizaron los mensajes de los seis commits public
 | a9d0576 | a58901a | #36 |
 
 Los SHA anteriores en registros históricos de esta documentación están superados por esta tabla. Para las próximas tareas, incluir el ticket correspondiente en cada mensaje de commit y actualizar los enlaces del ticket al publicar; no usar Closes hasta que se pretenda cerrar por merge. No se implementa B03 en esta tarea.
+
+## Réplica de planificación en Jira (25/10/2026)
+
+Por pedido de Benjamín se copiaron las 44 tareas de GitHub Projects al proyecto KAN de benjabb2005.atlassian.net: KAN-4 a KAN-47. Correspondencia completa en migracion-jira-mvp1.json. Se conservaron KAN-1, KAN-2 y la subtarea KAN-3 existentes. Importación inicial confirma 44 creadas: 24 Finalizado y 20 Por hacer; ninguna tarea migrada se marcó En curso. KAN-2 conserva su estado En curso previo.
+
+Cada descripción incluye responsable, origen, dependencias por ID, aceptación, evidencia/límites y enlace al issue GitHub. B01/B02 incluyen sus commits publicados. Q/X mantienen la aclaración de propuestas de planificación. Segunda importación por claves existentes: 44 actualizadas, 0 creadas y exactamente 98 enlaces Blocks creados, sin WARN/ERROR; se verificó en KAN-32 la dirección blocks/is blocked by. Son dependencias de integración/cierre, no prohibición de trabajo independiente.
+
+Campo de texto Responsable TP y etiquetas por integrante permiten identificar a los cinco responsables sin crear cuentas ni enviar invitaciones. B01–B06 (KAN-31 a KAN-36) y X04 (KAN-44) asignadas a la cuenta existente Benjamin Abbatiello, verificadas en lista. El resto conserva Assignee sin asignar hasta disponer de cuentas verificadas; el responsable académico sí está cargado. Vista List guardada para el espacio con Work, Assignee, Status, Responsable TP y Linked work items. Captura local ignorada temp/jira-mvp1.png. No se configuró sincronización automática GitHub/Jira ni se reescribieron commits para agregar claves KAN. Sin cambios de aplicación, commit o push en esta tarea.
+
+## B03 y paginado de listas (26/10/2026)
+
+Benjamín autoriza levantar Docker, implementar B03 y paginar todos los listados. Spec frontend/specs/chofer-paginacion.md y entrega completa en docs/entrega-b03.md. Se completa búsqueda/actualización/reintento y presentación móvil del chofer sobre la API propia existente. Paginado compartido 5/10/20 para todos los listados de registros, incluidos frecuentes, duplicados, candidatos e historial; opciones fijas de formularios y menú no se paginan. Se eliminan topes silenciosos de clientes. Paginado en memoria, no de servidor; no cambia el contrato API ni el esquema.
+
+Docker activo y health HTTP/DB OK. Frontend 51/51, backend 178 pasan/1 MySQL opt-in omitida, lint/build/sintaxis OK; warning de bundle grande previo. Check raíz bloqueado por copia Claude ppp1-mvp1 desactualizada, sin tocarla. Navegador chofer vacío a 360px claro/oscuro sin desbordes; no había envíos propios para comprobar tarjetas pobladas. Recorrido interactivo del paginado con 23 registros sintéticos, filtro y cambio de tamaño correcto; harness temporal retirado sin insertar datos. Jira KAN-33 En revisión y descripción actualizada con evidencia/límites. GitHub #37 conserva estado anterior hasta revisión/publicación. Cambios locales sin commit/push; B04/B05 no se implementaron. Se preservaron las modificaciones documentales de migración Jira que ya estaban al empezar.
+
+## Asignaciones y auditoría Jira (26/10/2026)
+
+Benjamín confirma que invitó a sus compañeros y autoriza asignar los tickets. Se verificaron las cinco cuentas asignables de KAN y se completaron 20 asignaciones faltantes. Consulta posterior confirma 44/44 responsables correctos: Santiago Filipeli 13, Sabrina Villano 10, Benjamin Abbatiello 7, tomaslaruina06 7 y Julián Ramos 7 (incluyen coordinación y pruebas propuestas Q/X). Comparación contra migracion-jira-mvp1.json: 44 IDs únicos, sin faltantes ni duplicados; 98 dependencias Blocks exactas, sin enlaces faltantes ni adicionales. KAN-1, KAN-2 y KAN-3 son registros previos ajenos al inventario MVP y se preservaron. No se modificaron estados en esta auditoría.
+
+## Limpieza de ejemplos Jira (26/10/2026)
+Con confirmación explícita del borrado irreversible, se eliminaron KAN-1 Task 1, KAN-2 Task 2 y KAN-3 Subtask 2.1. Consulta posterior completa del proyecto: 44 tickets, todos MVP1; ninguno de los tres ejemplos permanece. Las tareas del equipo se conservaron.
+
+## Seguimiento simultáneo Jira y GitHub Projects (26/10/2026)
+
+Benjamín pide usar ambos tableros mientras el equipo aprende a trabajar con tickets y evalúa cuál prefiere. En adelante, cada avance, cambio de estado, cierre y publicación debe reflejarse en el ticket correspondiente de Jira KAN y en el issue/GitHub Project del MVP. Usar la correspondencia docs/migracion-jira-mvp1.json; conservar enlaces al código y la evidencia/límites en ambos. La actualización es manual, sin sincronización automática configurada. No abandonar ninguno hasta nueva indicación del usuario, ni inferir actividad de compañeros. Si uno no puede actualizarse por acceso o error, informar cuál quedó pendiente.
+
+## Corrección de seguimiento B03 en GitHub (26/10/2026)
+Se corrige la omisión señalada por Benjamín: issue #37 pasa de Pendiente a En progreso en GitHub Projects y la descripción incorpora implementación local, evidencia, límites y enlace a Jira KAN-33. GitHub no tiene columna En revisión: En progreso cubre revisión/integración pendiente y equivale al En revisión de Jira en este caso. Guardado y estado verificados tras recargar. Sin commit/push.
+
+## Ajustes visuales B03 y paginado fijo (26/10/2026)
+Se revisó el reparto antes de implementar: cabecera/mapa de lectura del chofer pertenecen a B03; R03 de Sabrina conserva geocodificación, selección y confirmación sin modificaciones. Paginado/sidebar son ajustes compartidos explícitos. Paginado fijo 10 sin selector y controles compactos; sidebar trasladado fuera del contenedor escalado para fijarse al viewport, conservando dimensiones visuales. Cabecera del chofer azul marino, Ver mapa interno con consulta protegida propia y Google Maps separado. Referencia: OrderMapModal de branch-benjamin-1. Backend intacto en este ajuste.
+Verificación: 52 pruebas frontend, lint/build pasan; warning bundle grande previo. Sidebar a 1440x900 conserva top0/bottom900 al bajar639px. Chofer 360px claro/oscuro sin desborde. Paginado con23 registros sintéticos:10 por página sin selector. Diálogo con ID inexistente: rechazo, reintento y Escape correctos. Harness retirado, sin insertar datos. Mapa con pedido propio poblado pendiente por cuenta vacía. Jira KAN-33 conserva En revisión, GitHub #37 En progreso; descripciones actualizadas. Sin commit/push.
+
+## Cabecera compacta del chofer en PC (26/10/2026)
+Por pedido de Benjamín, driver-topbar queda centrada con max452px como el contenido móvil. A1440px ambos tienen x494/ancho452. Build pasa, warning preexistente bundle grande. Jira KAN-33 y GitHub #37 registran el ajuste; sin commit/push.
+
+## Corrección de apertura Ver mapa (26/10/2026)
+Reproducido cierre inmediato en MapaChofer bajo StrictMode: close del cleanup de efecto queda encolado y desmontaba el diálogo reabierto. onClose ahora verifica !dialog.open antes de avisar al padre. Harness temporal con StrictMode: antes desaparecía; después permanece, cierra con botón/Escape y reabre. ID inexistente, sin modificar datos; mapa propio poblado pendiente. Harness retirado. 52 pruebas frontend, lint/build pasan. GitHub #37 actualizado. Jira KAN-33 pendiente de actualizar por fallo de lectura del conector Atlassian en esta sesión. Sin commit/push.
+
+## Cierre técnico y publicación B03 (26/10/2026)
+Benjamín autoriza commit/push y finalizar B03 (#37 / KAN-33). Incluye vista móvil propia, paginado fijo10, mapa interno y corrección StrictMode, sidebar fijo y cabecera compacta. Frontend52/52, lint/build pasan nuevamente. Check raíz conserva fallo preexistente de copia Claude; UI poblada MySQL pendiente registrada, sin afirmar validación integral. Se publica en feature/benjamin-asignacion-entregas con referencias bidireccionales a ambos tickets. B04 sólo se explica, sin implementar.

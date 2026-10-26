@@ -560,19 +560,19 @@
       "id": "B03",
       "owner": "Benjamín",
       "title": "Vista móvil del chofer con pedidos propios",
-      "status": "Pendiente",
+      "status": "Hecho",
       "deps": [
         "B02",
         "S04"
       ],
       "acceptance": "Pedidos reales propios, teléfono, dirección/entre calles/notas y acceso al mapa confirmado; vacío/error/reintento.",
-      "evidence": "Existe base publicada de API propia y ChoferPedidosPage. Pendiente revisar/completar presentación móvil, estados de pantalla y pruebas con dos choferes; no se acredita como terminada.",
+      "evidence": "52 pruebas frontend, lint/build OK; backend178 pasan y1 MySQL opt-in omitida. Móvil vacío, paginado sintético y diálogo StrictMode probados. UI poblada MySQL pendiente; cierre técnico autorizado, sin validar integralmente MVP.",
       "issueNumber": 37,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/37",
       "previousInferredStatus": "Pendiente",
-      "statusConfirmed": false,
+      "statusConfirmed": true,
       "planningSource": "Reparto documentado",
-      "statusBasis": "Sin cierre completo acreditado"
+      "statusBasis": "Cierre y publicación autorizados por Benjamín el 26/10/2026"
     },
     {
       "id": "B04",

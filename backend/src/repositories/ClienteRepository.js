@@ -25,14 +25,14 @@ function createClienteRepository(db) {
                     `SELECT id, codigo_origen, nombre, dni, telefono, email, tipo, domicilio
                      FROM clientes
                      WHERE ${condiciones.join(" OR ")}
-                     ORDER BY nombre LIMIT 50`,
+                     ORDER BY nombre, id`,
                     valores
                 );
                 return filas;
             }
             const [filas] = await db.query(
                 `SELECT id, codigo_origen, nombre, dni, telefono, email, tipo, domicilio
-                 FROM clientes ORDER BY nombre LIMIT 200`
+                 FROM clientes ORDER BY nombre, id`
             );
             return filas;
         },
