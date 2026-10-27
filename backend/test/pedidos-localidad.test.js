@@ -80,7 +80,7 @@ test("una localidad que existe no suma advertencias y consulta con la provincia 
     const localidades = localidadesFalsas("EXISTE");
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades });
 
-    const resultado = await servicio.crear({ cliente_id: 1, direccion: { ...DIRECCION_VALIDA, provincia: "sta fe" } }, 7);
+    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { ...DIRECCION_VALIDA, provincia: "sta fe" } }, 7);
 
     assert.deepEqual(resultado.problemas, []);
     assert.deepEqual(localidades.llamadas, [{ provincia: "Santa Fe", localidad: "Rosario" }]);
@@ -91,7 +91,7 @@ test("una localidad inexistente suma ADVERTENCIA LOCALIDAD_NO_ENCONTRADA sin blo
     const pedidos = reposPedidosFalsos();
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades: localidadesFalsas("NO_EXISTE") });
 
-    const resultado = await servicio.crear({ cliente_id: 1, direccion: { ...DIRECCION_VALIDA, localidad: "Rosario del Tala" } }, 7);
+    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { ...DIRECCION_VALIDA, localidad: "Rosario del Tala" } }, 7);
 
     assert.deepEqual(codigos(resultado.problemas), ["LOCALIDAD_NO_ENCONTRADA"]);
     assert.equal(resultado.problemas[0].gravedad, "ADVERTENCIA");
@@ -103,7 +103,7 @@ test("si Georef no responde suma ADVERTENCIA LOCALIDAD_NO_VERIFICADA y no un ERR
     const pedidos = reposPedidosFalsos();
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades: localidadesFalsas("NO_VERIFICADO") });
 
-    const resultado = await servicio.crear({ cliente_id: 1, direccion: DIRECCION_VALIDA }, 7);
+    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: DIRECCION_VALIDA }, 7);
 
     assert.deepEqual(codigos(resultado.problemas), ["LOCALIDAD_NO_VERIFICADA"]);
     assert.equal(resultado.problemas[0].gravedad, "ADVERTENCIA");
@@ -125,7 +125,7 @@ test("si la provincia ya es inválida no se consulta Georef", async () => {
     const localidades = localidadesFalsas("EXISTE");
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades });
 
-    const resultado = await servicio.crear({ cliente_id: 1, direccion: { ...DIRECCION_VALIDA, provincia: "Narnia" } }, 7);
+    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { ...DIRECCION_VALIDA, provincia: "Narnia" } }, 7);
 
     assert.deepEqual(codigos(resultado.problemas), ["PROVINCIA_INVALIDA"]);
     assert.deepEqual(localidades.llamadas, []);
@@ -135,7 +135,7 @@ test("sin servicio de localidades no se consulta ni se agregan advertencias", as
     const pedidos = reposPedidosFalsos();
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
-    const resultado = await servicio.crear({ cliente_id: 1, direccion: DIRECCION_VALIDA }, 7);
+    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: DIRECCION_VALIDA }, 7);
 
     assert.deepEqual(resultado.problemas, []);
 });

@@ -1,12 +1,13 @@
 const { conflicto, noAutorizado } = require('../lib/errors');
 const { validarPropio } = require('../services/EntregaService');
+const { recargoPorIntentos } = require('../lib/importes');
 
 function createEntregaRepository(db) {
     async function transaccion(id, usuarioId, ejecutar) {
         const c = await db.getConnection();
         try {
             await c.beginTransaction();
-            const [[pedido]] = await c.query(`SELECT p.id,p.estado,p.chofer_id,d.estado_validacion
+            const [[pedido]] = await c.query(`SELECT p.id,p.estado,p.chofer_id,p.importe_base,p.recargo_total,p.importe_total,p.intentos_fallidos,d.estado_validacion
                 FROM pedidos p LEFT JOIN direcciones d ON d.pedido_id=p.id WHERE p.id=? FOR UPDATE`, [id]);
             validarPropio(pedido, usuarioId);
             const [[usuario]] = await c.query('SELECT id,rol,activo FROM usuarios WHERE id=? FOR UPDATE', [usuarioId]);
@@ -32,7 +33,12 @@ function createEntregaRepository(db) {
                 if (pedido.estado === 'ENTREGADO' && datos.resultado === 'ENTREGADO') return { id, estado: pedido.estado, repetido: true };
                 validar(pedido, usuarioId, datos.resultado);
                 const estado = datos.resultado === 'ENTREGADO' ? 'ENTREGADO' : 'EN PREPARACIÓN';
-                await c.query('UPDATE pedidos SET estado=? WHERE id=?', [estado, id]);
+                if (datos.resultado === 'FALLIDA') {
+                    const intentos = Number(pedido.intentos_fallidos || 0) + 1;
+                    const recargo = recargoPorIntentos(pedido.importe_base, intentos);
+                    await c.query(`UPDATE pedidos SET estado=?,intentos_fallidos=?,recargo_total=?,
+                        proxima_visita=DATE_ADD(DATE(UTC_TIMESTAMP()-INTERVAL 3 HOUR),INTERVAL 1 DAY) WHERE id=?`, [estado,intentos,recargo,id]);
+                } else await c.query('UPDATE pedidos SET estado=? WHERE id=?', [estado, id]);
                 await c.query(`INSERT INTO historial_estados (pedido_id,estado_anterior,estado_nuevo,usuario_id,observaciones)
                     VALUES (?,?,?,?,?)`, [id, pedido.estado, estado, usuarioId, detalle]);
                 return { id, estado, repetido: false };
@@ -43,18 +49,20 @@ function createEntregaRepository(db) {
                 validar(pedido, usuarioId);
                 const [[pago]] = await c.query('SELECT id,metodo,monto,registrado_por,fecha FROM pagos WHERE pedido_id=?', [id]);
                 if (pago) {
-                    if (pago.metodo !== datos.metodo || Number(pago.monto).toFixed(2) !== datos.monto) throw conflicto('El pedido ya tiene un pago registrado. No se modificó.');
+                    if (pago.metodo !== datos.metodo) throw conflicto('El pedido ya tiene un pago registrado. No se modificó.');
                     return { ...pago, repetido: true };
                 }
+                if (pedido.importe_total == null) throw conflicto('El pedido no tiene importe cargado. Contactá al operador.');
+                const monto = String(pedido.importe_total);
                 const [r] = await c.query('INSERT INTO pagos (pedido_id,metodo,monto,registrado_por) VALUES (?,?,?,?)',
-                    [id, datos.metodo, datos.monto, usuarioId]);
+                    [id, datos.metodo, monto, usuarioId]);
                 await c.query(`INSERT INTO historial_estados (pedido_id,estado_anterior,estado_nuevo,usuario_id,observaciones)
                     VALUES (?,?,?,?,?)`, [id, pedido.estado, pedido.estado, usuarioId, `Pago registrado: ${datos.metodo}. Acreditación no confirmada.`]);
-                return { id: r.insertId, metodo: datos.metodo, monto: datos.monto, repetido: false };
+                return { id: r.insertId, metodo: datos.metodo, monto, repetido: false };
             });
         },
         async entregados(usuarioId) {
-            const [filas] = await db.query(`SELECT p.id,p.codigo,p.estado,c.nombre AS cliente_nombre,
+            const [filas] = await db.query(`SELECT p.id,p.codigo,p.estado,p.importe_base,p.recargo_total,p.importe_total,p.proxima_visita,c.nombre AS cliente_nombre,
                 d.calle,d.altura,d.localidad,pa.metodo AS pago_metodo,pa.monto AS pago_monto,
                 (SELECT MAX(h.fecha) FROM historial_estados h WHERE h.pedido_id=p.id
                   AND h.estado_anterior='EN ENVÍO' AND h.estado_nuevo='ENTREGADO') AS entregado_fecha

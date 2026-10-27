@@ -544,7 +544,7 @@
       "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-48",
       "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/53",
       "owner": "Benjamín",
-      "status": "Pendiente",
+      "status": "Hecho",
       "dependencies": [
         "J04",
         "S02"

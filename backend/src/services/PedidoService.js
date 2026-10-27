@@ -6,6 +6,7 @@ const { validarDireccion, normalizarTexto } = require("./ValidadorDireccion");
 const { normalizarProvincia } = require("../constants/provincias");
 
 const VENTANA_DUPLICADOS_HORAS = 24;
+const { normalizarImporte } = require('../lib/importes');
 
 const MENSAJES_LOCALIDAD = Object.freeze({
     LOCALIDAD_NO_ENCONTRADA: "La localidad no figura en el listado oficial de esa provincia. Revisá la escritura o la provincia.",
@@ -159,7 +160,8 @@ function createPedidoService({
             return { ...detalle, problemas };
         },
 
-        async crear({ cliente_id, canal_origen, observaciones, direccion, confirmar_duplicado }, usuarioId) {
+        async crear({ cliente_id, canal_origen, observaciones, direccion, confirmar_duplicado, importe_base }, usuarioId) {
+            const importeBase = normalizarImporte(importe_base);
             const cliente = await clientes.buscarPorId(cliente_id);
             if (!cliente) throw errorValidacion({ cliente_id: "El cliente indicado no existe." });
 
@@ -177,6 +179,7 @@ function createPedidoService({
             }
 
             const pedidoId = await pedidos.crear({
+                importeBase,
                 codigo: null,
                 clienteId: cliente_id,
                 canalOrigen: canal_origen || CANAL_PREDETERMINADO,
@@ -191,6 +194,11 @@ function createPedidoService({
                 posiblesDuplicados,
                 problemas: [...problemas, ...problemasLocalidad],
             };
+        },
+
+        async completarImporte(pedidoId, importe, usuarioId) {
+            await pedidos.completarImporte(pedidoId, normalizarImporte(importe), usuarioId);
+            return pedidos.obtenerDetalle(pedidoId);
         },
 
         async actualizarDireccion(pedidoId, direccion) {

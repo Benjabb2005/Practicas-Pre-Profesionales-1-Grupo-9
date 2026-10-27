@@ -11,7 +11,7 @@ const entregaSchema = z.discriminatedUnion('resultado', [
     z.object({ resultado: z.literal('ENTREGADO'), operacion_id: z.string().uuid() }).strict(),
     z.object({ resultado: z.literal('FALLIDA'), operacion_id: z.string().uuid(), motivo: z.string().trim().min(3).max(500) }).strict(),
 ]);
-const pagoSchema = z.object({ metodo: z.enum(['EFECTIVO', 'TRANSFERENCIA']), monto: z.string() }).strict();
+const pagoSchema = z.object({ metodo: z.enum(['EFECTIVO', 'TRANSFERENCIA']) }).strict();
 
 function createAsignacionesRouter(container = {}) {
     const router = express.Router();

@@ -6,7 +6,7 @@ const createApp = require('../app');
 const { validarEntrega, validarPago, validarMonto } = require('../src/services/EntregaService');
 const { createEntregaRepository } = require('../src/repositories/EntregaRepository');
 
-const propio = { id: 7, chofer_id: 3, estado: 'EN ENVÍO', estado_validacion: 'CONFIRMADA' };
+const propio = { id: 7, chofer_id: 3, estado: 'EN ENVÍO', estado_validacion: 'CONFIRMADA', importe_base: '20.50', importe_total: '20.50', recargo_total: '0.00', intentos_fallidos: 0 };
 const operacion = 'c1f45a2d-7e45-4c72-9107-f12345678901';
 test('entrega y fallo: pertenencia, estado y confirmación vigentes', () => {
     validarEntrega(propio, '3', 'ENTREGADO');
@@ -42,7 +42,11 @@ function fakeDb({ pedido = { ...propio }, pago = null, falla = false, activo = 1
             if (sql.includes('FROM pedidos')) return [pedido ? [{ ...pedido }] : []];
             if (sql.includes('FROM usuarios')) return [[{ id: 3, rol: 'CHOFER', activo }]];
             if (sql.includes('LEFT(observaciones')) return [historial.filter(h => h.usuario_id === v[1] && h.observaciones.startsWith(v[3]))];
-            if (sql.startsWith('UPDATE pedidos')) { pedido.estado = v[0]; return [{}]; }
+            if (sql.startsWith('UPDATE pedidos')) {
+                pedido.estado = v[0];
+                if (sql.includes('intentos_fallidos=')) { pedido.intentos_fallidos = v[1]; pedido.recargo_total = v[2]; }
+                return [{}];
+            }
             if (sql.includes('INSERT INTO historial')) {
                 if (falla) throw new Error('fallo historial sintético');
                 historial.push({ estado_anterior: v[1], estado_nuevo: v[2], usuario_id: v[3], observaciones: v[4] }); return [{}];
@@ -79,12 +83,12 @@ test('entrega/fallo: un solo historial al reintentar y falla vuelve a preparaci�
 test('pago: mismo registro idempotente, no sobrescribe ni cambia a PAGADO', async () => {
     const db = fakeDb({ pedido: { ...propio, estado: 'ENTREGADO' } });
     const repo = createEntregaRepository(db);
-    const datos = { metodo: 'TRANSFERENCIA', monto: '20.50' };
+    const datos = { metodo: 'TRANSFERENCIA' };
     await repo.pago(7, 3, datos, validarPago);
     assert.equal((await repo.pago(7, 3, datos, validarPago)).repetido, true);
     assert.equal(db.historial.length, 1);
     assert.equal(db.pedido.estado, 'ENTREGADO');
-    await assert.rejects(() => repo.pago(7, 3, { ...datos, monto: '21.00' }, validarPago), e => e.statusCode === 409);
+    await assert.rejects(() => repo.pago(7, 3, { metodo: 'EFECTIVO' }, validarPago), e => e.statusCode === 409);
     assert.equal(db.pago.monto, '20.50');
 });
 test('fallo al guardar historial revierte entrega y pago; usuario inactivo no escribe', async () => {
@@ -119,14 +123,15 @@ test('HTTP: sesión/rol, cuerpos estrictos, motivo obligatorio, ajeno y pago pre
         for (const body of [{}, { ...datos, usuario_id: 4 }, { ...datos, operacion_id: 'mala' }, { resultado: 'FALLIDA', operacion_id: operacion, motivo: ' ' }]) {
             assert.equal((await pedir('entrega', body)).status, 400);
         }
-        assert.equal((await pedir('pago', { metodo: 'EFECTIVO', monto: '10.00' })).status, 409);
+        assert.equal((await pedir('pago', { metodo: 'EFECTIVO' })).status, 409);
         assert.equal((await pedir('entrega', datos)).status, 200);
         assert.equal((await pedir('entrega', datos)).status, 200);
         for (const body of [{ metodo: 'OTRO', monto: '1.00' }, { metodo: 'EFECTIVO', monto: 1 }, { metodo: 'EFECTIVO', monto: '0' }, { metodo: 'EFECTIVO', monto: '1.111' }]) {
             assert.equal((await pedir('pago', body)).status, 400);
         }
-        assert.equal((await pedir('pago', { metodo: 'EFECTIVO', monto: '10.00' })).status, 200);
-        assert.equal((await pedir('pago', { metodo: 'EFECTIVO', monto: '10.00' })).status, 200);
-        assert.equal((await pedir('pago', { metodo: 'TRANSFERENCIA', monto: '10.00' })).status, 409);
+        assert.equal((await pedir('pago', { metodo: 'EFECTIVO' })).status, 200);
+        assert.equal((await pedir('pago', { metodo: 'EFECTIVO' })).status, 200);
+        assert.equal(db.pago.monto, '20.50');
+        assert.equal((await pedir('pago', { metodo: 'TRANSFERENCIA' })).status, 409);
     } finally { server.close(); await once(server, 'close'); }
 });

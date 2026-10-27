@@ -19,6 +19,7 @@ const esquemaDireccion = z.object({
 });
 
 const esquemaCrear = z.object({
+    importe_base: z.string(),
     cliente_id: z.coerce.number().int().positive("Elegí un cliente."),
     canal_origen: z.enum(CANALES_VALIDOS, {
         errorMap: () => ({ message: "Elegí un canal de origen válido." }),
@@ -83,6 +84,13 @@ function createPedidosController({ pedidoService, geocodeService }) {
             const datos = validar(esquemaCrear, req.body ?? {});
             const resultado = await pedidoService.crear(datos, req.usuario?.id);
             res.status(201).json(resultado);
+        },
+
+        async completarImporte(req, res) {
+            if (!pedidoService) throw servicioNoDisponible();
+            const { id } = validar(esquemaId, req.params);
+            const { importe_base } = validar(z.object({ importe_base: z.string() }).strict(), req.body);
+            res.json({ pedido: await pedidoService.completarImporte(id, importe_base, req.usuario.id) });
         },
 
         async actualizarDireccion(req, res) {

@@ -8,6 +8,8 @@ import { mensajeError } from '../api/client'
 import './Asignaciones.css'
 import HistorialPedido from '../components/HistorialPedido.jsx'
 import { resumirAsignaciones } from '../components/asignaciones.js'
+import ImportePedido from '../components/ImportePedido.jsx'
+import CompletarImporte from '../components/CompletarImporte.jsx'
 
 function ContenidoDetalle({ pedidoId, tipo }) {
   const [pedido, setPedido] = useState(null)
@@ -35,7 +37,7 @@ function ContenidoDetalle({ pedidoId, tipo }) {
     ['Estado del pedido', pedido.estado], ['Validación', pedido.estado_validacion],
     ['Canal de origen', pedido.canal_origen], ['Observaciones', pedido.observaciones],
   ]
-  return <div className="asignacion-detalle-contenido"><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl><HistorialPedido pedidoId={pedidoId} operador/></div>
+  return <div className="asignacion-detalle-contenido"><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl><ImportePedido pedido={pedido}/><CompletarImporte pedido={pedido} onGuardado={setPedido}/><HistorialPedido pedidoId={pedidoId} operador/></div>
 }
 
 function DetalleDireccion({ pedidoId, tipo, onClose }) {
@@ -93,6 +95,7 @@ function FilaAsignacion({ pedido, choferes, onGuardar, onVerDireccion, onEstado,
       <p className="asignacion-cliente">{pedido.cliente_nombre}</p>
       <p>{[pedido.calle, pedido.altura, pedido.localidad, pedido.provincia].filter(Boolean).join(' ')}</p>
       <p className="asignacion-estado">{pedido.estado} · {pedido.chofer_nombre || 'Sin asignar'}</p>
+      <ImportePedido pedido={pedido}/>
       {motivo && <p className="asignacion-motivo">{motivo}</p>}
       {pedido.estado === 'EN PREPARACIÓN' && pedido.motivo_despacho && <p className="asignacion-motivo">{pedido.motivo_despacho}</p>}
     </div>

@@ -603,7 +603,7 @@
         "B07"
       ],
       "acceptance": "Efectivo/transferencia, monto válido, responsable; un registro por pedido y acreditación según decisión.",
-      "evidence": "Panel sólo método, sin monto manual. Usuario difiere integrar importe desde carga de pedido; guardado UI deshabilitado hasta esa integración. Contrato backend previo con monto conserva pruebas pero está desconectado de UI. D04/Q02 pendiente. En progreso, sin commit/push.",
+      "evidence": "Integración importe B07 realizada: sólo método desde chofer, total desde servidor; pago habilitado con importe. Q02/D04 acreditación pendiente; sin commit/push.",
       "issueNumber": 39,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39",
       "previousInferredStatus": "Pendiente",
@@ -852,17 +852,17 @@
       "id": "B07",
       "owner": "Benjamín",
       "title": "Importe del pedido en carga, API y persistencia",
-      "status": "Pendiente",
+      "status": "Hecho",
       "deps": [
         "J04",
         "S02"
       ],
-      "acceptance": "Importe a cobrar en carga, API/persistencia con precisión decimal, migración conservando pedidos previos, permisos y pruebas; chofer sólo lectura. Desbloquea B05 sin monto manual.",
-      "evidence": "Ticket creado por pedido explícito del26/10, sin implementación.",
+      "acceptance": "Importe base manual, tarifa/km sólo admin, recargo50% base por fallo y jornada siguiente Caso7. Sugerencia pendiente de origen; pago toma total servidor.",
+      "evidence": "Importe/tarifa/recargo y despacho manual listos. Backend187, frontend57 y MySQL/HTTP aislados pasan; lint/build OK. Sugerencia pendiente de origen por decisión de usuario.",
       "issueNumber": 53,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/53",
       "statusConfirmed": true,
-      "statusBasis": "Pendiente, asignado por usuario",
+      "statusBasis": "Publicación autorizada por Benjamín26/10; sugerencia distancia diferida explícitamente",
       "planningSource": "Pedido explícito Benjamín26/10/2026"
     }
   ],

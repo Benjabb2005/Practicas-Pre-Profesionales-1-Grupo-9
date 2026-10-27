@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const mysql = require('mysql2/promise');
 const { createEntregaRepository } = require('../src/repositories/EntregaRepository');
 const { createEntregaService } = require('../src/services/EntregaService');
+const { createAsignacionRepository } = require('../src/repositories/AsignacionRepository');
+const { validarDespacho } = require('../src/services/AsignacionService');
 
 test('MySQL entrega/pago: concurrencia, historial, aislamiento y rollback reales', {
     skip: process.env.ENTREGAS_MYSQL !== '1',
@@ -17,7 +19,7 @@ test('MySQL entrega/pago: concurrencia, historial, aislamiento y rollback reales
         const chofer = u.insertId;
         const [cl] = await db.query('INSERT INTO clientes (nombre) VALUES (?)', ['Cliente sintético']);
         async function crear() {
-            const [r] = await db.query('INSERT INTO pedidos (cliente_id,estado,chofer_id) VALUES (?,?,?)', [cl.insertId, 'EN ENVÍO', chofer]);
+            const [r] = await db.query('INSERT INTO pedidos (cliente_id,estado,chofer_id,importe_base) VALUES (?,?,?,?)', [cl.insertId, 'EN ENVÍO', chofer,'1000.00']);
             await db.query('INSERT INTO direcciones (pedido_id,estado_validacion) VALUES (?,?)', [r.insertId, 'CONFIRMADA']);
             return r.insertId;
         }
@@ -27,28 +29,45 @@ test('MySQL entrega/pago: concurrencia, historial, aislamiento y rollback reales
         await Promise.all([servicio.registrar(id, chofer, fallo), servicio.registrar(id, chofer, fallo)]);
         const [[preparado]] = await db.query('SELECT estado FROM pedidos WHERE id=?', [id]);
         assert.equal(preparado.estado, 'EN PREPARACIÓN');
+        const [[costo]] = await db.query('SELECT importe_base,recargo_total,importe_total,proxima_visita FROM pedidos WHERE id=?', [id]);
+        assert.equal(costo.recargo_total, '500.00');
+        assert.equal(costo.importe_total, '1500.00');
+        assert.ok(costo.proxima_visita);
+        const [[dia]] = await db.query('SELECT DATE_ADD(DATE(UTC_TIMESTAMP()-INTERVAL 3 HOUR),INTERVAL 1 DAY) manana');
+        assert.equal(costo.proxima_visita.getTime(),dia.manana.getTime());
+        const manual = await createAsignacionRepository(db).cambiarEstado(id,'EN ENVÍO',chofer,validarDespacho);
+        assert.equal(manual.estado,'EN ENVÍO');
         let [[hist]] = await db.query('SELECT COUNT(*) cantidad FROM historial_estados WHERE pedido_id=?', [id]);
-        assert.equal(hist.cantidad, 1);
+        assert.equal(hist.cantidad, 2); // fallo y despacho manual
         await db.query('UPDATE pedidos SET estado=? WHERE id=?', ['EN ENVÍO', id]);
         await servicio.registrar(id, chofer, fallo); // respuesta perdida del intento anterior
         const [[sinRetroceso]] = await db.query('SELECT estado FROM pedidos WHERE id=?', [id]);
         assert.equal(sinRetroceso.estado, 'EN ENVÍO');
+        const fallo2 = { ...fallo,operacion_id: 'c1f45a2d-7e45-4c72-9107-f12345678903' };
+        await servicio.registrar(id,chofer,fallo2);
+        const [[dosFallos]] = await db.query('SELECT importe_total,recargo_total,intentos_fallidos FROM pedidos WHERE id=?',[id]);
+        assert.equal(dosFallos.importe_total,'2000.00');
+        assert.equal(dosFallos.recargo_total,'1000.00');
+        assert.equal(dosFallos.intentos_fallidos,2);
+        await db.query('UPDATE pedidos SET estado=? WHERE id=?',['EN ENVÍO',id]);
         const entrega = { resultado: 'ENTREGADO', operacion_id: 'c1f45a2d-7e45-4c72-9107-f12345678902' };
         await Promise.all([servicio.registrar(id, chofer, entrega), servicio.registrar(id, chofer, entrega)]);
         await assert.rejects(() => servicio.registrar(id, chofer + 100000, entrega), e => e.statusCode === 404);
-        const datosPago = { metodo: 'TRANSFERENCIA', monto: '1350.50' };
+        const datosPago = { metodo: 'TRANSFERENCIA' };
         await Promise.all([servicio.pago(id, chofer, datosPago), servicio.pago(id, chofer, datosPago)]);
         await assert.rejects(() => servicio.pago(id, chofer, { ...datosPago, metodo: 'EFECTIVO' }), e => e.statusCode === 409);
         const [[pagos]] = await db.query('SELECT COUNT(*) cantidad FROM pagos WHERE pedido_id=?', [id]);
         assert.equal(pagos.cantidad, 1);
         [[hist]] = await db.query('SELECT COUNT(*) cantidad FROM historial_estados WHERE pedido_id=?', [id]);
-        assert.equal(hist.cantidad, 3); // fallo, entrega y registro pago
+        assert.equal(hist.cantidad, 5); // dos fallos, despacho manual, entrega y pago
         const historial = await servicio.historial(id, { id: chofer, rol: 'CHOFER' });
-        assert.equal(historial.length, 3);
+        assert.equal(historial.length, 5);
         assert.ok(historial.every(h => h.fecha && h.usuario_nombre === 'Chofer sintético'));
         assert.ok((await servicio.entregados(chofer)).some(p => p.id === id && p.pago_metodo === 'TRANSFERENCIA'));
         const [[final]] = await db.query('SELECT estado FROM pedidos WHERE id=?', [id]);
         assert.equal(final.estado, 'ENTREGADO');
+        const [[pagoReal]] = await db.query('SELECT monto FROM pagos WHERE pedido_id=?',[id]);
+        assert.equal(pagoReal.monto,'2000.00');
         const fallando = createEntregaService({ repositorio: createEntregaRepository({ async getConnection() {
             const c = await db.getConnection();
             return { beginTransaction: () => c.beginTransaction(), commit: () => c.commit(), rollback: () => c.rollback(), release: () => c.release(),

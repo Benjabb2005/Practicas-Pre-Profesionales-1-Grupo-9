@@ -6,6 +6,7 @@ import ChoferPedidosPage from './pages/ChoferPedidosPage.jsx'
 import AsignacionesPage from './pages/AsignacionesPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
+import TarifasPage from './pages/TarifasPage.jsx'
 import PedidosCargaPage from './pages/PedidosCargaPage.jsx'
 import PedidosListadoPage from './pages/PedidosListadoPage.jsx'
 import PedidosRevisionPage from './pages/PedidosRevisionPage.jsx'
@@ -36,6 +37,7 @@ function Sidebar({ usuario, onLogout }) {
   ]
   if (rol === 'ADMINISTRADOR') {
     items.splice(2, 0, { to: '/usuarios', label: 'Usuarios', icon: 'users' })
+    items.push({ to: '/tarifas', label: 'Tarifa por km', icon: 'truck' })
   }
 
   return <aside className="sidebar">
@@ -80,6 +82,7 @@ function App() {
       <Route path="pedidos/:id/revision" element={<PedidoRevisionDetallePage/>}/>
       <Route path="clientes" element={<ClientesPage/>}/>
       <Route path="usuarios" element={<ProtectedRoute roles={['ADMINISTRADOR']}><UsersPage/></ProtectedRoute>}/>
+      <Route path="tarifas" element={<ProtectedRoute roles={['ADMINISTRADOR']}><TarifasPage/></ProtectedRoute>}/>
     </Route>
     <Route path="/chofer" element={<ProtectedRoute roles={['CHOFER']}><ChoferRuta/></ProtectedRoute>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>

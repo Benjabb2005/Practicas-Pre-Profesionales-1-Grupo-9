@@ -9,6 +9,7 @@ import usePagination from '../components/usePagination.js'
 import { filtrarEntregas, ubicacionConfirmada as mapa } from '../components/chofer.js'
 import Icon from '../components/Icon.jsx'
 import AccionChofer from '../components/AccionChofer.jsx'
+import ImportePedido from '../components/ImportePedido.jsx'
 
 const MapaChofer = lazy(() => import('../components/MapaChofer.jsx'))
 
@@ -62,6 +63,7 @@ export default function ChoferPedidosPage({ onLogout }) {
       <div className="driver-stop-detail"><span>Dirección</span><strong>{[p.calle, p.altura, p.piso_depto, p.localidad, p.provincia].filter(Boolean).join(' ')}</strong>
         {p.entre_calles && <p>Entre calles: {p.entre_calles}</p>}{p.codigo_postal && <p>CP: {p.codigo_postal}</p>}</div>
       {p.observaciones && <p>Indicaciones: {p.observaciones}</p>}
+      <ImportePedido pedido={p}/>
       {vista === 'pendientes' && (mapa(p) ? <div className="driver-location-actions"><button type="button" className="driver-map-button" onClick={() => setMapaId(p.id)}>Ver mapa</button><a className="driver-map-button" href={mapa(p)} target="_blank" rel="noreferrer">Ver ubicación en Google Maps</a></div> : <p>Ubicación no disponible.</p>)}
       {vista === 'entregados' && <p className="driver-pago-nota">{p.entregado_fecha && <>Entrega: {new Date(p.entregado_fecha).toLocaleString('es-AR')}. </>}{p.pago_metodo ? `Pago registrado: ${p.pago_metodo === 'EFECTIVO' ? 'Efectivo' : 'Transferencia'} · $${Number(p.pago_monto).toLocaleString('es-AR', { minimumFractionDigits: 2 })}. Registro sin acreditación confirmada.` : 'Sin pago registrado.'}</p>}
       <div className="driver-result-actions">{vista === 'pendientes' ? <><button type="button" className="entrega-exito" onClick={() => setAccion({ tipo: 'entrega', pedido: p })}>Confirmar entrega</button><button type="button" className="entrega-fallo" onClick={() => setAccion({ tipo: 'fallo', pedido: p })}>No se pudo entregar</button></> : !p.pago_metodo && <button type="button" onClick={() => setAccion({ tipo: 'pago', pedido: p })}>Registrar pago</button>}

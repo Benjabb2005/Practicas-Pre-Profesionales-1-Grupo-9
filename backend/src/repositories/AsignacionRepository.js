@@ -1,4 +1,5 @@
 const SELECT = `SELECT p.id, p.codigo, p.estado, p.chofer_id, p.observaciones,
+    p.importe_base,p.recargo_total,p.importe_total,p.proxima_visita,
     c.nombre AS cliente_nombre, c.telefono AS cliente_telefono,
     u.nombre AS chofer_nombre, u.rol AS chofer_rol, u.activo AS chofer_activo, d.estado_validacion, d.calle, d.altura, d.localidad,
     d.provincia, d.piso_depto, d.entre_calles, d.codigo_postal, d.latitud, d.longitud

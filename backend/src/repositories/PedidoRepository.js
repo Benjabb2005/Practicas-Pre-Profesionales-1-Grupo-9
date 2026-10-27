@@ -3,6 +3,7 @@
 // servicios; acá solo hay SQL parametrizado y transacciones cortas.
 const SELECT_DETALLE = `
     SELECT p.id, p.codigo, p.estado, p.canal_origen, p.direccion_validada, p.observaciones, p.cliente_id,
+           p.importe_base,p.recargo_total,p.importe_total,p.intentos_fallidos,p.proxima_visita,
            p.created_at, p.updated_at,
            c.nombre AS cliente_nombre, c.telefono AS cliente_telefono, c.email AS cliente_email,
            c.dni AS cliente_dni, c.tipo AS cliente_tipo,
@@ -32,16 +33,18 @@ function condicionesCliente(cliente) {
     return { condiciones, valores };
 }
 
+const { conflicto, noEncontrado } = require('../lib/errors');
+const { recargoPorIntentos } = require('../lib/importes');
 function createPedidoRepository(db) {
     return {
-        async crear({ codigo, clienteId, canalOrigen, estado, observaciones, creadoPor, direccion }) {
+        async crear({ codigo, clienteId, canalOrigen, estado, observaciones, creadoPor, direccion, importeBase }) {
             const conexion = await db.getConnection();
             try {
                 await conexion.beginTransaction();
                 const [pedido] = await conexion.query(
-                    `INSERT INTO pedidos (codigo, cliente_id, canal_origen, estado, direccion_validada, observaciones, creado_por)
-                     VALUES (?, ?, ?, ?, 0, ?, ?)`,
-                    [codigo ?? null, clienteId, canalOrigen ?? null, estado, observaciones ?? null, creadoPor ?? null]
+                    `INSERT INTO pedidos (codigo, cliente_id, canal_origen, estado, direccion_validada, observaciones, creado_por,importe_base)
+                     VALUES (?, ?, ?, ?, 0, ?, ?,?)`,
+                    [codigo ?? null, clienteId, canalOrigen ?? null, estado, observaciones ?? null, creadoPor ?? null,importeBase ?? null]
                 );
                 await conexion.query(
                     `INSERT INTO direcciones
@@ -68,6 +71,21 @@ function createPedidoRepository(db) {
             } finally {
                 conexion.release();
             }
+        },
+
+        async completarImporte(id, importe, usuarioId) {
+            const c = await db.getConnection();
+            try {
+                await c.beginTransaction();
+                const [[p]] = await c.query('SELECT estado,importe_base,intentos_fallidos FROM pedidos WHERE id=? FOR UPDATE', [id]);
+                if (!p) throw noEncontrado();
+                if (p.importe_base != null || ['ENTREGADO', 'PAGADO'].includes(p.estado)) throw conflicto('Sólo podés completar el importe faltante de un pedido sin finalizar.');
+                const recargo = recargoPorIntentos(importe, p.intentos_fallidos);
+                await c.query('UPDATE pedidos SET importe_base=?,recargo_total=? WHERE id=?', [importe, recargo, id]);
+                await c.query(`INSERT INTO historial_estados (pedido_id,estado_anterior,estado_nuevo,usuario_id,observaciones) VALUES (?,?,?,?,?)`, [id,p.estado,p.estado,usuarioId,`Importe base completado: ${importe} ARS. Recargos: ${recargo} ARS.`]);
+                await c.commit();
+            } catch (e) { await c.rollback(); throw e; }
+            finally { c.release(); }
         },
 
         // Filtros del listado: estado del pedido, estado de validación de la

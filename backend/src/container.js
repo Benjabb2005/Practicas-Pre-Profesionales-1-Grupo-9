@@ -16,6 +16,8 @@ const { createAsignacionRepository } = require('./repositories/AsignacionReposit
 const { createAsignacionService } = require('./services/AsignacionService');
 const { createEntregaRepository } = require('./repositories/EntregaRepository');
 const { createEntregaService } = require('./services/EntregaService');
+const { createTarifaRepository } = require('./repositories/TarifaRepository');
+const { createTarifaService } = require('./services/TarifaService');
 
 // Construye los servicios a partir de la base inyectada. Sin base (pruebas HTTP)
 // devuelve un objeto vacío y las rutas responden 503 en vez de romper.
@@ -31,6 +33,7 @@ function createContainer({ db, config, georef } = {}) {
     const localidadService = createLocalidadService({ cliente: georefClient });
 
     return {
+        tarifaService: createTarifaService({ repositorio: createTarifaRepository(db) }),
         entregaService: createEntregaService({ repositorio: createEntregaRepository(db) }),
         asignacionService: createAsignacionService({ repositorio: createAsignacionRepository(db) }),
         config,

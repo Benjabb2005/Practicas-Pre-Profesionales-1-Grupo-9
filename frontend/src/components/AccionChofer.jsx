@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { registrarEntrega } from '../api/asignaciones.js'
+import { registrarEntrega, registrarPago } from '../api/asignaciones.js'
+import { moneda } from './importes.js'
 import { mensajeError } from '../api/client.js'
 import HistorialPedido from './HistorialPedido.jsx'
 import './EntregaChofer.css'
@@ -21,11 +22,12 @@ export default function AccionChofer({ pedido, tipo, onClose, onGuardado }) {
   const titulo = { entrega: 'Confirmar entrega', fallo: 'No se pudo entregar', pago: 'Registrar pago', historial: 'Historial' }[tipo]
   async function guardar(e) {
     e.preventDefault()
-    if (tipo === 'pago') return
+    if (tipo === 'pago' && pedido.importe_total == null) return
     if (enviando.current) return
     enviando.current = true; setOcupado(true); setError('')
     try {
-      await registrarEntrega(pedido.id, tipo === 'fallo'
+      if (tipo === 'pago') await registrarPago(pedido.id, { metodo })
+      else await registrarEntrega(pedido.id, tipo === 'fallo'
         ? { resultado: 'FALLIDA', operacion_id: operacion, motivo: motivo.trim() }
         : { resultado: 'ENTREGADO', operacion_id: operacion })
       onGuardado(tipo, pedido)
@@ -41,13 +43,13 @@ export default function AccionChofer({ pedido, tipo, onClose, onGuardado }) {
     <p><strong>{pedido.codigo || `Pedido #${pedido.id}`}</strong> · {pedido.cliente_nombre}</p>
     {tipo === 'historial' ? <HistorialPedido pedidoId={pedido.id}/> : <form onSubmit={guardar}>
       {tipo === 'entrega' && <p>Confirmá que el cliente recibió el pedido. Se guardarán la fecha, la hora y tu usuario.</p>}
-      {tipo === 'fallo' && <><p>El pedido volverá a preparación para que el operador lo revise antes de despacharlo otra vez.</p>
+      {tipo === 'fallo' && <><p>El pedido volverá a preparación y se reprogramará para la próxima jornada. Se sumará un recargo del 50% del envío base, facturable al emisor.</p>
         <label htmlFor="entrega-motivo">Motivo del intento fallido<textarea id="entrega-motivo" required minLength={3} maxLength={500} value={motivo} disabled={ocupado} onChange={e => setMotivo(e.target.value)}/></label></>}
       {tipo === 'pago' && <><p>La entrega ya está confirmada.</p>
         <label htmlFor="pago-metodo">Método de pago<select id="pago-metodo" value={metodo} disabled={ocupado} onChange={e => setMetodo(e.target.value)}><option value="EFECTIVO">Efectivo</option><option value="TRANSFERENCIA">Transferencia</option></select></label>
-        <p role="status">El registro del pago se habilitará cuando el pedido tenga su importe cargado.</p></>}
+        <p role="status">{pedido.importe_total == null ? 'El registro del pago se habilitará cuando el pedido tenga su importe cargado.' : `Importe a registrar: ${moneda(pedido.importe_total)}. La acreditación se confirma por separado.`}</p></>}
       {error && <p role="alert" className="entrega-error">{error}</p>}
-      <footer><button type="button" disabled={ocupado} onClick={() => dialogo.current.close()}>Cancelar</button><button type="submit" className="button button-primary" disabled={ocupado || tipo === 'pago'}>{ocupado ? 'Guardando…' : tipo === 'fallo' ? 'Registrar intento fallido' : tipo === 'pago' ? 'Guardar pago' : 'Sí, confirmar entrega'}</button></footer>
+      <footer><button type="button" disabled={ocupado} onClick={() => dialogo.current.close()}>Cancelar</button><button type="submit" className="button button-primary" disabled={ocupado || (tipo === 'pago' && pedido.importe_total == null)}>{ocupado ? 'Guardando…' : tipo === 'fallo' ? 'Registrar intento fallido' : tipo === 'pago' ? 'Guardar pago' : 'Sí, confirmar entrega'}</button></footer>
     </form>}
   </dialog>
 }

@@ -68,7 +68,7 @@ test("crear pedido guarda el estado que decide el validador y avisa los problema
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
     const resultado = await servicio.crear(
-        { cliente_id: 1, direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA" } },
+        { cliente_id: 1, importe_base: '100.00', direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA" } },
         7
     );
 
@@ -89,7 +89,7 @@ test("crear pedido con dirección completa la guarda VALIDA y normalizada", asyn
 
     const resultado = await servicio.crear(
         {
-            cliente_id: 1,
+            cliente_id: 1, importe_base: '100.00',
             direccion: {
                 calle: "av. corrientes",
                 altura: "1.234",
@@ -136,7 +136,7 @@ test("obtener devuelve problemas vacíos cuando la dirección guardada es válid
 test("crear pedido con cliente inexistente se rechaza", async () => {
     const servicio = createPedidoService({ pedidos: reposPedidosFalsos(), clientes: clientesFalsos });
     await assert.rejects(
-        () => servicio.crear({ cliente_id: 99, direccion: { calle: "X" } }, 1),
+        () => servicio.crear({ cliente_id: 99, importe_base: '100.00', direccion: { calle: "X" } }, 1),
         (error) => error.codigo === "DATOS_INVALIDOS"
     );
 });

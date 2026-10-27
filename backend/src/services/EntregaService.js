@@ -24,7 +24,7 @@ function validarMonto(monto) {
 function createEntregaService({ repositorio }) {
     return {
         registrar: (id, usuarioId, datos) => repositorio.registrar(id, usuarioId, datos, validarEntrega),
-        pago: (id, usuarioId, datos) => repositorio.pago(id, usuarioId, { ...datos, monto: validarMonto(datos.monto) }, validarPago),
+        pago: (id, usuarioId, datos) => repositorio.pago(id, usuarioId, { metodo: datos.metodo }, validarPago),
         entregados: usuarioId => repositorio.entregados(usuarioId),
         async historial(id, usuario) {
             return repositorio.historial(id, pedido => {
