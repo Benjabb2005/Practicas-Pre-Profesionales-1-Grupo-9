@@ -2,7 +2,22 @@ import { expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { paginar } from './usePagination.js'
 import Paginacion from './Paginacion.jsx'
-import { filtrarEntregas, ubicacionConfirmada } from './chofer.js'
+import { filtrarEntregas, ubicacionConfirmada, historialEntregas } from './chofer.js'
+
+it('historial incluye cambios de estado, entregas e intentos con motivo legible', () => {
+  const filas = [
+    { id: 1, estado_anterior: 'EN STOCK', estado_nuevo: 'EN PREPARACIÓN' },
+    { id: 2, estado_anterior: 'EN ENVÍO', estado_nuevo: 'EN PREPARACIÓN', observaciones: 'Entrega [clave] FALLIDA: Cliente ausente' },
+    { id: 3, estado_anterior: 'EN ENVÍO', estado_nuevo: 'ENTREGADO' },
+    { id: 4, estado_anterior: 'ENTREGADO', estado_nuevo: 'ENTREGADO', observaciones: 'Pago registrado' },
+    { id: 5, estado_anterior: 'EN PREPARACIÓN', estado_nuevo: 'EN ENVÍO' },
+    { id: 6, estado_anterior: null, estado_nuevo: 'EN STOCK' },
+  ]
+  expect(historialEntregas(filas).map(h => [h.id, h.titulo, h.motivo])).toEqual([
+    [1, 'En preparación', null], [2, 'En preparación · Intento fallido', 'Cliente ausente'], [3, 'Entregado', null],
+    [5, 'Despachado', null], [6, 'En stock', null],
+  ])
+})
 
 it('recorre todos los resultados sin perder ni duplicar registros', () => {
   const filas = Array.from({ length: 23 }, (_, id) => ({ id }))

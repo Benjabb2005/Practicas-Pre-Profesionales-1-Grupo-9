@@ -1,0 +1,27 @@
+.entrega-modal { width: min(440px, calc(100% - 24px)); max-height: 85dvh; overflow: auto; box-sizing: border-box; padding: 20px; border: 1px solid var(--border, #d6dce5); border-radius: 12px; background: var(--surface, #fff); color: var(--text, #15243c); }
+.entrega-modal::backdrop { background: #07132599; }
+.entrega-modal header, .entrega-modal footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.entrega-modal h2 { font-size: 19px; margin: 0; }
+.entrega-modal p { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.entrega-modal label { display: grid; gap: 8px; font-size: 13px; margin: 16px 0; }
+.entrega-modal input, .entrega-modal select, .entrega-modal textarea { box-sizing: border-box; width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border, #ccd5e3); background: var(--surface, #fff); color: inherit; font: inherit; }
+.entrega-modal textarea { min-height: 90px; resize: vertical; }
+.entrega-modal button, .driver-result-actions button, .driver-view-tabs button { min-height: 38px; padding: 8px 12px; border: 1px solid var(--border, #ccd5e3); border-radius: 6px; cursor: pointer; font: inherit; }
+.entrega-modal header button, .entrega-modal footer button:first-child, .driver-result-actions button, .driver-view-tabs button { background: var(--surface, #fff); color: inherit; }
+.entrega-modal button:disabled, .driver-result-actions button:disabled { cursor: wait; opacity: .6; }
+.entrega-modal footer { margin-top: 22px; flex-wrap: wrap; }
+.entrega-error, .driver-result-actions .entrega-fallo { color: #c63b47; }
+.driver-result-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; font-size: 13px; }
+.driver-result-actions .entrega-exito { background: #246b47; color: #fff; border-color: #246b47; }
+.driver-view-tabs { display: flex; gap: 8px; margin: 16px 0; font-size: 13px; }
+.driver-view-tabs button[aria-pressed="true"] { background: #285bd6; color: #fff; }
+.driver-pago-nota { font-size: 13px; line-height: 1.5; }
+.entrega-historial ol { padding-left: 20px; }
+.entrega-historial li { padding: 8px 0; font-size: 13px; overflow-wrap: anywhere; }
+.entrega-historial p { margin: 5px 0; }
+[data-theme="dark"] .entrega-modal { background: #22252b; color: #edf0f4; border-color: #424750; }
+[data-theme="dark"] .entrega-modal input, [data-theme="dark"] .entrega-modal select, [data-theme="dark"] .entrega-modal textarea,
+[data-theme="dark"] .entrega-modal header button, [data-theme="dark"] .entrega-modal footer button:first-child,
+[data-theme="dark"] .driver-result-actions button, [data-theme="dark"] .driver-view-tabs button:not([aria-pressed="true"]) { background: #2c3038; color: #edf0f4; border-color: #424750; }
+[data-theme="dark"] .driver-result-actions .entrega-exito { background: #246b47; }
+[data-theme="dark"] .entrega-error, [data-theme="dark"] .driver-result-actions .entrega-fallo { color: #ff9ba3; }

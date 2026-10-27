@@ -578,37 +578,38 @@
       "id": "B04",
       "owner": "Benjamín",
       "title": "Confirmación de entrega e historial",
-      "status": "Pendiente",
+      "status": "Hecho",
       "deps": [
         "B03",
         "S06"
       ],
       "acceptance": "Confirmar entrega propia; registrar ENTREGADO, fecha, hora y usuario; reintento no duplica.",
-      "evidence": "No implementado en MVP-1 inspeccionado.",
+      "evidence": "Entrega/fallo e historial implementados. Frontend55, backend184/2 opt-in omitidas y MySQL aislado pasa aparte. UI sintética probada. Publicación autorizada; integración MVP-1/celular físico no acreditados.",
       "issueNumber": 38,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/38",
       "previousInferredStatus": "Pendiente",
-      "statusConfirmed": false,
+      "statusConfirmed": true,
       "planningSource": "Reparto documentado",
-      "statusBasis": "Sin cierre completo acreditado"
+      "statusBasis": "Cierre y publicación autorizados por Benjamín el26/10"
     },
     {
       "id": "B05",
       "owner": "Benjamín",
       "title": "Registro de pago y prevención de doble cobro",
-      "status": "Pendiente",
+      "status": "En progreso",
       "deps": [
         "B04",
-        "Q02"
+        "Q02",
+        "B07"
       ],
       "acceptance": "Efectivo/transferencia, monto válido, responsable; un registro por pedido y acreditación según decisión.",
-      "evidence": "Tabla pagos existe, flujo no implementado. D04 pendiente para acreditación.",
+      "evidence": "Panel sólo método, sin monto manual. Usuario difiere integrar importe desde carga de pedido; guardado UI deshabilitado hasta esa integración. Contrato backend previo con monto conserva pruebas pero está desconectado de UI. D04/Q02 pendiente. En progreso, sin commit/push.",
       "issueNumber": 39,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39",
       "previousInferredStatus": "Pendiente",
-      "statusConfirmed": false,
+      "statusConfirmed": true,
       "planningSource": "Reparto documentado",
-      "statusBasis": "Sin cierre completo acreditado"
+      "statusBasis": "Implementación local solicitada el26/10; revisión pendiente"
     },
     {
       "id": "B06",
@@ -846,6 +847,23 @@
       "statusConfirmed": false,
       "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
       "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "B07",
+      "owner": "Benjamín",
+      "title": "Importe del pedido en carga, API y persistencia",
+      "status": "Pendiente",
+      "deps": [
+        "J04",
+        "S02"
+      ],
+      "acceptance": "Importe a cobrar en carga, API/persistencia con precisión decimal, migración conservando pedidos previos, permisos y pruebas; chofer sólo lectura. Desbloquea B05 sin monto manual.",
+      "evidence": "Ticket creado por pedido explícito del26/10, sin implementación.",
+      "issueNumber": 53,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/53",
+      "statusConfirmed": true,
+      "statusBasis": "Pendiente, asignado por usuario",
+      "planningSource": "Pedido explícito Benjamín26/10/2026"
     }
   ],
   "statusPolicy": "Hecho por comprobación técnica autorizada el 25/10/2026. En progreso solo por confirmación de actividad. Pendiente no significa ausencia de código."

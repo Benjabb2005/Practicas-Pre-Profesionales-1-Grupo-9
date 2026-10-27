@@ -19,3 +19,16 @@ export async function misPedidos() {
 export async function obtenerMiPedido(id) {
   return (await api.get(`/chofer/pedidos/${id}`)).data.pedido
 }
+
+export async function registrarEntrega(id, datos) {
+  return (await api.put(`/chofer/pedidos/${id}/entrega`, datos)).data.pedido
+}
+export async function registrarPago(id, datos) {
+  return (await api.put(`/chofer/pedidos/${id}/pago`, datos)).data.pago
+}
+export async function misEntregados() {
+  return (await api.get('/chofer/entregados')).data.pedidos
+}
+export async function historialPedido(id, operador = false) {
+  return (await api.get(`/${operador ? 'asignaciones' : 'chofer/pedidos'}/${id}/historial`)).data.historial
+}

@@ -1,0 +1,5 @@
+.delivery-history { grid-column: 1 / -1; }
+.delivery-history article { border-left: 2px solid #dce5fb; padding: 0 0 16px 14px; margin-top: 14px; font-size: 13px; overflow-wrap: anywhere; }
+.delivery-history small { display: block; margin-top: 5px; color: var(--theme-muted, #718094); font-size: 11px; }
+.delivery-history p { margin: 7px 0 0; white-space: pre-wrap; }
+:root[data-theme="dark"] .delivery-history article { border-left-color: #41516a; }

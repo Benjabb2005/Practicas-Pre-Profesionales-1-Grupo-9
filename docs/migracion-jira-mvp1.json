@@ -342,7 +342,7 @@
       "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-33",
       "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/37",
       "owner": "Benjamín",
-      "status": "Pendiente",
+      "status": "Hecho",
       "dependencies": [
         "B02",
         "S04"
@@ -354,7 +354,7 @@
       "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-34",
       "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/38",
       "owner": "Benjamín",
-      "status": "Pendiente",
+      "status": "Hecho",
       "dependencies": [
         "B03",
         "S06"
@@ -366,10 +366,11 @@
       "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-35",
       "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39",
       "owner": "Benjamín",
-      "status": "Pendiente",
+      "status": "En progreso",
       "dependencies": [
         "B04",
-        "Q02"
+        "Q02",
+        "B07"
       ]
     },
     {
@@ -536,8 +537,20 @@
       "dependencies": [
         "X06"
       ]
+    },
+    {
+      "id": "B07",
+      "jiraKey": "KAN-48",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-48",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/53",
+      "owner": "Benjamín",
+      "status": "Pendiente",
+      "dependencies": [
+        "J04",
+        "S02"
+      ]
     }
   ],
-  "linksCreated": 98,
+  "linksCreated": 101,
   "verification": "Importador: 44 creadas; segunda importación: 44 actualizadas, 0 creadas, 98 Created link Blocks, sin WARN/ERROR. KAN-1, KAN-2 y subtarea KAN-3 preservadas."
 }

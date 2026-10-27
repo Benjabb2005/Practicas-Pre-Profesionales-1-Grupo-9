@@ -1,9 +1,27 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { asignarChofer, listarChoferes, misPedidos, obtenerMiPedido, cambiarEstadoPedido } from './asignaciones'
+import { asignarChofer, listarChoferes, misPedidos, obtenerMiPedido, cambiarEstadoPedido, registrarEntrega, registrarPago, misEntregados, historialPedido } from './asignaciones'
 import { api } from './client'
 
 vi.mock('./client', () => ({ api: { get: vi.fn(), put: vi.fn() } }))
 beforeEach(() => vi.resetAllMocks())
+
+it('entrega conserva la clave para reintentos, pago queda separado y no envía identidad', async () => {
+  const datos = { resultado: 'FALLIDA', operacion_id: 'clave-sintetica', motivo: 'Sin respuesta' }
+  api.put.mockResolvedValue({ data: { pedido: { estado: 'EN PREPARACIÓN' }, pago: { metodo: 'EFECTIVO' } } })
+  expect(await registrarEntrega(7, datos)).toEqual({ estado: 'EN PREPARACIÓN' })
+  expect(api.put).toHaveBeenLastCalledWith('/chofer/pedidos/7/entrega', datos)
+  await registrarEntrega(7, datos)
+  expect(api.put).toHaveBeenLastCalledWith('/chofer/pedidos/7/entrega', datos)
+  expect(await registrarPago(7, { metodo: 'EFECTIVO', monto: '10.50' })).toEqual({ metodo: 'EFECTIVO' })
+  expect(api.put).toHaveBeenLastCalledWith('/chofer/pedidos/7/pago', { metodo: 'EFECTIVO', monto: '10.50' })
+  api.get.mockResolvedValue({ data: { pedidos: [], historial: [] } })
+  expect(await misEntregados()).toEqual([])
+  expect(api.get).toHaveBeenLastCalledWith('/chofer/entregados')
+  await historialPedido(7)
+  expect(api.get).toHaveBeenLastCalledWith('/chofer/pedidos/7/historial')
+  await historialPedido(7, true)
+  expect(api.get).toHaveBeenLastCalledWith('/asignaciones/7/historial')
+})
 
 it('el mapa consulta el detalle protegido del chofer y propaga un pedido no disponible', async () => {
   api.get.mockResolvedValueOnce({ data: { pedido: { id: 7, estado_validacion: 'CONFIRMADA' } } })

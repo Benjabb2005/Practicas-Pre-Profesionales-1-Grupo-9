@@ -6,6 +6,8 @@ import { obtenerPedido } from '../api/pedidos'
 import { listarAsignaciones, listarChoferes, asignarChofer, cambiarEstadoPedido } from '../api/asignaciones'
 import { mensajeError } from '../api/client'
 import './Asignaciones.css'
+import HistorialPedido from '../components/HistorialPedido.jsx'
+import { resumirAsignaciones } from '../components/asignaciones.js'
 
 function ContenidoDetalle({ pedidoId, tipo }) {
   const [pedido, setPedido] = useState(null)
@@ -33,7 +35,7 @@ function ContenidoDetalle({ pedidoId, tipo }) {
     ['Estado del pedido', pedido.estado], ['Validación', pedido.estado_validacion],
     ['Canal de origen', pedido.canal_origen], ['Observaciones', pedido.observaciones],
   ]
-  return <div className="asignacion-detalle-contenido"><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl></div>
+  return <div className="asignacion-detalle-contenido"><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl><HistorialPedido pedidoId={pedidoId} operador/></div>
 }
 
 function DetalleDireccion({ pedidoId, tipo, onClose }) {
@@ -149,7 +151,7 @@ export default function AsignacionesPage() {
     finally { setOcupado(false) }
   }
   const cargando = !datos && !error
-  const habilitados = datos?.pedidos.filter(p => p.puede_asignar).length ?? 0
+  const { habilitados, bloqueados } = resumirAsignaciones(datos?.pedidos)
   const visibles = datos?.pedidos.filter(p => !soloHabilitados || p.puede_asignar) ?? []
   const paginado = usePagination(visibles, String(soloHabilitados))
 
@@ -163,7 +165,7 @@ export default function AsignacionesPage() {
     {datos && !datos.choferes.length && <p>No hay choferes activos disponibles.</p>}
     {datos && !datos.pedidos.length && <p>No hay pedidos cargados.</p>}
     {datos && <>
-      <div className="asignaciones-resumen" aria-label="Resumen de asignaciones"><p><strong>{habilitados}</strong> habilitados</p><p><strong>{datos.pedidos.length - habilitados}</strong> bloqueados</p><p><strong>{datos.choferes.length}</strong> choferes activos</p></div>
+      <div className="asignaciones-resumen" aria-label="Resumen de asignaciones"><p><strong>{habilitados}</strong> habilitados</p><p><strong>{bloqueados}</strong> bloqueados</p><p><strong>{datos.choferes.length}</strong> choferes activos</p></div>
       <label className="asignaciones-filtro"><input type="checkbox" checked={soloHabilitados} onChange={e => setSoloHabilitados(e.target.checked)}/> Mostrar solo pedidos habilitados</label>
       {soloHabilitados && !visibles.length && <p>No hay pedidos habilitados. Revisá y confirmá las direcciones de los pedidos bloqueados.</p>}
     </>}
