@@ -20,6 +20,11 @@ function createAsignacionesRouter(container = {}) {
     router.use(requiereRol('ADMINISTRADOR', 'OPERADOR'));
     router.get('/', async (req, res) => res.json({ pedidos: await servicio.listar() }));
     router.get('/choferes', async (req, res) => res.json({ choferes: await servicio.choferes() }));
+    router.put('/:id/acreditar-pago', requiereRol('ADMINISTRADOR'), async (req,res) => {
+        const { id } = validar(idSchema,req.params);
+        validar(z.object({}).strict(),req.body);
+        res.json({ pedido:await container.entregaService.acreditar(id,req.usuario.id) });
+    });
     router.get('/:id/historial', async (req, res) => {
         const { id } = validar(idSchema, req.params);
         res.json({ historial: await container.entregaService.historial(id, req.usuario) });

@@ -6,6 +6,13 @@ export function ubicacionConfirmada(pedido) {
 }
 
 const normalizar = texto => String(texto ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+export function entregaFinalizada(pedido) {
+  return pedido.estado === 'PAGADO' && (pedido.pago_metodo === 'EFECTIVO' || (pedido.pago_metodo === 'TRANSFERENCIA' && Number(pedido.comprobantes_cantidad) > 0))
+}
+export function entregasDeVista(pedidos, vista) {
+  if(vista === 'pendientes')return pedidos.filter(p=>p.estado === 'EN ENVÍO')
+  return pedidos.filter(p=>['ENTREGADO','PAGADO'].includes(p.estado) && entregaFinalizada(p) === (vista === 'historial'))
+}
 export function historialEntregas(filas) {
   const etiquetas = { 'EN STOCK': 'En stock', 'EN PREPARACIÓN': 'En preparación', 'EN ENVÍO': 'Despachado', ENTREGADO: 'Entregado', PAGADO: 'Pagado' }
   return filas.filter(h => h.estado_anterior !== h.estado_nuevo)

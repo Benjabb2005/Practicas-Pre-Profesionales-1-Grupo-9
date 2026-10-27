@@ -4,7 +4,7 @@ export default function CompletarImporte({ pedido, onGuardado }) {
   const [importe, setImporte] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState('')
-  if (pedido.importe_base != null || ['ENTREGADO', 'PAGADO'].includes(pedido.estado)) return null
+  if (pedido.importe_base != null || pedido.estado === 'PAGADO' || pedido.pago_metodo) return null
   async function guardar(e) {
     e.preventDefault(); if (ocupado) return
     setOcupado(true); setError('')

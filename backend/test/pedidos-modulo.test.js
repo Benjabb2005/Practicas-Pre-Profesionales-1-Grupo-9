@@ -317,7 +317,8 @@ test("el listado sin filtros no agrega un WHERE", async () => {
 
     await repositorio.listar();
 
-    assert.doesNotMatch(consulta.sql, /WHERE/);
+    // El WHERE de una subconsulta de comprobantes no filtra el listado de pedidos.
+    assert.doesNotMatch(consulta.sql.slice(consulta.sql.indexOf('FROM pedidos p')), /WHERE/);
     assert.deepEqual(consulta.valores, []);
 });
 

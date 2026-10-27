@@ -596,20 +596,20 @@
       "id": "B05",
       "owner": "Benjamín",
       "title": "Registro de pago y prevención de doble cobro",
-      "status": "En progreso",
+      "status": "Hecho",
       "deps": [
         "B04",
         "Q02",
         "B07"
       ],
       "acceptance": "Efectivo/transferencia, monto válido, responsable; un registro por pedido y acreditación según decisión.",
-      "evidence": "Integración importe B07 realizada: sólo método desde chofer, total desde servidor; pago habilitado con importe. Q02/D04 acreditación pendiente; sin commit/push.",
+      "evidence": "B05 terminada y autorizada para publicación26/10. Efectivo confirmado, transferencia acreditada sólo admin, total servidor y prevención de doble cobro. Comprobantes privados opcionales con preview PDF.js, pendientes visibles e historial separado. Migración003 ensayada y aplicada localmente. Backend195 pasan/3opt-in omitidas, frontend66, lint/build/sintaxis OK. MySQL aislado de pagos/comprobantes verificado en desarrollo; recuperación final de importe cubierta con adaptador, sin nueva ejecución MySQL. Refs #39/KAN-35 en commit de cierre.",
       "issueNumber": 39,
       "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39",
       "previousInferredStatus": "Pendiente",
       "statusConfirmed": true,
       "planningSource": "Reparto documentado",
-      "statusBasis": "Implementación local solicitada el26/10; revisión pendiente"
+      "statusBasis": "Cierre autorizado por Benjamín26/10 tras correcciones verificadas"
     },
     {
       "id": "B06",

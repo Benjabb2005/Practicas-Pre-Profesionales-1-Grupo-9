@@ -6,6 +6,7 @@ function errorHandler(error, req, res, next) {
     if (res.headersSent) {
         return next(error);
     }
+    if (error.type === 'entity.too.large') return res.status(413).json({error:{codigo:'ARCHIVO_DEMASIADO_GRANDE',mensaje:'El archivo supera el tamaño permitido (5 MB para comprobantes).'}});
 
     if (error instanceof AppError) {
         const cuerpo = { codigo: error.codigo, mensaje: error.message };

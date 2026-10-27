@@ -4,6 +4,8 @@
 const SELECT_DETALLE = `
     SELECT p.id, p.codigo, p.estado, p.canal_origen, p.direccion_validada, p.observaciones, p.cliente_id,
            p.importe_base,p.recargo_total,p.importe_total,p.intentos_fallidos,p.proxima_visita,
+           pa.metodo AS pago_metodo,pa.monto AS pago_monto,pa.fecha AS pago_fecha,
+           (SELECT COUNT(*) FROM comprobantes_pago cp WHERE cp.pago_id=pa.id) AS comprobantes_cantidad,
            p.created_at, p.updated_at,
            c.nombre AS cliente_nombre, c.telefono AS cliente_telefono, c.email AS cliente_email,
            c.dni AS cliente_dni, c.tipo AS cliente_tipo,
@@ -12,7 +14,8 @@ const SELECT_DETALLE = `
            d.latitud, d.longitud, d.nivel_confianza, d.estado_validacion
     FROM pedidos p
     LEFT JOIN clientes c ON c.id = p.cliente_id
-    LEFT JOIN direcciones d ON d.pedido_id = p.id`;
+    LEFT JOIN direcciones d ON d.pedido_id = p.id
+    LEFT JOIN pagos pa ON pa.pedido_id = p.id`;
 
 // Búsqueda de cliente para el listado: nombre, DNI, teléfono o email. Si el
 // texto trae dígitos, también se busca por DNI/teléfono sin puntos ni guiones.
@@ -79,7 +82,9 @@ function createPedidoRepository(db) {
                 await c.beginTransaction();
                 const [[p]] = await c.query('SELECT estado,importe_base,intentos_fallidos FROM pedidos WHERE id=? FOR UPDATE', [id]);
                 if (!p) throw noEncontrado();
-                if (p.importe_base != null || ['ENTREGADO', 'PAGADO'].includes(p.estado)) throw conflicto('Sólo podés completar el importe faltante de un pedido sin finalizar.');
+                if (p.importe_base != null || p.estado === 'PAGADO') throw conflicto('Sólo podés completar un importe faltante antes de registrar el pago.');
+                const [[pago]] = await c.query('SELECT id FROM pagos WHERE pedido_id=? FOR UPDATE', [id]);
+                if(pago) throw conflicto('El pedido ya tiene un pago registrado. No se modificó el importe.');
                 const recargo = recargoPorIntentos(importe, p.intentos_fallidos);
                 await c.query('UPDATE pedidos SET importe_base=?,recargo_total=? WHERE id=?', [importe, recargo, id]);
                 await c.query(`INSERT INTO historial_estados (pedido_id,estado_anterior,estado_nuevo,usuario_id,observaciones) VALUES (?,?,?,?,?)`, [id,p.estado,p.estado,usuarioId,`Importe base completado: ${importe} ARS. Recargos: ${recargo} ARS.`]);

@@ -1,5 +1,13 @@
 import { expect, it } from 'vitest'
-import { resumirAsignaciones } from './asignaciones.js'
+import { resumirAsignaciones,asignacionesActivas } from './asignaciones.js'
+
+it('oculta pagados, conservando entregados con importe o pago por completar',()=>{
+  const pedidos=[{id:1,estado:'EN STOCK'},{id:2,estado:'EN PREPARACIÓN'},{id:3,estado:'EN ENVÍO'},
+    {id:4,estado:'ENTREGADO'},{id:5,estado:'ENTREGADO',pago_metodo:'TRANSFERENCIA'},
+    {id:6,estado:'PAGADO',pago_metodo:'TRANSFERENCIA'},{id:7,estado:'PAGADO',pago_metodo:'EFECTIVO'}]
+  expect(asignacionesActivas(pedidos).map(p=>p.id)).toEqual([1,2,3,4,5])
+  expect(asignacionesActivas()).toEqual([])
+})
 
 it('cuenta sólo los bloqueados antes del despacho, sin sumar envíos ni finalizados', () => {
   const pedidos = [

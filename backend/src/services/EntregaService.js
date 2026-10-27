@@ -26,6 +26,7 @@ function createEntregaService({ repositorio }) {
         registrar: (id, usuarioId, datos) => repositorio.registrar(id, usuarioId, datos, validarEntrega),
         pago: (id, usuarioId, datos) => repositorio.pago(id, usuarioId, { metodo: datos.metodo }, validarPago),
         entregados: usuarioId => repositorio.entregados(usuarioId),
+        acreditar: (id,usuarioId) => repositorio.acreditar(id,usuarioId),
         async historial(id, usuario) {
             return repositorio.historial(id, pedido => {
                 if (usuario.rol === 'CHOFER') validarPropio(pedido, usuario.id);

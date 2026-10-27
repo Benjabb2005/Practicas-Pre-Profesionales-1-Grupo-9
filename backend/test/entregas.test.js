@@ -28,7 +28,7 @@ test('pago: sólo después de entregar, montos decimales positivos sin redondear
     assert.equal(validarMonto('9999999999.99'), '9999999999.99');
 });
 
-function fakeDb({ pedido = { ...propio }, pago = null, falla = false, activo = 1 } = {}) {
+function fakeDb({ pedido = { ...propio }, pago = null, falla = false, activo = 1, rol = 'CHOFER' } = {}) {
     const historial = [];
     const llamadas = [];
     let respaldo;
@@ -40,7 +40,7 @@ function fakeDb({ pedido = { ...propio }, pago = null, falla = false, activo = 1
         async query(sql, v) {
             llamadas.push(sql);
             if (sql.includes('FROM pedidos')) return [pedido ? [{ ...pedido }] : []];
-            if (sql.includes('FROM usuarios')) return [[{ id: 3, rol: 'CHOFER', activo }]];
+            if (sql.includes('FROM usuarios')) return [[{ id: 3, rol, activo }]];
             if (sql.includes('LEFT(observaciones')) return [historial.filter(h => h.usuario_id === v[1] && h.observaciones.startsWith(v[3]))];
             if (sql.startsWith('UPDATE pedidos')) {
                 pedido.estado = v[0];
@@ -103,6 +103,48 @@ test('fallo al guardar historial revierte entrega y pago; usuario inactivo no es
     const inactivo = fakeDb({ activo: 0 });
     await assert.rejects(() => createEntregaRepository(inactivo).registrar(7, 3, datos, validarEntrega), e => e.statusCode === 403);
     assert.equal(inactivo.historial.length, 0);
+});
+
+test('efectivo confirma PAGADO atómicamente y reintento no duplica cobro ni historial', async () => {
+    const db = fakeDb({ pedido:{...propio,estado:'ENTREGADO'} });
+    const repo = createEntregaRepository(db);
+    assert.equal((await repo.pago(7,3,{metodo:'EFECTIVO'},validarPago)).estado_pedido,'PAGADO');
+    await repo.pago(7,3,{metodo:'EFECTIVO'},validarPago);
+    assert.equal(db.pedido.estado,'PAGADO');assert.equal(db.historial.length,1);
+    assert.equal(db.historial[0].estado_nuevo,'PAGADO');
+    const falla = fakeDb({pedido:{...propio,estado:'ENTREGADO'},falla:true});
+    await assert.rejects(()=>createEntregaRepository(falla).pago(7,3,{metodo:'EFECTIVO'},validarPago));
+    assert.equal(falla.pedido.estado,'ENTREGADO');assert.equal(falla.pago,null);
+});
+
+test('acreditación: sólo admin activo, transferencia existente, estado válido e idempotencia', async () => {
+    const pago = {id:1,metodo:'TRANSFERENCIA',monto:'20.50'};
+    const db = fakeDb({pedido:{...propio,estado:'ENTREGADO'},pago,rol:'ADMINISTRADOR'});
+    const repo = createEntregaRepository(db);
+    await repo.acreditar(7,3);await repo.acreditar(7,3);
+    assert.equal(db.pedido.estado,'PAGADO');assert.equal(db.historial.length,1);
+    for(const rol of ['CHOFER','OPERADOR']) await assert.rejects(()=>createEntregaRepository(fakeDb({pago,rol})).acreditar(7,3),e=>e.statusCode===403);
+    await assert.rejects(()=>createEntregaRepository(fakeDb({pago,rol:'ADMINISTRADOR',activo:0})).acreditar(7,3),e=>e.statusCode===403);
+    for(const existente of [null,{...pago,metodo:'EFECTIVO'}]) await assert.rejects(()=>createEntregaRepository(fakeDb({pedido:{...propio,estado:'ENTREGADO'},pago:existente,rol:'ADMINISTRADOR'})).acreditar(7,3),e=>e.statusCode===409);
+    await assert.rejects(()=>createEntregaRepository(fakeDb({pago,rol:'ADMINISTRADOR'})).acreditar(7,3),e=>e.statusCode===409);
+    const falla = fakeDb({pedido:{...propio,estado:'ENTREGADO'},pago,rol:'ADMINISTRADOR',falla:true});
+    await assert.rejects(()=>createEntregaRepository(falla).acreditar(7,3));
+    assert.equal(falla.pedido.estado,'ENTREGADO');assert.equal(falla.historial.length,0);
+});
+
+test('HTTP acreditar: 401/403, cuerpo estricto y confirmación idempotente sólo administrador', async () => {
+    const db=fakeDb({pedido:{...propio,estado:'ENTREGADO'},pago:{id:1,metodo:'TRANSFERENCIA',monto:'20.50'},rol:'ADMINISTRADOR'});
+    const server=createApp({db,config:{jwt:{secret:'secreto-sintetico'},geocode:{}}}).listen(0,'127.0.0.1');
+    await once(server,'listening');
+    const pedir=(rol,body={})=>fetch(`http://127.0.0.1:${server.address().port}/api/asignaciones/7/acreditar-pago`,{method:'PUT',headers:{'content-type':'application/json',...(rol?{authorization:`Bearer ${jwt.sign({sub:3,rol},'secreto-sintetico')}`}:{})},body:JSON.stringify(body)});
+    try{
+        assert.equal((await pedir(null)).status,401);
+        for(const rol of ['CHOFER','OPERADOR']) assert.equal((await pedir(rol)).status,403);
+        assert.equal((await pedir('ADMINISTRADOR',{monto:'1.00'})).status,400);
+        assert.equal((await pedir('ADMINISTRADOR')).status,200);
+        assert.equal((await pedir('ADMINISTRADOR')).status,200);
+        assert.equal(db.historial.length,1);
+    }finally{server.close();await once(server,'close');}
 });
 test('HTTP: sesión/rol, cuerpos estrictos, motivo obligatorio, ajeno y pago prematuro', async () => {
     const db = fakeDb();

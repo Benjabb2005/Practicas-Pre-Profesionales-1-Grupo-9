@@ -1,5 +1,6 @@
-const { conflicto, noAutorizado } = require('../lib/errors');
+const { conflicto, noAutorizado, noEncontrado } = require('../lib/errors');
 const { validarPropio } = require('../services/EntregaService');
+const { validarTransicion } = require('../services/EstadoPedidoService');
 const { recargoPorIntentos } = require('../lib/importes');
 
 function createEntregaRepository(db) {
@@ -50,20 +51,46 @@ function createEntregaRepository(db) {
                 const [[pago]] = await c.query('SELECT id,metodo,monto,registrado_por,fecha FROM pagos WHERE pedido_id=?', [id]);
                 if (pago) {
                     if (pago.metodo !== datos.metodo) throw conflicto('El pedido ya tiene un pago registrado. No se modificó.');
-                    return { ...pago, repetido: true };
+                    return { ...pago, estado_pedido: pedido.estado, repetido: true };
                 }
+                if (pedido.estado === 'PAGADO') throw conflicto('El pedido ya figura pagado. Revisá el registro existente con administración.');
                 if (pedido.importe_total == null) throw conflicto('El pedido no tiene importe cargado. Contactá al operador.');
                 const monto = String(pedido.importe_total);
+                const efectivo = datos.metodo === 'EFECTIVO';
+                if (efectivo) validarTransicion({ estadoActual:pedido.estado, estadoNuevo:'PAGADO',direccion:pedido });
                 const [r] = await c.query('INSERT INTO pagos (pedido_id,metodo,monto,registrado_por) VALUES (?,?,?,?)',
                     [id, datos.metodo, monto, usuarioId]);
+                if (efectivo) await c.query('UPDATE pedidos SET estado=? WHERE id=?',['PAGADO',id]);
                 await c.query(`INSERT INTO historial_estados (pedido_id,estado_anterior,estado_nuevo,usuario_id,observaciones)
-                    VALUES (?,?,?,?,?)`, [id, pedido.estado, pedido.estado, usuarioId, `Pago registrado: ${datos.metodo}. Acreditación no confirmada.`]);
-                return { id: r.insertId, metodo: datos.metodo, monto, repetido: false };
+                    VALUES (?,?,?,?,?)`, [id, pedido.estado, efectivo ? 'PAGADO' : pedido.estado, usuarioId,
+                    efectivo ? 'Cobro en efectivo confirmado por el chofer.' : 'Transferencia informada. Pendiente de acreditación por administrador.']);
+                return { id: r.insertId, metodo: datos.metodo, monto, estado_pedido:efectivo ? 'PAGADO' : pedido.estado, repetido: false };
             });
+        },
+        async acreditar(id, usuarioId) {
+            const c = await db.getConnection();
+            try {
+                await c.beginTransaction();
+                const [[pedido]] = await c.query('SELECT id,estado FROM pedidos WHERE id=? FOR UPDATE',[id]);
+                const [[usuario]] = await c.query('SELECT id,rol,activo FROM usuarios WHERE id=? FOR UPDATE',[usuarioId]);
+                if (!usuario?.activo || usuario.rol !== 'ADMINISTRADOR') throw noAutorizado();
+                if (!pedido) throw noEncontrado();
+                const [[pago]] = await c.query('SELECT id,metodo,monto FROM pagos WHERE pedido_id=? FOR UPDATE',[id]);
+                if (!pago || pago.metodo !== 'TRANSFERENCIA') throw conflicto('El pedido no tiene una transferencia informada para acreditar.');
+                if (pedido.estado === 'PAGADO') { await c.commit(); return { id,estado:'PAGADO',repetido:true }; }
+                validarTransicion({ estadoActual:pedido.estado,estadoNuevo:'PAGADO',direccion:pedido });
+                await c.query('UPDATE pedidos SET estado=? WHERE id=?',['PAGADO',id]);
+                await c.query(`INSERT INTO historial_estados (pedido_id,estado_anterior,estado_nuevo,usuario_id,observaciones)
+                    VALUES (?,?,?,?,?)`,[id,pedido.estado,'PAGADO',usuarioId,'Transferencia acreditada por administrador.']);
+                await c.commit();
+                return { id,estado:'PAGADO',repetido:false };
+            } catch(e) { await c.rollback();throw e; }
+            finally { c.release(); }
         },
         async entregados(usuarioId) {
             const [filas] = await db.query(`SELECT p.id,p.codigo,p.estado,p.importe_base,p.recargo_total,p.importe_total,p.proxima_visita,c.nombre AS cliente_nombre,
                 d.calle,d.altura,d.localidad,pa.metodo AS pago_metodo,pa.monto AS pago_monto,
+                (SELECT COUNT(*) FROM comprobantes_pago cp WHERE cp.pago_id=pa.id) AS comprobantes_cantidad,
                 (SELECT MAX(h.fecha) FROM historial_estados h WHERE h.pedido_id=p.id
                   AND h.estado_anterior='EN ENVÍO' AND h.estado_nuevo='ENTREGADO') AS entregado_fecha
                 FROM pedidos p JOIN clientes c ON c.id=p.cliente_id

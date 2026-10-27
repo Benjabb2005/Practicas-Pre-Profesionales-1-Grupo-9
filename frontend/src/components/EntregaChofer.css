@@ -8,17 +8,43 @@
 .entrega-modal textarea { min-height: 90px; resize: vertical; }
 .entrega-modal button, .driver-result-actions button, .driver-view-tabs button { min-height: 38px; padding: 8px 12px; border: 1px solid var(--border, #ccd5e3); border-radius: 6px; cursor: pointer; font: inherit; }
 .entrega-modal header button, .entrega-modal footer button:first-child, .driver-result-actions button, .driver-view-tabs button { background: var(--surface, #fff); color: inherit; }
-.entrega-modal button:disabled, .driver-result-actions button:disabled { cursor: wait; opacity: .6; }
+.entrega-modal button:disabled, .driver-result-actions button:disabled { cursor: not-allowed; opacity: .6; }
+.entrega-modal[aria-busy="true"] button:disabled { cursor:wait; }
 .entrega-modal footer { margin-top: 22px; flex-wrap: wrap; }
 .entrega-error, .driver-result-actions .entrega-fallo { color: #c63b47; }
 .driver-result-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; font-size: 13px; }
 .driver-result-actions .entrega-exito { background: #246b47; color: #fff; border-color: #246b47; }
-.driver-view-tabs { display: flex; gap: 8px; margin: 16px 0; font-size: 13px; }
+.driver-view-tabs { display: flex; gap: 8px; margin: 16px 0; font-size: 13px; flex-wrap:wrap; }
+.driver-payment-status { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0; }
+.driver-payment-status .estado-comprobante { margin:0; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+.driver-stop-status.in-transit { background:#e6efff; color:#2457a6; }
+.driver-stop-status.delivered { background:#e1f3ef; color:#176b58; }
+.driver-stop-status.payment-confirmed,.driver-payment-status .receipt-complete { background:#e5f3df; color:#356b24; }
+.driver-stop-status.payment-pending,.driver-payment-status .receipt-pending { background:#fff0d5; color:#875015; }
+.driver-stop-status.payment-review { background:#eee7ff; color:#64419c; }
+[data-theme="dark"] .driver-stop-status.in-transit { background:#203a61; color:#afceff; }
+[data-theme="dark"] .driver-stop-status.delivered { background:#183f36; color:#91dcc6; }
+[data-theme="dark"] .driver-stop-status.payment-confirmed,[data-theme="dark"] .driver-payment-status .receipt-complete { background:#2c4025; color:#b5df9e; }
+[data-theme="dark"] .driver-stop-status.payment-pending,[data-theme="dark"] .driver-payment-status .receipt-pending { background:#4b351b; color:#ffd18d; }
+[data-theme="dark"] .driver-stop-status.payment-review { background:#38284e; color:#d7baff; }
 .driver-view-tabs button[aria-pressed="true"] { background: #285bd6; color: #fff; }
 .driver-pago-nota { font-size: 13px; line-height: 1.5; }
 .entrega-historial ol { padding-left: 20px; }
 .entrega-historial li { padding: 8px 0; font-size: 13px; overflow-wrap: anywhere; }
 .entrega-historial p { margin: 5px 0; }
+.selector-comprobante input[type="file"] { padding:8px; max-width:100%; box-sizing:border-box; }
+.comprobantes-pedido ul { padding-left:0; list-style:none; }
+.comprobantes-pedido li { margin:8px 0; }
+.comprobantes-pedido li button { max-width:100%; overflow-wrap:anywhere; white-space:normal; text-align:left; }
+.comprobantes-pedido p,.selector-comprobante p { overflow-wrap:anywhere; }
+.preview-comprobante { margin-top:14px; padding:12px; border:1px solid var(--theme-border); border-radius:8px; background:var(--theme-raised); }
+.preview-comprobante header { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.preview-comprobante strong { overflow-wrap:anywhere; font-size:13px; }
+.preview-comprobante img { display:block; max-width:100%; max-height:55dvh; object-fit:contain; margin:0 auto 12px; }
+.preview-pdf canvas { display:block; width:100%; height:auto; margin-bottom:10px; background:#fff; }
+.preview-pdf canvas[hidden] { display:none; }
+.preview-pdf nav { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.preview-comprobante small { display:block; margin-bottom:8px; }
 [data-theme="dark"] .entrega-modal { background: #22252b; color: #edf0f4; border-color: #424750; }
 [data-theme="dark"] .entrega-modal input, [data-theme="dark"] .entrega-modal select, [data-theme="dark"] .entrega-modal textarea,
 [data-theme="dark"] .entrega-modal header button, [data-theme="dark"] .entrega-modal footer button:first-child,
