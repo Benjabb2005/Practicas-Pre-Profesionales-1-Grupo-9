@@ -11,6 +11,15 @@ function createTarifasRouter(container) {
         const { precio_km } = validar(z.object({ precio_km: z.string() }).strict(), req.body);
         res.json({ tarifa: await container.tarifaService.guardar(precio_km, req.usuario.id) });
     });
+    router.put('/sucursal', requiereRol('ADMINISTRADOR'), async (req, res) => {
+        const sucursal = validar(z.object({
+            calle: z.string(),
+            altura: z.string(),
+            localidad: z.string(),
+            provincia: z.string(),
+        }).strict(), req.body);
+        res.json({ tarifa: await container.tarifaService.guardarSucursal(sucursal, req.usuario.id) });
+    });
     return router;
 }
 module.exports = { createTarifasRouter };

@@ -736,3 +736,13 @@ Frontend72 pruebas pasan; lint/build pasan. Ensayo real en Brave por IP HTTP y36
 ## Publicación B06 autorizada (28/10/2026)
 
 Benjamín autoriza commit y push en feature/benjamin-asignacion-entregas y solicita instrucciones para abrir PR hacia MVP-1. Corte: regresión HTTP/MySQL del chofer, UUID compatible con HTTP por IP, pruebas de los cinco paneles y corrección de ancho mínimo móvil; informe entrega-b06.md y verificación actualizados. Check raíz ejecutado nuevamente pasa (backend195,4opt-in omitidas por defecto, lint/build/contexto/sintaxis); frontend72 pasan. Cuatro integraciones MySQL aisladas conservan evidencia previa, no reejecutadas en esta publicación. Se excluyen temporales, capturas, respaldos y secretos. Referencias #40/KAN-36 sin cierre automático ni modificación de tickets; límites físicos/selector y deuda de dependencias del informe se conservan. PR/merge no ejecutados: se entrega enlace de comparación e instrucciones al usuario.
+
+## Sucursal para sugerencia de envío — backend (28/10/2026)
+
+Responsable: Tomás Laruina. Tarjeta: KAN-49.
+
+La sucursal única queda guardada en `tarifas_envio`. `GET /api/tarifas` también devuelve sus campos y `PUT /api/tarifas/sucursal` permite configurarla solo al administrador. El servidor normaliza y valida la dirección antes de consultar Georef; una dirección con errores devuelve 400 y un resultado `ZERO_RESULTS` o `ERROR` devuelve 409 sin guardar. Si hay candidatos, se usa el primero y se guardan la dirección informada por Georef, sus coordenadas y el usuario que actualizó la tarifa.
+
+Se agregó `database/migrations/004_sucursal_envio.sql`; no se modificaron `002_importes_tarifas.sql` ni `database/init.sql`. Las pruebas usan repositorio y adaptador falsos, sin MySQL ni Internet. `npm test` ejecutado desde `backend/`: 204 pruebas, 200 aprobadas, 0 fallidas y 4 omitidas por requerir configuración optativa. `npm run check` del backend y `git diff --check` pasan. No se aplicó la migración a una base de datos. La prueba completa no modifica `backend/test/importes.test.js`.
+
+También se ejecutó el check de la raíz: contexto, check, pruebas y lint pasaron, pero el build frontend no pudo resolver `pdfjs-dist` importado por `frontend/src/components/PreviewPdf.jsx`. No se cambió ni instaló nada del frontend porque queda fuera de esta parte.

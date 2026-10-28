@@ -36,7 +36,10 @@ function createContainer({ db, config, georef } = {}) {
 
     return {
         comprobanteService:createComprobanteService({repositorio:createComprobanteRepository(db)}),
-        tarifaService: createTarifaService({ repositorio: createTarifaRepository(db) }),
+        tarifaService: createTarifaService({
+            repositorio: createTarifaRepository(db),
+            geocodeAdapter,
+        }),
         entregaService: createEntregaService({ repositorio: createEntregaRepository(db) }),
         asignacionService: createAsignacionService({ repositorio: createAsignacionRepository(db) }),
         config,
