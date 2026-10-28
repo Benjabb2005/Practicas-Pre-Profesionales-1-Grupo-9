@@ -7,6 +7,7 @@ import './EntregaChofer.css'
 import SelectorComprobante from './SelectorComprobante.jsx'
 import ComprobantesPedido from './ComprobantesPedido.jsx'
 import {subirComprobante,errorArchivo} from '../api/comprobantes.js'
+import { crearIdOperacion } from './operacionEntrega.js'
 
 export default function AccionChofer({ pedido, tipo, onClose, onGuardado,onComprobanteSubido }) {
   const dialogo = useRef(null)
@@ -18,7 +19,7 @@ export default function AccionChofer({ pedido, tipo, onClose, onGuardado,onCompr
   const [archivo,setArchivo]=useState(null)
   const [archivoError,setArchivoError]=useState('')
   const [pagoGuardado,setPagoGuardado]=useState(false)
-  const [operacion] = useState(() => crypto.randomUUID())
+  const [operacion] = useState(() => ['entrega', 'fallo'].includes(tipo) ? crearIdOperacion() : null)
   useEffect(() => {
     const d = dialogo.current
     const anterior = document.body.style.overflow

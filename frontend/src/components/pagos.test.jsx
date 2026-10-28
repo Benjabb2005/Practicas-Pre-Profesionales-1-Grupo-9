@@ -3,6 +3,25 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import PagoPedido from './PagoPedido.jsx'
 import AccionChofer from './AccionChofer.jsx'
 import EstadoComprobante from './EstadoComprobante.jsx'
+import { crearIdOperacion } from './operacionEntrega.js'
+
+it('genera UUID v4 distintos para intentos de entrega sin depender de randomUUID',()=>{
+ const getRandomValues=globalThis.crypto.getRandomValues.bind(globalThis.crypto)
+ vi.stubGlobal('crypto',{getRandomValues})
+ try{
+  const ids=Array.from({length:32},()=>crearIdOperacion())
+  expect(ids.every(id=>/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id))).toBe(true)
+  expect(new Set(ids).size).toBe(ids.length)
+ }finally{vi.unstubAllGlobals()}
+})
+
+it.each(['historial','comprobantes','entrega','fallo','pago'])('el panel %s abre por HTTP de red local sin crypto.randomUUID',tipo=>{
+ const getRandomValues=globalThis.crypto.getRandomValues.bind(globalThis.crypto)
+ vi.stubGlobal('crypto',{getRandomValues})
+ try{
+  expect(()=>renderToStaticMarkup(<AccionChofer pedido={{id:1,importe_total:'1000.00'}} tipo={tipo}/>)).not.toThrow()
+ }finally{vi.unstubAllGlobals()}
+})
 const contexto=vi.hoisted(()=>({rol:'ADMINISTRADOR'}))
 vi.mock('../auth/useAuth.js',()=>({useAuth:()=>({usuario:contexto})}))
 it('sólo admin ve acreditar una transferencia entregada; operador sólo consulta',()=>{

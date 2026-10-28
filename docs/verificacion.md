@@ -1,5 +1,11 @@
 # Verificación y evidencia · 30/09/2026
 
+## B06 · actualización 27/10/2026
+
+Evidencia completa en [entrega B06](entrega-b06.md). Check raíz host pasa tras sincronizar copias ignoradas de skills y reconstruir dependencias con npm ci desde lockfiles. Backend195 pasan/4integraciones opt-in omitidas por defecto, frontend66/lint/build pasan. Las cuatro integraciones se ejecutaron aparte en MySQL aislado: asignaciones, entregas/pagos, comprobantes y nueva regresión HTTP integral de chofer (8 resultados exitosos: padre+7subpruebas). UI real→API→MySQL: efectivo, transferencia/acreditación admin, fallo/recargo, historial, mapa, recarga y recuperación de caída. Móvil320/360 y escritorio1440, claro/oscuro; desborde15px a320 corregido y revisado. Desarrollo intacto, pruebas detenidas.
+
+Límites: sin celular físico; selección de archivo por UI bloqueada por permiso de extensión (subida/consulta binaria probadas vía API y preview PNG por UI). PDF nuevo no revisado visualmente. Audit registra backend5 (1crítica/4altas), frontend4altas; no se actualizan dependencias fuera del alcance. No cerrar B06 ni X04 automáticamente. Detalles, comandos y evidencia en entrega-b06.md.
+
 ## Comandos disponibles
 
 Desde la raíz, después de instalar las dependencias de backend y frontend:
