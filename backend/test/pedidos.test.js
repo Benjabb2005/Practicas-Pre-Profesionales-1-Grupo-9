@@ -111,6 +111,37 @@ test("crear pedido con dirección completa la guarda VALIDA y normalizada", asyn
     assert.deepEqual(resultado.problemas, []);
 });
 
+test("crear pedido sin importe o con importe vacío lo guarda como NULL", async () => {
+    for (const importe of [undefined, ""]) {
+        const pedidos = reposPedidosFalsos();
+        const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+        const datos = {
+            cliente_id: 1,
+            direccion: { calle: "Av. Corrientes" },
+        };
+        if (importe !== undefined) datos.importe_base = importe;
+
+        await servicio.crear(datos, 7);
+
+        assert.equal(pedidos.capturado.crear.importeBase, null);
+    }
+});
+
+test("crear pedido sigue rechazando importes cero, negativos y mal escritos", async () => {
+    const servicio = createPedidoService({ pedidos: reposPedidosFalsos(), clientes: clientesFalsos });
+
+    for (const importe of ["0", "-1.00", "12,50"]) {
+        await assert.rejects(
+            () => servicio.crear({
+                cliente_id: 1,
+                importe_base: importe,
+                direccion: { calle: "Av. Corrientes" },
+            }, 7),
+            (error) => error.codigo === "DATOS_INVALIDOS"
+        );
+    }
+});
+
 test("obtener calcula los problemas sobre la dirección guardada sin persistirlos", async () => {
     const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ provincia: "" }) });
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });

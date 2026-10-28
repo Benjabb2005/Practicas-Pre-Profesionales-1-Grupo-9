@@ -19,7 +19,7 @@ const esquemaDireccion = z.object({
 });
 
 const esquemaCrear = z.object({
-    importe_base: z.string(),
+    importe_base: z.string().optional().nullable(),
     cliente_id: z.coerce.number().int().positive("Elegí un cliente."),
     canal_origen: z.enum(CANALES_VALIDOS, {
         errorMap: () => ({ message: "Elegí un canal de origen válido." }),
@@ -58,7 +58,7 @@ const esquemaListar = z.object({
     { message: "La fecha hasta no puede ser anterior a la fecha desde.", path: ["fecha_hasta"] }
 );
 
-function createPedidosController({ pedidoService, geocodeService }) {
+function createPedidosController({ pedidoService, geocodeService, sugerenciaImporteService }) {
     return {
         async listar(req, res) {
             if (!pedidoService) throw servicioNoDisponible();
@@ -77,6 +77,12 @@ function createPedidosController({ pedidoService, geocodeService }) {
             if (!pedidoService) throw servicioNoDisponible();
             const { id } = validar(esquemaId, req.params);
             res.json({ pedido: await pedidoService.obtener(id) });
+        },
+
+        async sugerirImporte(req, res) {
+            if (!sugerenciaImporteService) throw servicioNoDisponible();
+            const { id } = validar(esquemaId, req.params);
+            res.json(await sugerenciaImporteService.sugerir(id));
         },
 
         async crear(req, res) {

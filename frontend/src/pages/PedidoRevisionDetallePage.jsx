@@ -7,6 +7,7 @@ import DireccionForm from '../components/DireccionForm.jsx'
 import ProblemasDireccion from '../components/ProblemasDireccion.jsx'
 import MapPreview from '../components/MapPreview.jsx'
 import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
+import CompletarImporte from '../components/CompletarImporte.jsx'
 import { motivoConfirmar, motivoGeocodificar, tieneCoordenadas } from '../components/direccion.js'
 import { mensajeError } from '../api/client'
 import { actualizarDireccion, confirmarDireccion, geocodificarPedido, obtenerPedido, rechazarUbicacion } from '../api/pedidos'
@@ -228,6 +229,10 @@ function PedidoRevisionDetallePage({ pedidoId } = {}) {
           <button type="button" className="button confirm-button" onClick={confirmar} disabled={ocupado || pedido.estado_validacion !== 'VALIDA' || !tieneCoordenadas(pedido)}><Icon name="check" size={14}/> Confirmar ubicación</button>
           {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
         </section>
+        {pedido.estado_validacion === 'CONFIRMADA' && pedido.importe_base == null && <section className="panel" style={{ padding: 18 }}>
+          <div className="section-heading"><div><h2>Completar importe</h2></div></div>
+          <CompletarImporte pedido={pedido} onGuardado={setPedido}/>
+        </section>}
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Cambiar calle o altura invalida la confirmación anterior.</small></div></div>
       </aside>
     </div>

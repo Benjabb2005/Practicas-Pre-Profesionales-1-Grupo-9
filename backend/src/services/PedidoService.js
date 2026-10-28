@@ -161,7 +161,9 @@ function createPedidoService({
         },
 
         async crear({ cliente_id, canal_origen, observaciones, direccion, confirmar_duplicado, importe_base }, usuarioId) {
-            const importeBase = normalizarImporte(importe_base);
+            const importeVacio = importe_base == null
+                || (typeof importe_base === "string" && importe_base.trim() === "");
+            const importeBase = importeVacio ? null : normalizarImporte(importe_base);
             const cliente = await clientes.buscarPorId(cliente_id);
             if (!cliente) throw errorValidacion({ cliente_id: "El cliente indicado no existe." });
 

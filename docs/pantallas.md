@@ -110,3 +110,10 @@ El tablero dejó de ser una maqueta de contadores en cero y pasó a listar pedid
 - Se retiraron de la pantalla el filtro de chofer y el botón «Agrupar envíos lejanos automáticamente» de la maqueta: la asignación de choferes pertenece a otro módulo y el agrupamiento a MVP 2. No se agregó paginación ni exportación.
 - La bandeja de revisión (`/pedidos/revision`) sigue existiendo para las direcciones sin confirmar; el tablero es el listado general y no reemplaza el detalle de revisión.
 - No se probó visualmente en navegador ni en viewport móvil en esta sesión; se acredita con pruebas de backend/frontend, lint, build y smoke de API.
+
+## Sugerencia de importe y sucursal · KAN-49
+
+- **Configuración de envíos** (`frontend/src/pages/TarifasPage.jsx`, solo ADMINISTRADOR): permite cargar calle, altura, localidad y provincia de la sucursal, además del precio por km para sugerir el costo de cada envío. El servidor valida y geocodifica con Georef; si responde con un error, se muestra el motivo sin reemplazar los datos guardados. Cuando hay una sucursal ubicada, se muestra el texto devuelto por Georef y su punto en el mapa. El acceso aparece en el menú lateral con un ícono de engranaje.
+- En la carga de pedidos el importe es opcional. Si se deja vacío, el alta no envía ese campo. La ayuda indica que el sistema sugiere un importe al confirmar la ubicación.
+- **Completar importe** permite guardar el valor pendiente mientras el pedido no esté pagado, incluso si es un pedido antiguo sin dirección confirmada. La sugerencia se consulta solo si la dirección está confirmada, en carga, revisión y el detalle de Asignaciones; si no lo está, se explica que la sugerencia aparece al confirmar la ubicación. Si la consulta no está disponible, se muestra el motivo y se mantiene la carga manual. Un importe sugerido igual a cero no se precarga.
+- Las pruebas de interfaz/API usan datos y respuestas simuladas; no llaman a Georef ni prueban el mapa contra una sesión autenticada. No se verificó visualmente en navegador ni en móvil en esta tarea.
