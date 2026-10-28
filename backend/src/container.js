@@ -18,6 +18,7 @@ const { createEntregaRepository } = require('./repositories/EntregaRepository');
 const { createEntregaService } = require('./services/EntregaService');
 const { createTarifaRepository } = require('./repositories/TarifaRepository');
 const { createTarifaService } = require('./services/TarifaService');
+const { crearSugerenciaImporteService } = require('./services/SugerenciaImporteService');
 const { createComprobanteService } = require('./services/ComprobanteService');
 const { createComprobanteRepository } = require('./repositories/ComprobanteRepository');
 
@@ -30,6 +31,7 @@ function createContainer({ db, config, georef } = {}) {
     const usuarios = createUsuarioRepository(db);
     const clientes = createClienteRepository(db);
     const pedidos = createPedidoRepository(db);
+    const tarifas = createTarifaRepository(db);
     const geocodeAdapter = createGeocodeAdapter(config.geocode);
     const georefClient = georef || createGeorefClient(config.georef);
     const localidadService = createLocalidadService({ cliente: georefClient });
@@ -37,9 +39,10 @@ function createContainer({ db, config, georef } = {}) {
     return {
         comprobanteService:createComprobanteService({repositorio:createComprobanteRepository(db)}),
         tarifaService: createTarifaService({
-            repositorio: createTarifaRepository(db),
+            repositorio: tarifas,
             geocodeAdapter,
         }),
+        sugerenciaImporteService: crearSugerenciaImporteService({ pedidos, tarifas }),
         entregaService: createEntregaService({ repositorio: createEntregaRepository(db) }),
         asignacionService: createAsignacionService({ repositorio: createAsignacionRepository(db) }),
         config,
