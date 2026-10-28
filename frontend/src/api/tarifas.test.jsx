@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { obtenerTarifa, guardarTarifa } from './tarifas.js'
+import { obtenerTarifa, guardarTarifa, guardarSucursal } from './tarifas.js'
 import { api } from './client.js'
 import ImportePedido from '../components/ImportePedido.jsx'
 vi.mock('./client.js', () => ({ api: { get: vi.fn(), put: vi.fn() } }))
@@ -11,6 +11,10 @@ it('consulta/guarda tarifa sin enviar identidad y conserva errores', async () =>
   api.put.mockResolvedValue({ data: { tarifa: { precio_km: '200.00' } } })
   await guardarTarifa('200.00')
   expect(api.put).toHaveBeenCalledWith('/tarifas', { precio_km: '200.00' })
+  const sucursal = { calle: 'Av. Corrientes', altura: '1234', localidad: 'CABA', provincia: 'Buenos Aires' }
+  api.put.mockResolvedValue({ data: { tarifa: { sucursal_direccion: 'Av. Corrientes 1234' } } })
+  await expect(guardarSucursal(sucursal)).resolves.toEqual({ sucursal_direccion: 'Av. Corrientes 1234' })
+  expect(api.put).toHaveBeenCalledWith('/tarifas/sucursal', sucursal)
   api.put.mockRejectedValue(new Error('Sin permiso'))
   await expect(guardarTarifa('2.00')).rejects.toThrow('Sin permiso')
 })

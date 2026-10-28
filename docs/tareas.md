@@ -737,7 +737,7 @@ Frontend72 pruebas pasan; lint/build pasan. Ensayo real en Brave por IP HTTP y36
 
 Benjamín autoriza commit y push en feature/benjamin-asignacion-entregas y solicita instrucciones para abrir PR hacia MVP-1. Corte: regresión HTTP/MySQL del chofer, UUID compatible con HTTP por IP, pruebas de los cinco paneles y corrección de ancho mínimo móvil; informe entrega-b06.md y verificación actualizados. Check raíz ejecutado nuevamente pasa (backend195,4opt-in omitidas por defecto, lint/build/contexto/sintaxis); frontend72 pasan. Cuatro integraciones MySQL aisladas conservan evidencia previa, no reejecutadas en esta publicación. Se excluyen temporales, capturas, respaldos y secretos. Referencias #40/KAN-36 sin cierre automático ni modificación de tickets; límites físicos/selector y deuda de dependencias del informe se conservan. PR/merge no ejecutados: se entrega enlace de comparación e instrucciones al usuario.
 
-## Sucursal para sugerencia de envío — backend (28/10/2026)
+## Sucursal y sugerencia de envío — backend y frontend (28/10/2026)
 
 Responsable: Tomás Laruina. Tarjeta: KAN-49.
 
@@ -748,3 +748,5 @@ Se agregó `database/migrations/004_sucursal_envio.sql`; no se modificaron `002_
 También se ejecutó el check de la raíz: contexto, check, pruebas y lint pasaron. El build frontend falló solo porque faltaba ejecutar `npm ci` dentro de `frontend/`; no era un error del código. No se instaló nada del frontend en esa parte.
 
 La parte 2 calcula la sugerencia sin guardar cambios. `SugerenciaImporteService` lee el pedido y la tarifa; requiere dirección confirmada, coordenadas de destino y sucursal, y precio por km. Calcula la distancia Haversine y redondea a un decimal antes de multiplicar; entrega el importe con dos decimales. El alta de pedidos acepta importe omitido o vacío y lo guarda como `NULL`; los valores cero, negativos y mal escritos siguen rechazados. `npm test` en `backend/`: 215 pruebas, 211 aprobadas, 0 fallidas y 4 omitidas por configuración optativa. `npm run check` del backend y `git diff --check` pasan. Sin MySQL, Internet, commit ni push.
+
+La parte frontend agrega la configuración de la sucursal con errores por campo, el motivo de Georef y el mapa de la ubicación guardada. En la carga, el importe queda opcional. `CompletarImporte` consulta siempre la sugerencia cuando la dirección está confirmada en carga, revisión y Asignaciones; muestra el cálculo, precarga solo valores positivos y deja editar el importe. Cuando falta un dato para calcular, informa el motivo y mantiene habilitada la carga manual. Se agregan pruebas unitarias de formato, precarga y llamadas a la API. En `frontend/`, `npm test` pasa con 75 pruebas en 18 archivos; `npm run lint` y `npm run build` también pasan. La compilación terminó con un aviso de chunks mayores a 500 kB. No se verificó visualmente en navegador ni en móvil porque no hay una sesión autenticada disponible. No se modificó el backend ni se hizo commit o push.

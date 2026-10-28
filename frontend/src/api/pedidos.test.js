@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from './client'
-import { crearPedido, listarPedidos, pedidosDuplicadosDeError } from './pedidos'
+import { crearPedido, listarPedidos, obtenerImporteSugerido, pedidosDuplicadosDeError } from './pedidos'
 
 vi.mock('./client', () => ({
   api: {
@@ -42,6 +42,14 @@ describe('api de pedidos', () => {
 
     await crearPedido(cuerpo)
     expect(api.post).toHaveBeenCalledWith('/pedidos', cuerpo)
+  })
+
+  it('consulta y devuelve la sugerencia de importe del pedido', async () => {
+    const sugerencia = { disponible: true, distancia_km: 2.4, precio_km: '100.00', importe_sugerido: '240.00' }
+    api.get.mockResolvedValue({ data: sugerencia })
+
+    await expect(obtenerImporteSugerido(10)).resolves.toEqual(sugerencia)
+    expect(api.get).toHaveBeenCalledWith('/pedidos/10/importe-sugerido')
   })
 
   it('extrae los pedidos existentes sólo del conflicto de duplicado', () => {

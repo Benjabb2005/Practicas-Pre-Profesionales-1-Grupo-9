@@ -16,6 +16,7 @@ import { mensajeError } from '../api/client'
 import { crearCliente } from '../api/clientes'
 import { confirmarDireccion, crearPedido, geocodificarPedido, pedidosDuplicadosDeError } from '../api/pedidos'
 import ImportePedido from '../components/ImportePedido.jsx'
+import CompletarImporte from '../components/CompletarImporte.jsx'
 import './Pedidos.css'
 
 const RESULTADOS = {
@@ -132,7 +133,8 @@ function PedidosCargaPage() {
           avisoCliente = `Cliente creado. ${describirCoincidenciasClientes(repetidos)}`
         }
       }
-      const cuerpo = { cliente_id: clienteId, canal_origen: canalOrigen, observaciones: observaciones || null, direccion, importe_base: importeBase.trim().replace(',', '.') }
+      const cuerpo = { cliente_id: clienteId, canal_origen: canalOrigen, observaciones: observaciones || null, direccion }
+      if (importeBase.trim()) cuerpo.importe_base = importeBase.trim().replace(',', '.')
       if (confirmarDuplicado) cuerpo.confirmar_duplicado = true
       const data = await crearPedido(cuerpo)
       setPedido(data.pedido)
@@ -267,9 +269,9 @@ function PedidosCargaPage() {
             {CANALES_ORIGEN.map((opcion) => <option key={opcion.valor} value={opcion.valor}>{opcion.etiqueta}</option>)}
           </select>
         </label>
-        <label className="form-field" htmlFor="pedido-importe"><span>Importe base del envío (ARS) *</span>
-          <input id="pedido-importe" required inputMode="decimal" pattern="[0-9]{1,10}([.,][0-9]{1,2})?" placeholder="Ingresá el importe" value={importeBase} disabled={Boolean(pedido) || ocupado} onChange={e => { setImporteBase(e.target.value); descartarDuplicados() }} aria-describedby="importe-sugerido"/>
-          <small id="importe-sugerido" style={{ color: 'var(--theme-muted)' }}>Sugerido: pendiente de definir el origen del envío y su distancia.</small>
+        <label className="form-field" htmlFor="pedido-importe"><span>Importe base del envío (ARS)</span>
+          <input id="pedido-importe" inputMode="decimal" pattern="[0-9]{1,10}([.,][0-9]{1,2})?" placeholder="Ingresá el importe" value={importeBase} disabled={Boolean(pedido) || ocupado} onChange={e => { setImporteBase(e.target.value); descartarDuplicados() }} aria-describedby="importe-sugerido"/>
+          <small id="importe-sugerido" style={{ color: 'var(--theme-muted)' }}>Si no lo sabés, el sistema te sugiere uno al confirmar la ubicación.</small>
         </label>
         <label className="form-field span-2 pedido-observaciones" htmlFor="pedido-observaciones"><span>Notas / Instrucciones de entrega</span>
           <textarea id="pedido-observaciones" rows="3" value={observaciones} onChange={(event) => { setObservaciones(event.target.value); descartarDuplicados() }} placeholder="Ej. Tocar timbre B, dejar en recepción..." disabled={Boolean(pedido) || ocupado}/>
@@ -318,6 +320,7 @@ function PedidosCargaPage() {
             <div><dt>Importe del envío</dt><dd><ImportePedido pedido={pedido}/></dd></div>
             <div><dt>Estado del pedido</dt><dd>{pedido.estado}</dd></div>
           </dl>}
+          {pedido && <CompletarImporte pedido={pedido} onGuardado={setPedido}/>}
 
           {resultado && <div className={`geo-resultado ${tonoResultado(resultado.resultado)}`} role="status">
             <b>{ETIQUETAS_RESULTADO[resultado.resultado] || 'Búsqueda registrada'}</b>

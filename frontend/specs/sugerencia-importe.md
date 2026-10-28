@@ -13,6 +13,8 @@ se confirma la ubicación en el mapa.
 - Distancia en línea recta entre la sucursal y el destino confirmado.
 - Importe sugerido = km × precio por km. La persona lo acepta o lo cambia.
 - El importe deja de ser obligatorio al cargar el pedido.
+- Si el pedido no tiene importe, la sugerencia se consulta siempre que se muestre CompletarImporte
+  con dirección confirmada: en la carga, la revisión y el detalle de Asignaciones.
 
 ## Fuera de alcance
 - Varias sucursales, distancia por calles, tarifas por zona.
@@ -23,6 +25,7 @@ se confirma la ubicación en el mapa.
   y se explica qué falta.
 - Una dirección de sucursal con errores (por ejemplo altura S/N) no se guarda.
 - Si Georef no encuentra la sucursal, no se guardan coordenadas inventadas.
-- Con todo cargado, al confirmar la ubicación se ve "Sugerido: $X (Y km en línea recta)"
-  y el campo de importe viene completado con ese valor, editable.
+- Con todo cargado, al confirmar la ubicación se ve "Sugerido: $X (Y km en línea recta × $Z por km)"
+  y el campo de importe viene completado con ese valor si es mayor que cero; sigue editable.
+- La sugerencia se consulta en carga, revisión y Asignaciones, sin opción para desactivarla.
 - Un pedido creado sin importe se puede completar después con el botón existente.
