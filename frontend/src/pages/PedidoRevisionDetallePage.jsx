@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import Icon from '../components/Icon.jsx'
 import DireccionForm from '../components/DireccionForm.jsx'
 import ProblemasDireccion from '../components/ProblemasDireccion.jsx'
@@ -22,8 +24,10 @@ function direccionDesdePedido(pedido) {
   }
 }
 
-function PedidoRevisionDetallePage() {
-  const { id } = useParams()
+function PedidoRevisionDetallePage({ pedidoId } = {}) {
+  const { id: idRuta } = useParams()
+  const id = pedidoId ?? idRuta
+  const Contenedor = pedidoId == null ? 'main' : 'div'
   const [pedido, setPedido] = useState(null)
   const [problemas, setProblemas] = useState([])
   const [direccion, setDireccion] = useState(null)
@@ -33,6 +37,8 @@ function PedidoRevisionDetallePage() {
   const [ocupado, setOcupado] = useState(false)
   const [candidatos, setCandidatos] = useState([])
   const [indiceCandidato, setIndiceCandidato] = useState(null)
+  const historialPaginado = usePagination(pedido?.intentos ?? [], String(id))
+  const candidatosPaginados = usePagination(candidatos, String(id), 5)
   const formularioRef = useRef(null)
 
   useEffect(() => {
@@ -138,25 +144,25 @@ function PedidoRevisionDetallePage() {
   )
 
   if (cargando) {
-    return <main className="main-content revision-page"><p className="users-state" role="status">Cargando pedido…</p></main>
+    return <Contenedor className="main-content revision-page"><p className="users-state" role="status">Cargando pedido…</p></Contenedor>
   }
   if (!pedido) {
-    return <main className="main-content revision-page">
+    return <Contenedor className="main-content revision-page">
       {error && <p className="users-alert" role="alert">{error}</p>}
       <p className="users-state">No se pudo cargar el pedido.</p>
-      <Link className="button button-outline" to="/pedidos/revision">Volver a la bandeja</Link>
-    </main>
+      {pedidoId == null && <Link className="button button-outline" to="/pedidos/revision">Volver a la bandeja</Link>}
+    </Contenedor>
   }
 
   const motivoGeo = motivoGeocodificar(pedido, ocupado)
   const motivoConf = motivoConfirmar(pedido, ocupado)
   const candidatoElegido = candidatos.find((candidato) => candidato.indice === indiceCandidato)
 
-  return <main className="main-content revision-page">
-    <header className="page-header">
+  return <Contenedor className="main-content revision-page">
+    {pedidoId == null && <header className="page-header">
       <div><p className="eyebrow">Revisión de dirección</p><h1>Pedido #{pedido.id}</h1><p className="subtitle">{pedido.cliente_nombre || 'Sin cliente'} · {pedido.codigo || 'Sin código interno'}</p></div>
       <Link className="button button-outline header-action" to="/pedidos/revision">Volver a la bandeja</Link>
-    </header>
+    </header>}
 
     {error && <p className="users-alert" role="alert">{error}</p>}
     {aviso && <p className="users-ok" role="status">{aviso}</p>}
@@ -179,13 +185,14 @@ function PedidoRevisionDetallePage() {
           <button className="button button-primary" type="button" onClick={guardarCambios} disabled={ocupado}>Guardar cambios</button>
         </div>
 
+        <Paginacion datos={historialPaginado} nombre="historial de geocodificación" disabled={ocupado}/>
         <div className="form-divider"><span>Historial de geocodificación</span></div>
         {pedido.intentos?.length
           ? <div className="users-table-wrap">
               <table className="users-table">
                 <thead><tr><th scope="col">Fecha</th><th scope="col">Dirección enviada</th><th scope="col">Resultado</th><th scope="col">Coordenadas</th><th scope="col">Confianza</th><th scope="col">Acción</th></tr></thead>
                 <tbody>
-                  {pedido.intentos.map((intento) => <tr key={intento.id}>
+                  {historialPaginado.items.map((intento) => <tr key={intento.id}>
                     <td>{intento.fecha ? new Date(intento.fecha).toLocaleString('es-AR') : '—'}</td>
                     <td>{intento.direccion_enviada || '—'}</td>
                     <td>{intento.resultado}</td>
@@ -210,10 +217,11 @@ function PedidoRevisionDetallePage() {
           {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
           {candidatos.length > 1 && <fieldset className="geo-candidatos">
             <legend>Encontramos varias ubicaciones. Elegí la correcta:</legend>
-            {candidatos.map((candidato) => <label key={candidato.indice}>
+            {candidatosPaginados.items.map((candidato) => <label key={candidato.indice}>
               <input type="radio" name="candidato-geo" checked={indiceCandidato === candidato.indice} onChange={() => setIndiceCandidato(candidato.indice)}/>
               <span>{candidato.direccion}<small>Confianza: {candidato.nivelConfianza || 'BAJO'}</small></span>
             </label>)}
+            <Paginacion datos={candidatosPaginados} nombre="ubicaciones candidatas" disabled={ocupado}/>
             <button className="button button-outline" type="button" disabled={ocupado || indiceCandidato === null} onClick={usarCandidato}>Usar ubicación seleccionada</button>
           </fieldset>}
           {tieneCoordenadas(pedido) && pedido.estado_validacion !== 'CONFIRMADA' && <button type="button" className="button button-outline" onClick={corregirUbicacion} disabled={ocupado}>No es correcta</button>}
@@ -223,7 +231,7 @@ function PedidoRevisionDetallePage() {
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Cambiar calle o altura invalida la confirmación anterior.</small></div></div>
       </aside>
     </div>
-  </main>
+  </Contenedor>
 }
 
 export default PedidoRevisionDetallePage

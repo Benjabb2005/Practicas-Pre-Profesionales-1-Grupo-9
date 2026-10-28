@@ -1,3 +1,5 @@
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import { useEffect, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { api, mensajeError } from '../api/client'
@@ -19,6 +21,8 @@ function UsersPage() {
   const [aviso, setAviso] = useState('')
   const [formulario, setFormulario] = useState(null)
   const [enviando, setEnviando] = useState(false)
+
+  const paginado = usePagination(usuarios, '')
 
   async function refrescar() {
     setCargando(true)
@@ -118,7 +122,7 @@ function UsersPage() {
             <table className="users-table">
               <thead><tr><th scope="col">Nombre</th><th scope="col">Email</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col"><span className="sr-only">Acciones</span></th></tr></thead>
               <tbody>
-                {usuarios.map((usuario) => <tr key={usuario.id}>
+                {paginado.items.map((usuario) => <tr key={usuario.id}>
                   <td>{usuario.nombre}{usuario.id === sesion?.id && <small className="users-self"> (vos)</small>}</td>
                   <td>{usuario.email}</td>
                   <td>{ROLES.find((rol) => rol.valor === usuario.rol)?.etiqueta || usuario.rol}</td>
@@ -128,6 +132,8 @@ function UsersPage() {
               </tbody>
             </table>
           </div>}
+
+    <Paginacion datos={paginado} nombre="usuarios" disabled={cargando}/>
     </section>
   </main>
 }

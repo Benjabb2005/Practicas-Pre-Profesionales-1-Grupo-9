@@ -1,0 +1,14 @@
+# B07 · importe base, tarifa por km y giro Caso7
+
+26/10/2026, pedido explícito de Benjamín. Carga manual permite importe base editable en ARS. Sugerencia gris pendiente: no hay sucursal/origen, no calcular km ni inventar monto. Nueva pantalla Tarifas exclusiva admin para persistir precio por km; sin valor predeterminado inventado. Operador puede consultar tarifa, no modificarla. Tarifa nueva no recalcula pedidos ya cargados.
+
+PDF PPP1 El Giro de Requisitos, Caso7: entrega fallida incrementa50% del costo base facturable al emisor y reprograma para jornada posterior. Se mantiene retorno a preparación aprobado, con próxima visita al día siguiente de Buenos Aires y bloqueo de despacho anticipado. Cada fallo nuevo suma50% del base, no50% del total; reenvío idempotente no duplica. Redondear medio centavo hacia arriba. No se optimizan rutas multi-parada por el texto del resumen del PDF.
+
+Guardar importe_base, recargo_total, intentos_fallidos y proxima_visita; importe_total calculado. Migración002 conserva pedidos previos con baseNULL (no inventar0). Fallo de pedido antiguo incrementa contador/fecha; recargo monetario queda pendiente hasta completar base. Operador/admin puede completar base faltante antes de entrega, calculando recargos pendientes. No se cambia silenciosamente precio ya acordado.
+
+PUT /api/tarifas sólo ADMINISTRADOR {precio_km:decimal textual}; GET admin/operador. Crear pedido acepta importe_base decimal positivo obligatorio en API y UI. PUT /api/pedidos/:id/importe sólo admin/operador completa baseNULL de pedido no finalizado. Pago B05 recibe sólo método y toma total desde servidor bajo bloqueo; chofer jamás modifica importe. No confirma acreditación/PAGADO (Q02 pendiente).
+
+UI: campo con label/ayuda gris, errores por campo, éxito sólo respuesta servidor, resumen base/recargo/total en pedido y chofer. Tarifa pantalla carga/error/reintento y guardar sin duplicar envíos. Importe faltante visible en antiguos. Móvil360 y oscuro. Pruebas precisión/duplicados/concurrencia,50% base y no compuesto, pagos desde total sin monto cliente, permisos de tarifa y recuperación/migración aislada. Backups antes de aplicar en desarrollo; sin commit/push salvo pedido posterior.
+
+## Despacho manual de reintento (26/10/2026)
+Benjamín pide permitir despacho manual aunque próxima visita sea futura. Se elimina bloqueo por fecha del servidor y motivo de UI; se conservan próxima fecha/recargo e invariantes de dirección confirmada, preparación y chofer activo. La fecha no impide la decisión manual del operador. Esta decisión explícita supera la interpretación previa de bloquear hasta mañana. Backend187 pasan/2 opt-in omitidas; prueba unitaria cubre permiso y botón habilitado con fecha futura. Test MySQL opt-in adaptado al despacho manual e historial adicional, no reejecutado en esta corrección. Sin commit/push.

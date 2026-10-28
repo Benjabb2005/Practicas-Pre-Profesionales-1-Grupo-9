@@ -1,0 +1,11 @@
+# B03 y paginado de listas
+
+Actualización solicitada el 26/10: páginas fijas de 10 sin selector, controles compactos; sidebar fijo al viewport fuera del contenedor escalado; cabecera del chofer azul marino separada del contenido. Ver mapa abre diálogo interno con MapPreview reutilizado y consulta protegida /chofer/pedidos/:id; Google Maps queda como acción externa independiente. Inspeccionados reparto MVP y OrderMapModal de branch-benjamin-1: corresponde a B03 consumir coordenadas confirmadas; R03 de Sabrina conserva geocodificación/selección/confirmación/corrección. Paginado/sidebar son ajustes compartidos autorizados, no cierres de tareas ajenas. Esta actualización supera los tamaños configurables indicados debajo.
+
+Pedido de Benjamín, 26/10/2026. El chofer consulta únicamente envíos despachados propios, con cliente, teléfono, dirección, indicaciones y acceso a coordenadas confirmadas. B04 entrega y B05 pago quedan fuera. La pantalla móvil permite buscar por código/cliente/dirección, actualizar y reintentar; no muestra un indicador ficticio de conexión ni avances inventados.
+
+Todas las colecciones de registros visibles llevan Anterior/Siguiente, tamaño 5/10/20 y rango/total: tablero, asignaciones, clientes, usuarios, revisión, chofer, frecuentes, duplicados, candidatos geográficos e historial. Las opciones fijas de formularios, menú y mensajes de validación no son listados de registros. Filtrar vuelve a página 1; reducir resultados ajusta la página válida; totales y resúmenes se calculan sobre la colección completa. Controles type=button, accesibles por teclado y con contraste claro/oscuro; se acomodan a 360px.
+
+Paginado de presentación sobre las respuestas completas existentes, sin cambiar contratos API. Quitar topes silenciosos de las búsquedas/listado de clientes para no ocultar registros posteriores. No equivale a paginado SQL y carga el conjunto completo en memoria; paginado de servidor queda como mejora de escala.
+
+Aceptación: 23 registros pueden recorrerse sin saltos ni duplicados; cambiar búsqueda/tamaño o borrar última fila no deja página vacía; error API no muestra datos viejos como vigentes; no se filtran envíos ajenos ni anteriores al despacho. Sin cambios de esquema, entrega o pagos.

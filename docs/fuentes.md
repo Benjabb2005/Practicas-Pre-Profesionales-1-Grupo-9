@@ -41,3 +41,6 @@ Los originales no se versionan, así que un clon nuevo no los trae. Para importa
 - Se reforzó AGENTS.md con jerarquía explícita, referencia final, obligaciones académicas, entrega y enlaces mantenibles. Se mantuvieron JWT como decisión previa y las dudas del modelo, sin reimponer los estados rígidos del AGENTS histórico.
 - Se corrigió la atribución temporal: Git estaba modificado al iniciar esta integración; los tests HTTP, skills y adaptadores ya existían. Los resultados previos se conservan como históricos, separados de la verificación actual.
 - El usuario dejó pendiente revisar la demo autenticada. El login público se observó nuevamente; el resto sigue siendo evidencia recibida, no pruebas repetidas.
+# Giro de requisitos · Caso7 recibido26/10/2026
+
+`PPP 1 - El Giro de Requisitos (Cambios de Alcance).pdf`, SHA256 D173C986D36A21FF5D3799DDCAE9A00502674096BEF536F1301669D3AE6BD0D1. Leído con pypdf: Caso7 exige recargo50% sobre costo base, facturable al emisor, y reprogramación jornada posterior por entrega fallida. El resumen menciona multi-parada; el detalle recibido no define ese algoritmo. B07 implementa importe/tarifa y giro monetario solicitado, sin adelantar rutas. Interpretación técnica y pruebas en entrega-b07.md, decisiónD23. PDF no incorporado al repositorio.

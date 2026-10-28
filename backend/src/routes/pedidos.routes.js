@@ -15,6 +15,7 @@ function createPedidosRouter(container = {}) {
 
     router.get("/", controller.listar);
     router.post("/", controller.crear);
+    router.put('/:id/importe', controller.completarImporte);
     router.get("/:id", controller.obtener);
     router.put("/:id/direccion", controller.actualizarDireccion);
     router.post("/:id/geocodificar", controller.geocodificar);

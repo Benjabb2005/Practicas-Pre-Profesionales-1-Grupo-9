@@ -12,6 +12,14 @@ const { createLocalidadService } = require("./services/LocalidadService");
 const { createGeocodeAdapter } = require("./geocode");
 const { createGeorefClient } = require("./georef/localidades");
 const { createAuthMiddleware } = require("./middleware/auth");
+const { createAsignacionRepository } = require('./repositories/AsignacionRepository');
+const { createAsignacionService } = require('./services/AsignacionService');
+const { createEntregaRepository } = require('./repositories/EntregaRepository');
+const { createEntregaService } = require('./services/EntregaService');
+const { createTarifaRepository } = require('./repositories/TarifaRepository');
+const { createTarifaService } = require('./services/TarifaService');
+const { createComprobanteService } = require('./services/ComprobanteService');
+const { createComprobanteRepository } = require('./repositories/ComprobanteRepository');
 
 // Construye los servicios a partir de la base inyectada. Sin base (pruebas HTTP)
 // devuelve un objeto vacío y las rutas responden 503 en vez de romper.
@@ -27,6 +35,10 @@ function createContainer({ db, config, georef } = {}) {
     const localidadService = createLocalidadService({ cliente: georefClient });
 
     return {
+        comprobanteService:createComprobanteService({repositorio:createComprobanteRepository(db)}),
+        tarifaService: createTarifaService({ repositorio: createTarifaRepository(db) }),
+        entregaService: createEntregaService({ repositorio: createEntregaRepository(db) }),
+        asignacionService: createAsignacionService({ repositorio: createAsignacionRepository(db) }),
         config,
         auth: createAuthMiddleware({ config }),
         authService: createAuthService({ usuarios, jwt: config.jwt }),

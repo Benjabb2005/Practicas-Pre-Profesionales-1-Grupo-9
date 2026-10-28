@@ -1,3 +1,5 @@
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import { useEffect, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import ClienteForm from '../components/ClienteForm.jsx'
@@ -29,6 +31,8 @@ function ClientesPage() {
   const [enviando, setEnviando] = useState(false)
   const [clienteAEliminar, setClienteAEliminar] = useState(null)
   const [eliminando, setEliminando] = useState(false)
+
+  const paginado = usePagination(clientes, busqueda)
 
   async function cargar(texto = busqueda) {
     setCargando(true)
@@ -213,7 +217,7 @@ function ClientesPage() {
                 </tr>
               </thead>
               <tbody>
-                {clientes.map((cliente) => <tr key={cliente.id}>
+                {paginado.items.map((cliente) => <tr key={cliente.id}>
                   <td>{cliente.nombre}</td>
                   <td>{cliente.dni || '—'}</td>
                   <td>{cliente.telefono || '—'}</td>
@@ -229,6 +233,8 @@ function ClientesPage() {
               </tbody>
             </table>
           </div>}
+
+    <Paginacion datos={paginado} nombre="clientes" disabled={cargando}/>
     </section>
   </main>
 }

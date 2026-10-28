@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon.jsx'
+import Paginacion from './Paginacion.jsx'
+import usePagination from './usePagination.js'
 import { contactoDeCliente } from './cliente.js'
 import { mensajeError } from '../api/client'
 import { listarClientes } from '../api/clientes'
@@ -25,6 +27,7 @@ function ClienteSelector({ cliente, onSeleccionar, bloqueado = false }) {
     return () => { vigente = false; clearTimeout(temporizador) }
   }, [busqueda, cliente])
 
+  const paginado = usePagination(resultados, busqueda, 5)
   if (cliente) {
     return <div className="cliente-selector">
       <span className="form-field-label">Cliente</span>
@@ -55,13 +58,14 @@ function ClienteSelector({ cliente, onSeleccionar, bloqueado = false }) {
     <ul className="cliente-lista">
       {cargando && <li className="cliente-vacio" role="status">Buscando…</li>}
       {!cargando && !error && resultados.length === 0 && <li className="cliente-vacio">Sin coincidencias. Completá los datos para dar de alta un cliente nuevo.</li>}
-      {!cargando && resultados.map((opcion) => <li key={opcion.id}>
+      {!cargando && paginado.items.map((opcion) => <li key={opcion.id}>
         <button type="button" onClick={() => onSeleccionar(opcion)}>
           <b>{opcion.nombre}</b>
           <small>{contactoDeCliente(opcion) || 'Sin datos de contacto'}</small>
         </button>
       </li>)}
     </ul>
+    {!cargando && !error && <Paginacion datos={paginado} nombre="clientes frecuentes" disabled={bloqueado}/>}
   </div>
 }
 

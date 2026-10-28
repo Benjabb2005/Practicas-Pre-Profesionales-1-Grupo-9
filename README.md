@@ -22,6 +22,25 @@ Para Claude Code: `npm run skills:sync`. Después de editar una skill, volver a 
 
 ## Arranque Docker
 
+### Base compatible con MVP-1 (22/10/2026)
+
+Esta rama requiere el esquema de `database/migrations/001_esquema_inicial.sql`.
+Cambiar de rama no modifica las tablas del volumen MySQL. No reutilizar una base
+con otro esquema ni reaplicar `init.sql`: conservarla y preparar una base separada.
+En el entorno local reparado se usa `mandatodo_mvp1`; las cuentas se conservaron,
+pero los clientes y pedidos anteriores permanecen en la base anterior.
+
+Compose monta las migraciones en solo lectura. Sobre una base nueva configurada
+y accesible al usuario de aplicación, ejecutar:
+
+```powershell
+docker compose exec -T backend npm run migrate
+docker compose exec -T backend npm run seed
+```
+
+El runner rechaza bases heredadas sin historial. No borrar volúmenes para resolverlo.
+Detalle de reparación, verificación y recuperación en `docs/tareas.md` (22/10/2026).
+
 Crear .env desde .env.example **solo si no existe**, completar credenciales locales sin subirlas. No sobrescribir un .env existente.
 
 ```powershell
@@ -32,13 +51,13 @@ docker compose ps
 docker compose logs --tail 100 backend
 ```
 
-Frontend: http://localhost:5173 · backend: http://localhost:3000 · MySQL: localhost:3306. Para detener sin eliminar datos: `docker compose stop`. No borrar volúmenes.
+Frontend: http://localhost:5173 · backend: http://localhost:3000 · MySQL: localhost:3307 (configurable con MYSQL_HOST_PORT en .env). Para detener sin eliminar datos: `docker compose stop`. No borrar volúmenes.
 
 **Importante:** Compose no monta database/init.sql; iniciar MySQL no crea esas tablas. El script inicial no es una migración y no debe reaplicarse sobre datos existentes. Resolver T02 antes de habilitar persistencia.
 
 ## Ejecución nativa opcional
 
-MySQL debe estar disponible. Copiar backend/.env.example a backend/.env solo si falta; completar con los valores de la misma base. Para Node en host, DB_HOST=127.0.0.1; Compose usa mysql.
+MySQL debe estar disponible. Copiar backend/.env.example a backend/.env solo si falta; completar con los valores de la misma base. Para Node en host contra MySQL de Docker: DB_HOST=127.0.0.1 y DB_PORT=3307 (o el MYSQL_HOST_PORT elegido); Compose usa mysql:3306 internamente.
 
 En terminales separadas:
 ```powershell

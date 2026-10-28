@@ -1,0 +1,870 @@
+{
+  "date": "2026-10-25",
+  "project": "https://github.com/users/Benjabb2005/projects/1",
+  "sourceRef": "f87f6e1",
+  "statesProposed": false,
+  "tasks": [
+    {
+      "id": "S01",
+      "owner": "Santiago",
+      "title": "Entorno Docker, configuración y errores uniformes",
+      "status": "Pendiente",
+      "deps": [],
+      "acceptance": "El equipo levanta frontend, backend y MySQL desde README; configuración coherente y errores seguros.",
+      "evidence": "Docker y configuración integrados; hay reparaciones locales del 22/10 pendientes de integrar.",
+      "issueNumber": 8,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/8",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": false,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "S02",
+      "owner": "Santiago",
+      "title": "Esquema MySQL, migraciones y cuentas de prueba",
+      "status": "Hecho",
+      "deps": [],
+      "acceptance": "Esquema versionado y seed reproducible sin reaplicar init.sql ni perder datos.",
+      "evidence": "database/migrations/001_esquema_inicial.sql y scripts migrate/seed integrados.",
+      "issueNumber": 9,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/9",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "S03",
+      "owner": "Santiago",
+      "title": "Login JWT y sesión en frontend",
+      "status": "Hecho",
+      "deps": [
+        "S02"
+      ],
+      "acceptance": "Login válido, rechazo de credenciales inválidas y rutas protegidas por sesión.",
+      "evidence": "AuthService, auth middleware, contexto React y tests integrados. Corrección local del mensaje se registra por separado.",
+      "issueNumber": 10,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/10",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "S04",
+      "owner": "Santiago",
+      "title": "Permisos por rol y por pedido",
+      "status": "Pendiente",
+      "deps": [
+        "S03"
+      ],
+      "acceptance": "Administrador/operador según matriz; chofer no lee ni modifica pedidos ajenos, incluso alterando IDs.",
+      "evidence": "Roles de carga/usuarios integrados; seguridad de endpoints de chofer debe cerrarse con módulo Benjamín.",
+      "issueNumber": 11,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/11",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": false,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "S05",
+      "owner": "Santiago",
+      "title": "ABM de usuarios de administrador",
+      "status": "Hecho",
+      "deps": [
+        "S03",
+        "S04"
+      ],
+      "acceptance": "Administrador lista, crea y edita usuarios; otros roles rechazados.",
+      "evidence": "Usuarios backend/frontend y pruebas integrados.",
+      "issueNumber": 12,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/12",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "S06",
+      "owner": "Santiago",
+      "title": "Estados únicos, transiciones e historial",
+      "status": "Pendiente",
+      "deps": [
+        "S02"
+      ],
+      "acceptance": "Transiciones acordadas, bloqueo de despacho e historial atómico; sin saltos de estado.",
+      "evidence": "EstadoPedidoService y repositorio existen; despacho y contrato con Benjamín pendientes.",
+      "issueNumber": 13,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/13",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": false,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "S07",
+      "owner": "Santiago",
+      "title": "Importación histórica de Excel",
+      "status": "Hecho",
+      "deps": [
+        "S02"
+      ],
+      "acceptance": "Dry-run, trazabilidad de origen y reejecución sin duplicados contra MySQL.",
+      "evidence": "docs/arquitectura.md y tareas registran importación real validada; no se repitió en esta planificación.",
+      "issueNumber": 14,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/14",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "J01",
+      "owner": "Julián",
+      "title": "ABM de clientes y validación de datos",
+      "status": "Hecho",
+      "deps": [
+        "S02",
+        "S03"
+      ],
+      "acceptance": "Alta, edición, búsqueda y baja restringida con pedidos asociados; DNI/email/teléfono validados.",
+      "evidence": "Suite vigente más HTTP con MySQL aislado: clientes CRUD/frecuentes/duplicados; pedidos persistidos, recarga, duplicado explícito y filtros. Fixtures propios limpiados.",
+      "issueNumber": 15,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/15",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "J02",
+      "owner": "Julián",
+      "title": "Recuperar clientes frecuentes",
+      "status": "Hecho",
+      "deps": [
+        "J01"
+      ],
+      "acceptance": "Buscar por DNI, nombre o teléfono y completar formulario sin duplicar cliente.",
+      "evidence": "Suite vigente más HTTP con MySQL aislado: clientes CRUD/frecuentes/duplicados; pedidos persistidos, recarga, duplicado explícito y filtros. Fixtures propios limpiados.",
+      "issueNumber": 16,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/16",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "J03",
+      "owner": "Julián",
+      "title": "Detectar y avisar clientes duplicados",
+      "status": "Hecho",
+      "deps": [
+        "J01"
+      ],
+      "acceptance": "Rechazar DNI repetido y advertir teléfono/email sin fusionar silenciosamente.",
+      "evidence": "Suite vigente más HTTP con MySQL aislado: clientes CRUD/frecuentes/duplicados; pedidos persistidos, recarga, duplicado explícito y filtros. Fixtures propios limpiados.",
+      "issueNumber": 17,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/17",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "J04",
+      "owner": "Julián",
+      "title": "Carga manual y persistencia del pedido",
+      "status": "Hecho",
+      "deps": [
+        "J02",
+        "S06",
+        "T01",
+        "T05"
+      ],
+      "acceptance": "Cliente nuevo/frecuente, canal y notas; pedido guardado y recargable con errores visibles.",
+      "evidence": "Suite vigente más HTTP con MySQL aislado: clientes CRUD/frecuentes/duplicados; pedidos persistidos, recarga, duplicado explícito y filtros. Fixtures propios limpiados.",
+      "issueNumber": 18,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/18",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "J05",
+      "owner": "Julián",
+      "title": "Duplicados de pedido por dirección normalizada",
+      "status": "Hecho",
+      "deps": [
+        "J04",
+        "T02"
+      ],
+      "acceptance": "Ventana configurable y confirmación explícita de duplicado potencial antes de crear.",
+      "evidence": "Suite vigente más HTTP con MySQL aislado: clientes CRUD/frecuentes/duplicados; pedidos persistidos, recarga, duplicado explícito y filtros. Fixtures propios limpiados.",
+      "issueNumber": 19,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/19",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "J06",
+      "owner": "Julián",
+      "title": "Listado real con filtros de estado, cliente y fecha",
+      "status": "Hecho",
+      "deps": [
+        "J04"
+      ],
+      "acceptance": "Consultar pedidos reales y filtrar; estados de carga, vacío y error.",
+      "evidence": "Suite vigente más HTTP con MySQL aislado: clientes CRUD/frecuentes/duplicados; pedidos persistidos, recarga, duplicado explícito y filtros. Fixtures propios limpiados.",
+      "issueNumber": 20,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/20",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "T01",
+      "owner": "Tomás",
+      "title": "Formulario estructurado de dirección",
+      "status": "Hecho",
+      "deps": [
+        "S03"
+      ],
+      "acceptance": "Calle, altura, piso/depto, localidad, provincia, CP y entre calles; provincias y ayuda de localidad.",
+      "evidence": "Pruebas de normalización/validación/localidades y guardado pasan; formulario visible en navegador. Batería de más de 30 casos. No acredita exactitud geográfica de toda dirección.",
+      "issueNumber": 21,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/21",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "T02",
+      "owner": "Tomás",
+      "title": "Normalización de direcciones",
+      "status": "Hecho",
+      "deps": [],
+      "acceptance": "Limpiar y uniformar campos sin inventar datos y conservar texto original.",
+      "evidence": "Pruebas de normalización/validación/localidades y guardado pasan; formulario visible en navegador. Batería de más de 30 casos. No acredita exactitud geográfica de toda dirección.",
+      "issueNumber": 22,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/22",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "T03",
+      "owner": "Tomás",
+      "title": "Validación de campos y coherencia geográfica",
+      "status": "Hecho",
+      "deps": [
+        "T02"
+      ],
+      "acceptance": "Detectar faltantes, alturas inválidas, intersecciones, datos mezclados, provincia y CP; documentar límites geográficos.",
+      "evidence": "Pruebas de normalización/validación/localidades y guardado pasan; formulario visible en navegador. Batería de más de 30 casos. No acredita exactitud geográfica de toda dirección.",
+      "issueNumber": 23,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/23",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "T04",
+      "owner": "Tomás",
+      "title": "Advertencias visibles y corrección de campos",
+      "status": "Hecho",
+      "deps": [
+        "T01",
+        "T03"
+      ],
+      "acceptance": "Mostrar problemas por campo y permitir corregir y revalidar.",
+      "evidence": "Pruebas de normalización/validación/localidades y guardado pasan; formulario visible en navegador. Batería de más de 30 casos. No acredita exactitud geográfica de toda dirección.",
+      "issueNumber": 24,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/24",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "T05",
+      "owner": "Tomás",
+      "title": "Integrar estados de validación con el guardado",
+      "status": "Hecho",
+      "deps": [
+        "T02",
+        "T03"
+      ],
+      "acceptance": "Guardar VALIDA/CON_ADVERTENCIAS y exigir VALIDA para geocodificar.",
+      "evidence": "Pruebas de normalización/validación/localidades y guardado pasan; formulario visible en navegador. Batería de más de 30 casos. No acredita exactitud geográfica de toda dirección.",
+      "issueNumber": 25,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/25",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "T06",
+      "owner": "Tomás",
+      "title": "Pruebas de direcciones argentinas",
+      "status": "Hecho",
+      "deps": [
+        "T02",
+        "T03"
+      ],
+      "acceptance": "Batería de al menos 30 casos y regresiones de normalización/validación.",
+      "evidence": "Pruebas de normalización/validación/localidades y guardado pasan; formulario visible en navegador. Batería de más de 30 casos. No acredita exactitud geográfica de toda dirección.",
+      "issueNumber": 26,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/26",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R01",
+      "owner": "Sabrina",
+      "title": "Proveedor geográfico y tratamiento de fallos",
+      "status": "Hecho",
+      "deps": [
+        "T05"
+      ],
+      "acceptance": "Adaptador según D06, timeout, sin resultados, ambigüedad, confianza y caché de consultas idénticas.",
+      "evidence": "Georef real sobre dirección pública; HTTP con MySQL aislado verifica coordenadas, rechazo, confirmación humana, conservación ante dirección equivalente, invalidación y reintento con historial. R01: caché, ambigüedad, 429/503, timeout y cero resultados comprobados con proveedor simulado.",
+      "issueNumber": 27,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/27",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R02",
+      "owner": "Sabrina",
+      "title": "Endpoint de geocodificación e historial del intento",
+      "status": "Hecho",
+      "deps": [
+        "J04",
+        "R01"
+      ],
+      "acceptance": "Geocodificar sólo VALIDA y guardar intento sin confirmar automáticamente.",
+      "evidence": "Georef real sobre dirección pública; HTTP con MySQL aislado verifica coordenadas, rechazo, confirmación humana, conservación ante dirección equivalente, invalidación y reintento con historial. R01: caché, ambigüedad, 429/503, timeout y cero resultados comprobados con proveedor simulado.",
+      "issueNumber": 28,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/28",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R03",
+      "owner": "Sabrina",
+      "title": "Mapa y selección de ubicación",
+      "status": "Pendiente",
+      "deps": [
+        "R02"
+      ],
+      "acceptance": "Mostrar punto, dirección/confianza, corregir ubicación y resolver coincidencias múltiples según contrato.",
+      "evidence": "PR #7 integrado en f87f6e1: Georef, candidatos, confirmación humana y corrección/reintento. Verificar alcance individual y flujo real; no acredita cierre del responsable.",
+      "issueNumber": 29,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/29",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": false,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "R04",
+      "owner": "Sabrina",
+      "title": "Confirmación humana de la ubicación",
+      "status": "Hecho",
+      "deps": [
+        "R02",
+        "R03"
+      ],
+      "acceptance": "Confirmación explícita, VALIDA con coordenadas; guardar CONFIRMADA y direccion_validada.",
+      "evidence": "Georef real sobre dirección pública; HTTP con MySQL aislado verifica coordenadas, rechazo, confirmación humana, conservación ante dirección equivalente, invalidación y reintento con historial. R01: caché, ambigüedad, 429/503, timeout y cero resultados comprobados con proveedor simulado.",
+      "issueNumber": 30,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/30",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R05",
+      "owner": "Sabrina",
+      "title": "Corrección y reintento de geocodificación",
+      "status": "Hecho",
+      "deps": [
+        "R02",
+        "T04"
+      ],
+      "acceptance": "Editar, normalizar y validar de nuevo; volver a buscar sin confirmar automáticamente.",
+      "evidence": "Georef real sobre dirección pública; HTTP con MySQL aislado verifica coordenadas, rechazo, confirmación humana, conservación ante dirección equivalente, invalidación y reintento con historial. R01: caché, ambigüedad, 429/503, timeout y cero resultados comprobados con proveedor simulado.",
+      "issueNumber": 31,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/31",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R06",
+      "owner": "Sabrina",
+      "title": "Invalidar confirmación al cambiar dirección",
+      "status": "Hecho",
+      "deps": [
+        "R04",
+        "R05"
+      ],
+      "acceptance": "Cambio relevante descarta coordenadas y confirmación; escritura equivalente normalizada no invalida.",
+      "evidence": "Georef real sobre dirección pública; HTTP con MySQL aislado verifica coordenadas, rechazo, confirmación humana, conservación ante dirección equivalente, invalidación y reintento con historial. R01: caché, ambigüedad, 429/503, timeout y cero resultados comprobados con proveedor simulado.",
+      "issueNumber": 32,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/32",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R07",
+      "owner": "Sabrina",
+      "title": "Historial de geolocalización y acción humana",
+      "status": "Hecho",
+      "deps": [
+        "R02",
+        "R04"
+      ],
+      "acceptance": "Persistir intentos, coordenadas, confianza, responsable y confirmación; conservar origen.",
+      "evidence": "Georef real sobre dirección pública; HTTP con MySQL aislado verifica coordenadas, rechazo, confirmación humana, conservación ante dirección equivalente, invalidación y reintento con historial. R01: caché, ambigüedad, 429/503, timeout y cero resultados comprobados con proveedor simulado.",
+      "issueNumber": 33,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/33",
+      "previousInferredStatus": "Hecho",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Verificación técnica autorizada por el usuario, no declaración de actividad del responsable",
+      "verifiedAt": "2026-10-25",
+      "verificationReference": "docs/verificacion.md: Auditoría para cierre técnico de tareas (25/10/2026)"
+    },
+    {
+      "id": "R08",
+      "owner": "Sabrina",
+      "title": "Bloqueo central de despacho y asignación",
+      "status": "Pendiente",
+      "deps": [
+        "R04",
+        "S06"
+      ],
+      "acceptance": "puedeDespacharse se aplica en toda asignación/despacho de servidor, sin posibilidad de omitirlo desde UI/API.",
+      "evidence": "PR #7 integrado en f87f6e1: Georef, candidatos, confirmación humana y corrección/reintento. Verificar alcance individual y flujo real; no acredita cierre del responsable.",
+      "issueNumber": 34,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/34",
+      "previousInferredStatus": "En progreso",
+      "statusConfirmed": false,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "B01",
+      "owner": "Benjamín",
+      "title": "Pantalla y API de asignación manual",
+      "status": "Hecho",
+      "deps": [
+        "J06",
+        "S04",
+        "R08"
+      ],
+      "acceptance": "Elegir chofer activo, mostrar pedidos habilitados y motivo de bloqueo; backend aplica las mismas reglas.",
+      "evidence": "Pantalla /asignaciones y API con permisos, indicadores y bloqueos; HTTP/MySQL aislado verifica persistencia y rechazo, prueba real de concurrencia/rollback, backend 175 y frontend 42; UI filtro/selección sin alterar pedidos existentes.",
+      "issueNumber": 35,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/35",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Implementación autorizada por Benjamín y verificada el 25/10/2026",
+      "verifiedAt": "2026-10-25"
+    },
+    {
+      "id": "B02",
+      "owner": "Benjamín",
+      "title": "Despacho, reasignación y desasignación",
+      "status": "Hecho",
+      "deps": [
+        "B01",
+        "S06",
+        "Q01"
+      ],
+      "acceptance": "Guardar chofer_id y despachar mediante transiciones acordadas; definir hasta cuándo se puede reasignar/quitar.",
+      "evidence": "Preparación/despacho con transacciones e historial, chofer activo y CONFIRMADA; reasignación/quitar antes de despacho. Backend178, frontend47 y MySQL1/1, concurrencia/rollback y flujo HTTP aislado. Cierre documentado en docs/entrega-b02.md para publicación en feature/benjamin-asignacion-entregas; mutación de despacho por UI no probada con pedido sintético.",
+      "issueNumber": 36,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/36",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Implementación autorizada, pruebas HTTP y MySQL reales; no aprobación de decisiones pendientes del equipo",
+      "verifiedAt": "2026-10-25"
+    },
+    {
+      "id": "B03",
+      "owner": "Benjamín",
+      "title": "Vista móvil del chofer con pedidos propios",
+      "status": "Hecho",
+      "deps": [
+        "B02",
+        "S04"
+      ],
+      "acceptance": "Pedidos reales propios, teléfono, dirección/entre calles/notas y acceso al mapa confirmado; vacío/error/reintento.",
+      "evidence": "52 pruebas frontend, lint/build OK; backend178 pasan y1 MySQL opt-in omitida. Móvil vacío, paginado sintético y diálogo StrictMode probados. UI poblada MySQL pendiente; cierre técnico autorizado, sin validar integralmente MVP.",
+      "issueNumber": 37,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/37",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Cierre y publicación autorizados por Benjamín el 26/10/2026"
+    },
+    {
+      "id": "B04",
+      "owner": "Benjamín",
+      "title": "Confirmación de entrega e historial",
+      "status": "Hecho",
+      "deps": [
+        "B03",
+        "S06"
+      ],
+      "acceptance": "Confirmar entrega propia; registrar ENTREGADO, fecha, hora y usuario; reintento no duplica.",
+      "evidence": "Entrega/fallo e historial implementados. Frontend55, backend184/2 opt-in omitidas y MySQL aislado pasa aparte. UI sintética probada. Publicación autorizada; integración MVP-1/celular físico no acreditados.",
+      "issueNumber": 38,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/38",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Cierre y publicación autorizados por Benjamín el26/10"
+    },
+    {
+      "id": "B05",
+      "owner": "Benjamín",
+      "title": "Registro de pago y prevención de doble cobro",
+      "status": "Hecho",
+      "deps": [
+        "B04",
+        "Q02",
+        "B07"
+      ],
+      "acceptance": "Efectivo/transferencia, monto válido, responsable; un registro por pedido y acreditación según decisión.",
+      "evidence": "B05 terminada y autorizada para publicación26/10. Efectivo confirmado, transferencia acreditada sólo admin, total servidor y prevención de doble cobro. Comprobantes privados opcionales con preview PDF.js, pendientes visibles e historial separado. Migración003 ensayada y aplicada localmente. Backend195 pasan/3opt-in omitidas, frontend66, lint/build/sintaxis OK. MySQL aislado de pagos/comprobantes verificado en desarrollo; recuperación final de importe cubierta con adaptador, sin nueva ejecución MySQL. Refs #39/KAN-35 en commit de cierre.",
+      "issueNumber": 39,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": true,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Cierre autorizado por Benjamín26/10 tras correcciones verificadas"
+    },
+    {
+      "id": "B06",
+      "owner": "Benjamín",
+      "title": "Pruebas de celular y flujo de chofer",
+      "status": "Pendiente",
+      "deps": [
+        "B03",
+        "B04",
+        "B05"
+      ],
+      "acceptance": "Verificar tamaños móviles, permisos, persistencia, entrega y pago con casos válidos/rechazados.",
+      "evidence": "Sólo hay pruebas parciales del borrador local; falta ensayo del módulo aprobado.",
+      "issueNumber": 40,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/40",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Reparto documentado",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "Q01",
+      "owner": "Santiago",
+      "title": "Acordar asignación, despacho y reasignación",
+      "status": "Pendiente",
+      "deps": [
+        "S06"
+      ],
+      "acceptance": "Santiago y Benjamín acuerdan separar o unir asignación/despacho y límites de reasignación sin saltos.",
+      "evidence": "D04: contradicción detectada en el reparto y servicio actual. Responsabilidad de coordinación, no decisión de IA.",
+      "issueNumber": 41,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/41",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "Q02",
+      "owner": "Santiago",
+      "title": "Definir entrega versus pago y acreditación",
+      "status": "Pendiente",
+      "deps": [],
+      "acceptance": "Equipo/cliente define quién acredita transferencias y cómo se pasa a PAGADO; Benjamín implementa lo acordado.",
+      "evidence": "D04 sigue pendiente; no se inventa regla financiera.",
+      "issueNumber": 42,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/42",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "Q03",
+      "owner": "Sabrina",
+      "title": "Cerrar trazabilidad/versionado de confirmación",
+      "status": "Pendiente",
+      "deps": [
+        "R06",
+        "S02"
+      ],
+      "acceptance": "Acordar con Santiago modelo de versión, responsable y auditoría para confirmaciones concurrentes.",
+      "evidence": "D10: invalidación básica implementada; modelo completo no cerrado.",
+      "issueNumber": 43,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/43",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "Q04",
+      "owner": "Santiago",
+      "title": "Cerrar campos obligatorios, borradores y reintentos",
+      "status": "Pendiente",
+      "deps": [],
+      "acceptance": "Coordinar con equipo/cliente D08/D09 y dejar reglas observables sin inventar alturas o ubicaciones.",
+      "evidence": "D08/D09 abiertos; no bloquea diseñar ni probar partes independientes.",
+      "issueNumber": 44,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/44",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X01",
+      "owner": "Julián",
+      "title": "Prueba cruzada del módulo de Tomás",
+      "status": "Pendiente",
+      "deps": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06"
+      ],
+      "acceptance": "Probar éxito, faltantes y direcciones inconsistentes; registrar hallazgos con evidencia.",
+      "evidence": "Reparto de pruebas cruzadas del Sprint 4; no hay cierre registrado.",
+      "issueNumber": 45,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/45",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X02",
+      "owner": "Tomás",
+      "title": "Prueba cruzada del módulo de Sabrina",
+      "status": "Pendiente",
+      "deps": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R05",
+        "R06",
+        "R07",
+        "R08"
+      ],
+      "acceptance": "Probar proveedor caído, ambigüedad, corrección, confirmación y bloqueo.",
+      "evidence": "Reparto Sprint 4; pendiente ensayo completo.",
+      "issueNumber": 46,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/46",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X03",
+      "owner": "Sabrina",
+      "title": "Prueba cruzada del módulo de Benjamín",
+      "status": "Pendiente",
+      "deps": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06"
+      ],
+      "acceptance": "Probar asignación, pedidos ajenos, entrega y pagos repetidos desde móvil y API.",
+      "evidence": "Reparto Sprint 4; depende del módulo de Benjamín.",
+      "issueNumber": 47,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/47",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X04",
+      "owner": "Benjamín",
+      "title": "Prueba cruzada del núcleo de Santiago",
+      "status": "Pendiente",
+      "deps": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07"
+      ],
+      "acceptance": "Verificar arranque, login, permisos y transiciones con cuentas de cada rol.",
+      "evidence": "Reparto Sprint 4; no atribuir al integrante las pruebas hechas automáticamente por IA.",
+      "issueNumber": 48,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/48",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X05",
+      "owner": "Santiago",
+      "title": "Prueba cruzada del módulo de Julián",
+      "status": "Pendiente",
+      "deps": [
+        "J01",
+        "J02",
+        "J03",
+        "J04",
+        "J05",
+        "J06"
+      ],
+      "acceptance": "Probar frecuentes, duplicados y listado con datos sintéticos; recargar y forzar API.",
+      "evidence": "Reparto Sprint 4; módulo integrado, revisión cruzada por confirmar.",
+      "issueNumber": 49,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/49",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X06",
+      "owner": "Santiago",
+      "title": "Integración y ensayo completo del MVP1",
+      "status": "Pendiente",
+      "deps": [
+        "X01",
+        "X02",
+        "X03",
+        "X04",
+        "X05",
+        "Q03",
+        "Q04"
+      ],
+      "acceptance": "Todos ensayan cargar→validar→ubicar→confirmar→asignar→despachar→entregar→pagar y corrigen fallos.",
+      "evidence": "Responsable de coordinación Santiago, ejecución de los cinco; no sustituye las pruebas de cada módulo.",
+      "issueNumber": 50,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/50",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "X07",
+      "owner": "Santiago",
+      "title": "Preparar entrega y arranque reproducible",
+      "status": "Pendiente",
+      "deps": [
+        "X06"
+      ],
+      "acceptance": "Compose/configuración final, README verificado, evidencia y demo académica con todos los roles.",
+      "evidence": "No implica autorización para desplegar, hacer merge o publicar el código.",
+      "issueNumber": 51,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/51",
+      "previousInferredStatus": "Pendiente",
+      "statusConfirmed": false,
+      "planningSource": "Propuesta del asistente pendiente de validar por el equipo",
+      "statusBasis": "Sin cierre completo acreditado"
+    },
+    {
+      "id": "B07",
+      "owner": "Benjamín",
+      "title": "Importe del pedido en carga, API y persistencia",
+      "status": "Hecho",
+      "deps": [
+        "J04",
+        "S02"
+      ],
+      "acceptance": "Importe base manual, tarifa/km sólo admin, recargo50% base por fallo y jornada siguiente Caso7. Sugerencia pendiente de origen; pago toma total servidor.",
+      "evidence": "Importe/tarifa/recargo y despacho manual listos. Backend187, frontend57 y MySQL/HTTP aislados pasan; lint/build OK. Sugerencia pendiente de origen por decisión de usuario.",
+      "issueNumber": 53,
+      "url": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/53",
+      "statusConfirmed": true,
+      "statusBasis": "Publicación autorizada por Benjamín26/10; sugerencia distancia diferida explícitamente",
+      "planningSource": "Pedido explícito Benjamín26/10/2026"
+    }
+  ],
+  "statusPolicy": "Hecho por comprobación técnica autorizada el 25/10/2026. En progreso solo por confirmación de actividad. Pendiente no significa ausencia de código."
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
+import ThemeToggle from '../ThemeToggle.jsx'
 import { useAuth } from '../auth/useAuth'
 
 function LoginPage() {
@@ -14,7 +15,8 @@ function LoginPage() {
   const [enviando, setEnviando] = useState(false)
 
   if (usuario) {
-    return <Navigate to={ubicacion.state?.desde || '/'} replace/>
+    const destino = usuario.rol === 'CHOFER' ? '/chofer' : (ubicacion.state?.desde === '/chofer' ? '/' : (ubicacion.state?.desde || '/'))
+    return <Navigate to={destino} replace/>
   }
 
   async function handleSubmit(event) {
@@ -23,7 +25,7 @@ function LoginPage() {
     setError('')
     try {
       const autenticado = await login(email.trim(), password)
-      const destino = autenticado.rol === 'CHOFER' ? '/chofer' : (ubicacion.state?.desde || '/')
+      const destino = autenticado.rol === 'CHOFER' ? '/chofer' : (ubicacion.state?.desde === '/chofer' ? '/' : (ubicacion.state?.desde || '/'))
       navegar(destino, { replace: true })
     } catch (fallo) {
       setError(errorLogin(fallo))
@@ -43,6 +45,7 @@ function LoginPage() {
       <div className="login-rings" aria-hidden="true"><i/><i/><i/></div>
     </section>
     <section className="login-panel" aria-labelledby="login-heading">
+      <ThemeToggle/>
       <div className="login-form-wrap">
         <p className="login-eyebrow">Bienvenido</p>
         <h2 id="login-heading">Iniciar sesión</h2>

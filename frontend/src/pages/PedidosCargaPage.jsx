@@ -1,3 +1,5 @@
+import Paginacion from '../components/Paginacion.jsx'
+import usePagination from '../components/usePagination.js'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
@@ -13,6 +15,7 @@ import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
 import { mensajeError } from '../api/client'
 import { crearCliente } from '../api/clientes'
 import { confirmarDireccion, crearPedido, geocodificarPedido, pedidosDuplicadosDeError } from '../api/pedidos'
+import ImportePedido from '../components/ImportePedido.jsx'
 import './Pedidos.css'
 
 const RESULTADOS = {
@@ -62,6 +65,7 @@ function PedidosCargaPage() {
   const [direccion, setDireccion] = useState({ ...DIRECCION_VACIA })
   const [canalOrigen, setCanalOrigen] = useState(CANAL_PREDETERMINADO)
   const [observaciones, setObservaciones] = useState('')
+  const [importeBase, setImporteBase] = useState('')
   const [pedido, setPedido] = useState(null)
   const [problemas, setProblemas] = useState([])
   const [resultado, setResultado] = useState(null)
@@ -128,7 +132,7 @@ function PedidosCargaPage() {
           avisoCliente = `Cliente creado. ${describirCoincidenciasClientes(repetidos)}`
         }
       }
-      const cuerpo = { cliente_id: clienteId, canal_origen: canalOrigen, observaciones: observaciones || null, direccion }
+      const cuerpo = { cliente_id: clienteId, canal_origen: canalOrigen, observaciones: observaciones || null, direccion, importe_base: importeBase.trim().replace(',', '.') }
       if (confirmarDuplicado) cuerpo.confirmar_duplicado = true
       const data = await crearPedido(cuerpo)
       setPedido(data.pedido)
@@ -222,6 +226,7 @@ function PedidosCargaPage() {
     setDireccion({ ...DIRECCION_VACIA })
     setCanalOrigen(CANAL_PREDETERMINADO)
     setObservaciones('')
+    setImporteBase('')
     setPedido(null)
     setProblemas([])
     setResultado(null)
@@ -233,6 +238,8 @@ function PedidosCargaPage() {
     setVersionFormulario((actual) => actual + 1)
   }
 
+  const duplicadosPaginados = usePagination(duplicados, versionFormulario, 5)
+  const candidatosPaginados = usePagination(resultado?.candidatos ?? [], pedido?.id, 5)
   return <main className="main-content form-page">
     <header className="page-header">
       <div><p className="eyebrow">Nuevo envío</p><h1>Carga Manual de Pedido</h1><p className="subtitle">Buscá al cliente frecuente por DNI, nombre o teléfono, o cargá sus datos como cliente nuevo. Después completá la dirección y confirmá la ubicación antes de despachar.</p></div>
@@ -260,6 +267,10 @@ function PedidosCargaPage() {
             {CANALES_ORIGEN.map((opcion) => <option key={opcion.valor} value={opcion.valor}>{opcion.etiqueta}</option>)}
           </select>
         </label>
+        <label className="form-field" htmlFor="pedido-importe"><span>Importe base del envío (ARS) *</span>
+          <input id="pedido-importe" required inputMode="decimal" pattern="[0-9]{1,10}([.,][0-9]{1,2})?" placeholder="Ingresá el importe" value={importeBase} disabled={Boolean(pedido) || ocupado} onChange={e => { setImporteBase(e.target.value); descartarDuplicados() }} aria-describedby="importe-sugerido"/>
+          <small id="importe-sugerido" style={{ color: 'var(--theme-muted)' }}>Sugerido: pendiente de definir el origen del envío y su distancia.</small>
+        </label>
         <label className="form-field span-2 pedido-observaciones" htmlFor="pedido-observaciones"><span>Notas / Instrucciones de entrega</span>
           <textarea id="pedido-observaciones" rows="3" value={observaciones} onChange={(event) => { setObservaciones(event.target.value); descartarDuplicados() }} placeholder="Ej. Tocar timbre B, dejar en recepción..." disabled={Boolean(pedido) || ocupado}/>
         </label>
@@ -269,12 +280,13 @@ function PedidosCargaPage() {
             <div><b>Posible pedido duplicado</b><span>Este cliente ya tiene un pedido con la misma dirección dentro de la ventana configurada. Revisá el pedido existente antes de continuar.</span></div>
           </div>
           <ul className="duplicate-list">
-            {duplicados.map((existente) => <li key={existente.id}>
+            {duplicadosPaginados.items.map((existente) => <li key={existente.id}>
               <b>{existente.codigo ? `Pedido ${existente.codigo}` : `Pedido #${existente.id}`}</b>
               <span>{existente.estado}{fechaVisible(existente.created_at) && ` · ${fechaVisible(existente.created_at)}`}</span>
               {existente.direccion_original && <small>{existente.direccion_original}</small>}
             </li>)}
           </ul>
+          <Paginacion datos={duplicadosPaginados} nombre="pedidos duplicados" disabled={ocupado}/>
           <p>Si el envío es realmente otro, confirmá la creación. Si no, cancelá y corregí los datos.</p>
           <div className="duplicate-actions">
             <button type="button" className="button button-primary" onClick={() => guardar(null, true)} disabled={ocupado}>{guardando ? 'Guardando…' : 'Sí, crear otro pedido'}</button>
@@ -303,6 +315,7 @@ function PedidosCargaPage() {
 
           {pedido && <dl className="detalle-datos pedido-resumen">
             <div><dt>Canal de origen</dt><dd>{etiquetaCanal(pedido.canal_origen)}</dd></div>
+            <div><dt>Importe del envío</dt><dd><ImportePedido pedido={pedido}/></dd></div>
             <div><dt>Estado del pedido</dt><dd>{pedido.estado}</dd></div>
           </dl>}
 
@@ -313,10 +326,11 @@ function PedidosCargaPage() {
           {pedido?.nivel_confianza && <p className="geo-nota">Confianza del proveedor: <b>{pedido.nivel_confianza}</b> ({resultado?.proveedor || 'georef'}).</p>}
           {resultado?.candidatos?.length > 1 && <fieldset className="geo-candidatos">
             <legend>Encontramos varias ubicaciones. Elegí la correcta:</legend>
-            {resultado.candidatos.map((candidato) => <label key={candidato.indice}>
+            {candidatosPaginados.items.map((candidato) => <label key={candidato.indice}>
               <input type="radio" name="candidato-geo-carga" checked={indiceCandidato === candidato.indice} onChange={() => setIndiceCandidato(candidato.indice)}/>
               <span>{candidato.direccion}<small>Confianza: {candidato.nivelConfianza || 'BAJO'}</small></span>
             </label>)}
+            <Paginacion datos={candidatosPaginados} nombre="ubicaciones candidatas" disabled={ocupado}/>
             <button className="button button-outline" type="button" disabled={ocupado || indiceCandidato === null} onClick={usarCandidato}>Usar ubicación seleccionada</button>
           </fieldset>}
 

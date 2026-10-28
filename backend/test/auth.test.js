@@ -99,6 +99,7 @@ test("login con contraseña incorrecta se rechaza", async () => {
     assert.equal(respuesta.status, 401);
     const cuerpo = await respuesta.json();
     assert.equal(cuerpo.error.codigo, "NO_AUTENTICADO");
+    assert.equal(cuerpo.error.mensaje, "Usuario o contraseña incorrectos.");
 });
 
 test("login con cuerpo inválido informa los campos", async () => {

@@ -129,7 +129,7 @@ Observación (no abordada, queda para otra tarea): `backend/scripts/migrate.mjs`
 
 Evidencia: `docker compose ps` con los 3 servicios `Up` (MySQL `healthy`); log del backend `Conexión a MySQL exitosa`; `POST /api/auth/login` admin devuelve token (rol `ADMINISTRADOR`); `GET /api/pedidos` y `GET /api/clientes` responden `200` (0 filas, base recién migrada); `http://localhost:5173/` responde `200`.
 
-Credenciales de desarrollo del seed (ya presentes en `.env.example`): `admin@mandatodo.com`, `operador@mandatodo.com`, `chofer@mandatodo.com`, todas con contraseña `Admin123!`.
+Credenciales de desarrollo del seed (ya presentes en `.env.example`): `admin@mandatodo.com`, `operador@mandatodo.com`, `chofer@mandatodo.com`, todas con contraseña `[contraseña local omitida]`.
 
 Siguiente paso: probar el flujo real en el navegador (login → carga → geocodificar → confirmar → revisión) y retomar T07 cuando D04/D09 se definan.
 
@@ -420,3 +420,319 @@ Estado: implementado en la rama `feature/sabrina-geolocalizacion`, basada en `or
 Verificación local: `npm run context:check`, la comprobación de sintaxis del backend, `git diff --check` y el lint del frontend pasaron. Los tests del backend no iniciaron seis archivos porque faltan paquetes locales (`bcryptjs`, `jsonwebtoken`, `express`); el frontend build se detuvo al resolver `react-router-dom`, también ausente. Falta probar Georef real, MySQL y el flujo visual. No se modificó el esquema y no existe endpoint de asignación a choferes (pertenece al módulo de Benjamín); todo cambio a `EN ENVÍO` que pase por el servicio de estados sí aplica el bloqueo.
 
 Próximo paso: revisión del PR por el equipo. Acordar si Google queda fuera del MVP1 o si se incorpora mapa Google con política de borrado a 30 días.
+## Reparación de base local para MVP-1 (22/10/2026)
+
+Estado: completada. El error al abrir Cliente frecuente se debía a que el backend de MVP-1 consultaba una base con otro esquema: faltaban codigo_origen/domicilio en clientes y varias columnas/estados de pedidos y direcciones.
+
+Se creó la base separada `mandatodo_mvp1` en el MySQL existente, se aplicó `001_esquema_inicial.sql` y se ejecutó el seed. Se copiaron las cuentas compatibles existentes (nombre, email, hash, rol y activo), conservando sus accesos. No se importaron clientes ni pedidos anteriores: requieren un mapeo explícito. La base anterior y el volumen permanecen intactos.
+
+Cambios: `.env` y `backend/.env` locales apuntan a la base nueva; sus copias previas están en `temp/env-antes-mvp1.txt` y `temp/backend-env-antes-mvp1.txt`, ignoradas por Git y con secretos: no compartirlas. `docker-compose.yml` monta `./database:/database:ro` para que el runner encuentre las migraciones desde `/app/scripts`. No hay commit, push ni cambio de init.sql.
+
+Recuperación: restaurar los archivos de entorno desde esas copias y recrear solamente el backend con `docker compose up -d --no-deps backend` vuelve a conectar con la base anterior, cuyo esquema seguirá siendo incompatible con esta rama. No borrar bases ni volúmenes. Cambiar de rama no cambia el esquema MySQL.
+
+Aceptación: HTTP real autenticado, GET clientes 200; POST cliente sintético 201; POST pedido 201 con estado de dirección VALIDA; GET detalle y listado de pedidos 200. Quedan cliente y pedido sintéticos (pedido id 1). Pruebas en Docker: backend 125/125, frontend 7/7, lint y build OK. El token de prueba fue generado internamente con una cuenta activa: no se verificó login desde navegador, ni geocodificación/confirmación real.
+
+Límites: el check raíz en host sigue bloqueado por copias de skills desactualizadas; las dependencias del host están incompletas. Se verificó dentro de los contenedores con sus dependencias instaladas. El tablero sigue siendo maqueta y no acredita los pedidos guardados; consultarlos en Revisión de direcciones. Próximo paso: recargar navegador y probar con una cuenta habitual.
+
+## Recuperación del acceso administrador (22/10/2026)
+
+Pedido explícito del usuario: restablecer solo la contraseña de admin@mandatodo.com usando SEED_ADMIN_PASSWORD del entorno local. Se actualizó el hash de una cuenta activa ADMINISTRADOR en mandatodo_mvp1; sin modificar otras cuentas ni la base anterior. No se registran secretos.
+
+Corregido backend/src/middleware/errorHandler.js: AppError hereda message de Error; devolver error.mensaje omitía el texto y la UI mostraba un error genérico. Se agregó una aserción HTTP en backend/test/auth.test.js para exigir el mensaje de credenciales incorrectas. Backend reiniciado; npm test dentro de Docker: 125/125. No se verificó visualmente en navegador.
+
+## Corrección de navegación del chofer (22/10/2026)
+
+Causa: ProtectedRoute devolvía a / a cualquier usuario sin permiso, incluyendo al chofer que no puede entrar a /. LoginPage también podía enviar una sesión existente de chofer a /. Se corrigen ambas redirecciones para usar /chofer y se evita que un operador regrese a /chofer desde el login.
+
+Archivos: frontend/src/auth/ProtectedRoute.jsx, frontend/src/pages/LoginPage.jsx y frontend/src/auth/navegacion.test.jsx. Casos de regresión: chofer rechazado por tablero, recuperación de sesión desde login, operador con destino previo de chofer y renderizado de DriverApp autorizado. La pantalla del chofer conserva datos de maqueta y cambios locales; esta corrección no implementa asignación, entregas ni pagos persistidos.
+Verificación ejecutada en Docker: frontend 11/11 pruebas, lint y build OK; git diff --check OK. Incluye cuatro regresiones de navegación/renderizado con redirección simulada; no acredita navegación real de navegador. Recargar /chofer para comprobar visualmente.
+
+## Pantalla en blanco: Vite servía módulos anteriores (22/10/2026)
+
+Reproducido en navegador: administrador entraba, pero chofer terminaba en / con contenido vacío. La respuesta HTTP de /src/auth/ProtectedRoute.jsx todavía contenía `to: "/"` y LoginPage conservaba la redirección anterior pese a que los archivos del checkout estaban corregidos. Vite dentro de Docker no invalidaba los módulos al editar el bind mount desde Windows; compilar y correr tests en procesos separados no actualizaba el servidor de desarrollo.
+
+Se agrega server.watch.usePolling condicionado por VITE_USE_POLLING en frontend/vite.config.js y se habilita esa variable en el servicio frontend de Compose. Se recrea solo frontend para limpiar su caché en memoria y activar la configuración. Esta corrección no cambia la autenticación ni datos de negocio.
+Verificado en navegador: se reprodujo el blanco al entrar como chofer antes del reinicio; después, recargar la sesión existente y hacer un login nuevo llevan a /chofer con la pantalla visible. Abrir / con sesión de chofer redirige a /chofer sin errores de consola. GET del módulo de guarda confirma código actualizado. Docker: 11/11 tests frontend, lint y build OK. Los pedidos mostrados siguen siendo de maqueta.
+
+## Benjamín — plan T07 y primer corte (24/10/2026)
+
+Responsable humano: Benjamín. Alcance autorizado: plan de su módulo y comenzar implementación. Skill principal: ppp1-funcionalidad, con reglas de backend/frontend. Trabajo local sobre MVP-1; se preservan las modificaciones de reparación del 22/10. origin/MVP-1 tiene dos commits adicionales (ec5239d/0f153f8) con clientes/listado; no se hizo pull/merge ni commit. Coordinar la integración antes de publicar y conservar estos arreglos locales.
+
+Plan de entregas:
+1. Asignación segura y consulta propia del chofer (implementada en este corte): administrador/operador lista pedidos y choferes activos, asigna/reasigna/quita antes del despacho; chofer consulta únicamente pedidos propios EN ENVÍO con dirección CONFIRMADA.
+2. Preparar/despachar/entregar: acordar con Santiago cómo exponer transiciones sin saltear EN PREPARACIÓN; conservar EstadoPedidoService como fuente de reglas, transacción con historial y verificación de chofer activo/confirmación al despachar. Después implementar entrega propia con confirmación UI, fecha/usuario y rechazo de repetición. No está implementado todavía.
+3. Pago: cerrar D04 (quién acredita transferencias y cómo pasa a PAGADO), formulario método/monto y permisos, persistencia atómica y rechazo de duplicados; pruebas de celular y flujo completo. No está implementado todavía.
+
+Decisión del primer corte (revisión del equipo pendiente): asignar no cambia estado. El reparto de ppp1-mvp1 decía asignar y pasar a EN ENVÍO, mientras el servicio vigente exige EN STOCK → EN PREPARACIÓN → EN ENVÍO. No se saltean transiciones ni se define acreditación. Reasignación posterior al despacho queda bloqueada hasta definir su regla.
+
+Contrato y criterios: frontend/specs/asignacion-chofer.md. Sin tablas nuevas, sin modificar init.sql ni datos de negocio existentes. Se reutilizan chofer_id e historial_estados (mismo estado anterior/nuevo con observación de cambio de chofer).
+
+Archivos del corte: backend/src/repositories/AsignacionRepository.js (SQL y transacción con bloqueo), services/AsignacionService.js (reglas y pertenencia), routes/asignaciones.routes.js (rutas/validación/permisos), container.js y app.js (registro), test/asignaciones*.test.js (reglas, HTTP y MySQL opt-in). Frontend: api/asignaciones.js y test, pages/AsignacionesPage.jsx y CSS, pages/ChoferPedidosPage.jsx, App.jsx (rutas/navegación) y auth/navegacion.test.jsx. DriverApp anterior queda como referencia, ya no es la ruta activa.
+
+Verificación: backend 134 aprobadas, 1 integración MySQL omitida por defecto; esta última se ejecutó aparte y pasó 1/1 en mandatodo_test_asignaciones, una base aislada creada con el runner existente. Comprueba concurrencia de dos asignaciones iguales sin duplicar historial, persistencia, reasignación/desasignación, rollback real ante fallo inyectado y aislamiento entre dos choferes. Conserva fixtures sintéticos sólo en esa base. No se usa para probar geocodificación ni confirmación humana.
+
+Comandos: docker compose exec -T backend npm test; npm.cmd --prefix backend run check (host, OK); docker compose exec -T frontend npm test (14/14), npm run lint y npm run build. Para MySQL: docker compose exec -T -e DB_NAME=mandatodo_test_asignaciones -e ASIGNACIONES_MYSQL=1 backend node --test test/asignaciones-mysql.test.js (requiere base aislada previamente migrada).
+
+Límites de checks preexistentes: npm run check raíz se detiene por copias Claude desactualizadas de ppp1-mvp1; backend npm run check dentro del contenedor no encuentra /scripts/check-backend.mjs (scripts raíz no está montado), se ejecutó sintaxis desde host. No se modifican herramientas de contexto en esta tarea.
+
+Navegador real: login de administrador → /asignaciones muestra pedidos reales y bloquea dirección sin confirmar; recarga y catálogo de choferes OK. Login chofer → /chofer muestra nombre de sesión y vacío real sin entregas ficticias, sin errores de consola observados. Estado vacío revisado a 390x844; tarjetas pobladas y asignación con clic no se probaron en navegador para no cambiar pedidos existentes. Persistencia y mutación cubiertas en MySQL aislado.
+
+Siguiente paso: integrar los dos commits de compañeros preservando cambios locales, revisar este corte con Santiago/Julián y avanzar con preparación/despacho/entrega. Tu explicación para defensa: el navegador envía pedido y chofer; el servidor verifica rol, bloquea pedido/dirección, valida estado/confirmación y chofer activo, y guarda asignación e historial en una transacción. Al consultar como chofer, la identidad sale del token y el filtro de pertenencia se aplica en SQL.
+
+## Planificación visual de MVP1 (25/10/2026)
+
+Pedido del usuario: investigar herramientas gratuitas y crear planificación visual con estado, responsable y dependencias para todo el equipo. Se compararon GitHub Projects, Zoho Projects, ClickUp, Trello y Asana en fuentes oficiales. Se eligió GitHub Projects por integrarse al repositorio y ofrecer tablero/tabla/roadmap y dependencias en Free.
+
+Se creó https://github.com/users/Benjabb2005/projects/1, con vistas Tablero general y Por responsable. Se crearon y asignaron 44 issues (#8–#51): 33 tareas de módulo, 4 decisiones abiertas y 7 pruebas/integración. Asignaciones verificadas desde el selector del repositorio: Santiago→filipelisanti, Julián→julianramos42, Tomás→TomasLaruina, Sabrina→Dinaitos, Benjamín→Benjabb2005. No se inventaron cuentas ni fechas.
+
+Estados iniciales técnicos propuestos: 17 Pendiente, 7 En progreso, 20 Hecho, según código/documentación de origin/MVP-1 ec5239d. Cada responsable debe confirmarlos. Hecho no acredita aceptación integral del MVP. Las automatizaciones predeterminadas del proyecto cierran como completed los issues movidos a Hecho.
+
+Rectificación del apartado anterior: el usuario aclaró que quería revisar el plan antes de implementar. El borrador local T07 adelantado por el asistente no está aprobado ni se atribuye como trabajo aceptado de Benjamín; B01–B06 se dejan Pendiente. No se modificó código de producto ni se retiraron borradores en esta tarea.
+
+Fuente y copia local: docs/planificacion-mvp1.json y docs/planificacion-mvp1.md. Se verificó que las 44 IDs son únicas, que las 98 dependencias refieren a IDs existentes y que el grafo no tiene ciclos. Las dependencias indican requisitos de integración/cierre, no impiden trabajo independiente en paralelo. Cantidad de tarjetas no mide esfuerzo; las transversales conservan un coordinador.
+
+Las tareas incluyen Depende de, aceptación y evidencia. Se cargaron relaciones mediante el editor nativo de GitHub; la verificación tras recargar detectó selecciones no persistidas y relaciones auxiliares incompletas. No se presentan las 98 como nativas verificadas: el mapa completo y las descripciones son la referencia. El tablero y su agrupación por responsable sí se verificaron guardados. El proyecto permanece privado; no se enviaron invitaciones de acceso a compañeros/profesor. El dueño puede habilitarlos desde Settings → Manage access.
+
+La integración GitHub rechazó crear issues con 403 Resource not accessible by integration; se utilizó la UI con la sesión del usuario, sin cambiar permisos de la integración. No hubo commit, push, merge ni modificación de datos de negocio.
+
+Mapa completo publicado como documento de consulta separado (no se cuenta dentro de las 44 tareas): https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/52. Contiene los 44 nodos, 98 flechas y enlaces a cada issue. Guía del proyecto enlaza este documento. Se verificó publicación y que no está añadido como tarea al proyecto.
+La vista Por responsable se verificó agrupada al recargar usando el enlace con parámetro groupedBy[columnId]=Assignees. GitHub sigue mostrando Unsaved changes en esa configuración: compartir el enlace completo con el parámetro, no afirmar que la agrupación predeterminada quedó guardada. El tablero general sí conserva sus tres estados y los 44 elementos.
+
+## Pull y planificación (25/10/2026)
+
+Pull --ff-only de de12d0e a f87f6e1: PR #6 (Julián) y #7 (Sabrina). Cambios locales respaldados en stash codex-respaldo-antes-pull-mvp1-20261025 y restaurados, conservando ambos registros en conflictos documentales. Sin commit ni push; no se implementó ninguna tarea nueva de Benjamín.
+
+Planificación actualizada a Georef y evidencias nuevas, sin inferir actividad ni aceptación: 44 Pendiente hasta confirmación de responsables. Q/X son propuestas a validar. Primera tarea B01: revisar asignación versus despacho con Santiago, CONFIRMADA y transiciones existentes.
+
+Verificación: git diff --check, sintaxis backend y lint frontend pasan. Check raíz detenido por copia Claude ppp1-mvp1 desactualizada. Docker apagado. Backend host: 70 pasan, 7 archivos fallan por dependencias ausentes (bcryptjs), 1 omitida. Frontend test no inicia por vitest ausente y build falla por react-router-dom ausente. Sin prueba de MySQL, proveedor real ni flujo visual; no se acredita regresión del merge con estos fallos de entorno.
+
+## Auditoría para cierre técnico de tareas (25/10/2026)
+
+El usuario autoriza marcar Hecho por comprobación de implementación completa y funcionando, sin inferir actividad actual de compañeros. Se revisa checkout f87f6e1 con reparaciones/borradores locales conservados. No se implementó producto nuevo ni se aprobaron B01–B06.
+
+Resultado: 22 Hecho, 22 Pendiente, 0 En progreso. Hecho: S02, S03, S05, S07, J01, J02, J03, J04, J05, J06, T01, T02, T03, T04, T05, T06, R01, R02, R04, R05, R06, R07.
+
+Evidencias ejecutadas: Docker Compose levantado sin borrar datos/volúmenes; MySQL mandatodo_mvp1 disponible, 8 tablas y 1 migración registrada. Backend npm test: 174 pasan, 0 fallan, 1 integración opt-in omitida. Frontend npm test: 42/42; lint y build pasan (warning chunk mayor de 500 kB). Logs locales ignorados: temp/pruebas-backend-auditoria.log y temp/pruebas-frontend-auditoria.log.
+
+Auditoría HTTP/MySQL: temp/auditoria-mvp1.cjs, ejecutada por stdin dentro de backend, base fija mandatodo_test_asignaciones. Crea usuarios/clientes/pedidos sintéticos y limpia exclusivamente sus IDs. Verifica usuarios alta/edición/listado; login correcto/incorrecto/me y 403 chofer; clientes CRUD/búsqueda/DNI repetido/advertencias/baja restringida; pedidos guardados/recarga/duplicados con confirmación/listado filtrado; Georef real, rechazo, confirmación humana, edición equivalente conserva confirmación, cambio de altura descarta coordenadas y confirmación, reintento y registros CONFIRMO/RECHAZO asociados al usuario. No toca datos de negocio de desarrollo.
+
+Proveedor: dirección pública Av. Corrientes 1234, CABA, respondió APPROXIMATE con confianza MEDIO. Además auditoría en memoria del adaptador Georef: caché de consulta idéntica, dos candidatos, HTTP 429/503, ZERO_RESULTS y timeout pasan. Son pruebas del adaptador activo, distintas de geocode.test.js que todavía prueba Nominatim anterior.
+
+Navegador: login de administrador, tablero real con pedidos, formulario de carga y mapa Leaflet con punto e historial de un pedido confirmado; lecturas sin modificar pedidos existentes. No se publican datos personales ni capturas de esas pantallas en GitHub. S02/S07 también se apoyan en evidencia previa documentada de migración/seed e importación real idempotente (apartados 13/10), no reejecutada sobre desarrollo.
+
+No cerradas: S01 requiere consolidar reparaciones locales y arranque reproducible para equipo; S04 permisos de entrega/pago aún sin flujo completo; S06 decisiones de transición y operaciones completas pendientes; R03 falta verificar selección múltiple/corrección de ubicación de punta a punta en UI; R08 no tiene integración final con despacho/asignación. B01–B06 conservan borrador previo no aprobado, faltan acciones reales de despacho/entrega/pago y prueba móvil integral. Q01–Q04 y X01–X07 siguen propuestas/decisiones/pruebas de integrantes pendientes; esta auditoría del asistente no acredita pruebas cruzadas realizadas por ellos.
+
+Límite adicional: check raíz sigue bloqueado por copia Claude ppp1-mvp1 desactualizada; sintaxis backend, suites, lint/build se verificaron por separado. No commit ni push.
+
+## B01 — Asignación manual autorizada y verificada (25/10/2026)
+
+Pedido explícito de Benjamín: implementar pantalla y API de asignación manual y explicar cómo ver los cambios. Se revisó y completó el borrador previo sobre MVP-1 f87f6e1; B01 queda Hecho localmente. B02–B06 siguen pendientes y no se acredita su implementación completa.
+
+Backend: AsignacionRepository conserva SQL parametrizado, selección de choferes activos y transacción con bloqueo de pedido/dirección/chofer. AsignacionService devuelve puede_asignar, motivo_bloqueo y puede_quitar en listado y guardado, usando CONFIRMADA y estados previos al despacho. El PUT vuelve a validar aunque se eluda UI; asigna sin adelantar estado y registra historial una sola vez por cambio. Endpoints GET /api/asignaciones, GET /api/asignaciones/choferes, PUT /api/asignaciones/:id para administrador/operador. Sin cambios de esquema ni nueva máquina de estados.
+
+Frontend: /asignaciones, menú «Asignar choferes», tarjetas con pedido/cliente/dirección/estado/chofer, indicadores habilitados/bloqueados/choferes activos y filtro. Motivos de bloqueo y enlace a revisar dirección. Guardar requiere elección válida y cambio real; controles bloqueados durante escritura, éxito tras respuesta del servidor y error con reintento. Se conserva quitar/reasignar del borrador antes del despacho, sin cerrar B02. Contrato actualizado en frontend/specs/asignacion-chofer.md.
+
+Verificación real: backend 175/175 y una MySQL opt-in omitida por defecto; frontend 42/42, lint y build OK (warning chunk >500 kB). Sintaxis backend y git diff --check pasan. MySQL opt-in ejecutada aparte: 1/1, persistencia/concurrencia/idempotencia/rollback; se añadió limpieza limitada a fixtures de esa ejecución. Auditoría HTTP real temp/b01-http-mysql.cjs en mandatodo_test_asignaciones: flags, asignación, nueva lectura persistida, historial sin duplicados, 403 chofer, 409 dirección sin confirmar, rechazo de otro rol/inactivo y exclusión del catálogo. Fixtures propios limpiados, desarrollo intacto. Logs temp/b01-backend.log y temp/b01-frontend.log.
+
+Navegador real: /asignaciones carga 4 pedidos (2 habilitados/2 bloqueados) y 2 choferes activos del entorno. Filtro reduce a los habilitados; elegir chofer habilita Guardar. Se restableció selección sin escribir sobre pedidos existentes. Revisado a viewport angosto (319 px): tarjetas/controles caben en layout mínimo global de 320 px. No se acredita prueba exhaustiva de todos los estados visuales ni prueba poblada de /chofer.
+
+Límite preexistente: npm run check raíz detenido por copia Claude ppp1-mvp1 desactualizada; verificaciones técnicas se ejecutaron por separado. No commit, push ni cambios de datos del usuario. Para ver: iniciar como administrador/operador → menú Asignar choferes → elegir uno de los pedidos con dirección confirmada y chofer activo → Guardar asignación → Actualizar/recargar comprueba persistencia. Asignar no despacha.
+
+## Vista compacta de asignaciones (25/10/2026)
+
+A pedido de Benjamín se mantiene el apartado independiente y se compacta su presentación. AsignacionesPage agrupa datos del pedido con etiqueta discreta y acciones breves (Asignar/Ver dirección); Asignaciones.css usa filas con datos, selector y acciones en escritorio, adaptación apilada en móvil, espacios menores, tipografía jerarquizada, contadores en una línea y controles bloqueados atenuados. Sin cambiar API ni reglas de asignación.
+
+Lint y build frontend en Docker pasan (warning preexistente de chunk >500 kB). Revisión visual real del navegador angosto de 319 px: resumen y tarjetas compactos; filtro y selección siguen operativos, sin escribir en pedidos existentes. Vista de escritorio no revisada visualmente en esta sesión; CSS usa tres columnas y adapta a dos/una. No se agregan pruebas de negocio por ser cambio visual.
+
+## Modal de dirección y publicación del módulo Benjamín (25/10/2026)
+
+Pedido explícito: reutilizar el patrón modal de branch-benjamin-1, crear branch con nombre coherente al equipo y publicar cambios. Referencia leída: frontend/src/Orders.jsx (DetailModal nativo con showModal) y Orders.css de origin/branch-benjamin-1. Ver dirección ahora abre dialog dentro de /asignaciones; reutiliza PedidoRevisionDetallePage con pedidoId opcional, manteniendo su ruta independiente. Botón de cierre, Escape y fondo; foco devuelto al disparador, scroll de fondo bloqueado/restaurado y recarga de asignaciones al cerrar. Sin copiar contratos antiguos ni cambiar API de geolocalización.
+
+Verificación: 42 pruebas frontend, lint y build Docker pasan; warning de chunk grande preexistente. Navegador real: abrir pedidos confirmados/no confirmados, cerrar con Escape y botón, URL /asignaciones estable y foco devuelto al botón correcto. No se modificaron pedidos existentes. Persistencia/API de B01 conservan verificación previa. Cierre por fondo implementado, no probado por clic en esta sesión; escritorio no revisado visualmente.
+
+Branch creada desde MVP-1 f87f6e1: feature/benjamin-asignacion-entregas; nombre cubre próximas entregas del módulo sin exigir branch por tarjeta. Publicación autorizada por el usuario, sin merge a MVP-1. Se separan reparaciones locales de acceso/entorno y asignación/documentación. Se conserva la base local de consulta propia del chofer; B02–B06 siguen pendientes, no se acreditan entrega/pago ni el cierre de B03 por incluir ese borrador. No se incluyen .env, contraseñas, respaldos ni archivos temporales.
+
+## Separación de mapa e información (25/10/2026)
+
+A pedido de Benjamín se reemplaza Ver dirección por Ver mapa y Más información, según el patrón OrderMapLink y DetailModal de branch-benjamin-1. Modales de consulta independientes: mapa/estado de confirmación por un lado; cliente, contacto, dirección, estado, canal y notas por otro. Ambos usan obtenerPedido y contemplan carga/error/reintento. Sin cambios de backend ni escritura; editar/confirmar continúa en Revisión de Direcciones.
+
+Lint y build Docker pasan, con warning preexistente de chunk grande. Navegador real: Información contiene 12 campos y ningún mapa; Mapa contiene un Leaflet y ningún campo del detalle; URL /asignaciones estable, cierre por botón y Escape. Sin cambios de pedidos. Esta modificación queda local sobre feature/benjamin-asignacion-entregas; no se hizo un nuevo commit/push en este pedido.
+
+## Tema oscuro y menú sin subrayado (25/10/2026)
+
+Autorizado por Benjamín: recuperar tema de branch-benjamin-1 y pushear todo a feature/benjamin-asignacion-entregas. Se copiaron theme.js, ThemeToggle.jsx y Theme.css desde origin/branch-benjamin-1, adaptando selectores para MVP-1. Conserva paleta, luna/sol, localStorage mandatodo-theme, preferencia del sistema, aplicación antes de render y sincronización storage entre pestañas. Fallback sin window/matchMedia y tolerancia a storage bloqueado. Selector en lateral, login y cabecera chofer. Menú lateral sin subrayados conservando estado activo.
+
+Adaptados formularios, tablas y modales actuales, incluidos Ver mapa y Más información. Esta publicación incluye esa separación pendiente del pedido anterior. Sin cambios de API ni datos de negocio. Spec frontend/specs/tema.md.
+
+Verificación: 46 pruebas frontend (4 nuevas de tema) aprobadas, lint y build Docker pasan (warning preexistente de chunk >500 kB). Navegador real: alternancia claro/oscuro y persistencia al recargar; tarjeta/modal con fondo RGB 34,37,43 y texto 237,240,244; los seis enlaces laterales devuelven textDecorationLine none. Probado modal de información en oscuro y retorno al listado, sin escribir pedidos. No se acredita prueba visual exhaustiva de todas las pantallas/desktop. Se conserva límite preexistente del check raíz por copia Claude ppp1-mvp1 desactualizada.
+
+## B02 — Preparación, despacho y cambio de chofer (25/10/2026)
+
+Autorizado por Benjamín: levantar Docker e implementar segunda tarea. Estados de Santiago conservados; preparación EN STOCK → EN PREPARACIÓN y despacho EN PREPARACIÓN → EN ENVÍO. Reasignar cambia chofer y Quitar chofer deja null, solo antes del despacho como ya establecía B01; después del despacho se rechazan ambos. Entrega y pago siguen en B04/B05; Q01 y las demás decisiones de equipo no se declaran cerradas. Spec frontend/specs/despacho.md.
+
+API PUT /api/asignaciones/:id/estado, cuerpo estricto con estado EN PREPARACIÓN o EN ENVÍO, administrador/operador. Reutiliza validarTransicion de EstadoPedidoService. AsignacionRepository vuelve a leer y bloquear pedido/dirección/chofer en la misma transacción de UPDATE e historial. Despacho exige CONFIRMADA y usuario CHOFER activo. Repetición/concurrencia responde conflicto sin duplicar historial; fallo de historial revierte estado. El servicio devuelve puede_preparar/puede_despachar/motivo_despacho.
+
+UI /asignaciones: encabezado Asignación y despacho, secuencia de los cinco estados, botones Preparar/Despachar, etiqueta Reasignar cuando ya hay chofer, Quitar chofer y confirmación de despacho con pedido/chofer/dirección. Evita cambios de estado mientras hay selección de chofer sin guardar. Estado y botones se actualizan al responder el servidor. Modal cancelable con Escape y Cancelar; no permite cerrar/enviar doble mientras guarda.
+
+Verificación: backend 178 pasan, 0 fallan, 1 opt-in omitida por defecto; frontend 47/47, lint y build OK (warning preexistente de chunk >500 kB). MySQL opt-in 1/1: reasignación/desasignación, rollback real, concurrentes preparación/despacho con una sola escritura e historial, rechazo de dirección cambiada/chofer inactivo, aislamiento de consulta propia y cambios posteriores bloqueados; fixtures propios limpiados. HTTP/MySQL aislado temp/b02-http-mysql.cjs: administrador prepara, operador despacha, consulta propia chofer y nueva lectura persisten, saltos/ENTREGADO-PAGADO/rol chofer/cuerpo inválido rechazados. Sin modificar pedidos del usuario. Logs ignorados temp/b02-backend.log, temp/b02-frontend.log. Navegador real: login y pantalla con Preparar, Reasignar y Quitar chofer según datos vigentes; no se pulsaron mutaciones sobre pedidos existentes. Despacho por clic con pedido sintético en UI queda sin verificar; API y persistencia sí probadas. Check raíz mantiene bloqueo preexistente de copia Claude ppp1-mvp1 desactualizada.
+
+Puerto Docker: 3306 local ocupado por proceso 3980. Se usó override temporal sin publicación y después, por pedido explícito, se cambió docker-compose.yml a MYSQL_HOST_PORT:-3307. .env.example y README documentan localhost:3307 para host y mysql:3306 interno. docker compose up -d confirma mysql healthy y 3307→3306; no se detuvo MySQL local, borraron datos/volúmenes ni cambiaron credenciales. Para iniciar normalmente usar docker compose up -d sin override.
+
+B02 queda implementada y verificada técnicamente en la branch local feature/benjamin-asignacion-entregas. No se hizo commit ni push en este pedido. B03–B06 siguen pendientes.
+
+## Colores de estados en asignaciones (25/10/2026)
+Pedido de Benjamín: distinguir Bloqueado de En envío. Bloqueado usa rojo, En envío azul y habilitados/entregados/pagados conservan verde, con variantes claras/oscuras. Se corrige la clase compartida que hacía que los pedidos enviados usaran el color de bloqueo. Lint y build frontend Docker pasan; warning de chunk grande preexistente. Cambio visual local, sin nuevas pruebas de negocio ni push.
+
+## Sesión visible en carga y asignaciones (25/10/2026)
+Se elimina display:none del bloque profile en móvil y se mueve bajo el logo, antes de la navegación, para mantenerlo visible sin depender del pie del lateral. Sidebar recibe el usuario completo y muestra nombre real (email como alternativa), rol y botón textual Cerrar sesión; reutiliza logout y redirección existentes. Cambio compartido entre todas las rutas de administrador/operador. 47 pruebas frontend, lint y build Docker pasan (warning preexistente de chunk grande). Navegador real verifica profile visible y botón en /asignaciones y /form, sin modificar pedidos; no se cerró la sesión del usuario durante esta comprobación. Cambio local sin push.
+
+## Rectificación visual de sesión (25/10/2026)
+Benjamín rechaza ubicar el perfil bajo el logo. Se restaura al pie del lateral con avatar/nombre/rol y botón de icono centrado, como antes; en móvil queda una barra inferior y se reserva espacio para que no tape contenido. Se ajusta la altura del sidebar al escalado de escritorio preexistente para que su pie no quede fuera del viewport en páginas largas, sin modificar el escalado global. Lint y build pasan. Navegador angosto: pie termina en y=672 igual al alto visible; avatar y botón comparten centro vertical y cierre de sesión accesible. No se probó visualmente escritorio en esta sesión. La nota anterior de perfil bajo el logo queda superada. Cambio local sin push.
+
+## Contraste de clientes y login oscuro (25/10/2026)
+Pedido de Benjamín: clientes guardados poco legibles y login con paleta distinta. Theme.css aplica explícitamente texto claro a td y texto secundario a th en Clientes; ajusta confirmación/baja y éxito. Login oscuro comparte fondo general #17191e, panel de marca #0c1b30 como sidebar, campos #22252b y texto #edf0f4, incluido autofill. Lint/build pasan (warning preexistente chunk grande). Navegador real: clientes td RGB237,240,244 sobre tarjeta34,37,43; login fondo23,25,30 y marca12,27,48; autofill con sombra interior34,37,43. Sesión de prueba restaurada tras verificar login; no se cambiaron datos de clientes. Cambio local sin push.
+
+## Publicación del cierre B02 (25/10/2026)
+
+Benjamín autoriza pushear B02 con información de cambios y actualizar la tabla; luego explicar B03 sin implementarla. Resumen de entrega y verificaciones/límites en docs/entrega-b02.md. Se publican B02 y ajustes solicitados de puerto/colores/sesión/contraste en feature/benjamin-asignacion-entregas, separados en commits revisables. Las notas anteriores de cambios locales quedan superadas una vez verificado el push. B02 Hecho y B03–B06 Pendiente; Q01 conserva coordinación del equipo pendiente.
+
+## Vinculación de commits y tickets (25/10/2026)
+
+Por pedido de Benjamín, se actualizaron los mensajes de los seis commits publicados para incluir (#35) o (#36), Refs y el enlace al ticket. Se preservaron los árboles de archivos, autoría y fechas; cambian los identificadores. Respaldo local: backup/benjamin-antes-vincular-tickets-20261025. Push con force-with-lease contra el SHA remoto esperado, no se sobrescribieron cambios ajenos. Descripciones de #35/#36 contienen enlaces directos a sus commits; GitHub muestra enlaces al ticket dentro de cada commit.
+
+| Anterior | Actual | Ticket |
+| --- | --- | --- |
+| 3ff0823 | 8c6c987 | #35 |
+| ed317b9 | e0b7eff | #35 |
+| ee02d46 | cc2cd7a | #35 |
+| f2763ef | 164807b | #36 |
+| c6653b9 | 3e241c7 | #36 |
+| a9d0576 | a58901a | #36 |
+
+Los SHA anteriores en registros históricos de esta documentación están superados por esta tabla. Para las próximas tareas, incluir el ticket correspondiente en cada mensaje de commit y actualizar los enlaces del ticket al publicar; no usar Closes hasta que se pretenda cerrar por merge. No se implementa B03 en esta tarea.
+
+## Réplica de planificación en Jira (25/10/2026)
+
+Por pedido de Benjamín se copiaron las 44 tareas de GitHub Projects al proyecto KAN de benjabb2005.atlassian.net: KAN-4 a KAN-47. Correspondencia completa en migracion-jira-mvp1.json. Se conservaron KAN-1, KAN-2 y la subtarea KAN-3 existentes. Importación inicial confirma 44 creadas: 24 Finalizado y 20 Por hacer; ninguna tarea migrada se marcó En curso. KAN-2 conserva su estado En curso previo.
+
+Cada descripción incluye responsable, origen, dependencias por ID, aceptación, evidencia/límites y enlace al issue GitHub. B01/B02 incluyen sus commits publicados. Q/X mantienen la aclaración de propuestas de planificación. Segunda importación por claves existentes: 44 actualizadas, 0 creadas y exactamente 98 enlaces Blocks creados, sin WARN/ERROR; se verificó en KAN-32 la dirección blocks/is blocked by. Son dependencias de integración/cierre, no prohibición de trabajo independiente.
+
+Campo de texto Responsable TP y etiquetas por integrante permiten identificar a los cinco responsables sin crear cuentas ni enviar invitaciones. B01–B06 (KAN-31 a KAN-36) y X04 (KAN-44) asignadas a la cuenta existente Benjamin Abbatiello, verificadas en lista. El resto conserva Assignee sin asignar hasta disponer de cuentas verificadas; el responsable académico sí está cargado. Vista List guardada para el espacio con Work, Assignee, Status, Responsable TP y Linked work items. Captura local ignorada temp/jira-mvp1.png. No se configuró sincronización automática GitHub/Jira ni se reescribieron commits para agregar claves KAN. Sin cambios de aplicación, commit o push en esta tarea.
+
+## B03 y paginado de listas (26/10/2026)
+
+Benjamín autoriza levantar Docker, implementar B03 y paginar todos los listados. Spec frontend/specs/chofer-paginacion.md y entrega completa en docs/entrega-b03.md. Se completa búsqueda/actualización/reintento y presentación móvil del chofer sobre la API propia existente. Paginado compartido 5/10/20 para todos los listados de registros, incluidos frecuentes, duplicados, candidatos e historial; opciones fijas de formularios y menú no se paginan. Se eliminan topes silenciosos de clientes. Paginado en memoria, no de servidor; no cambia el contrato API ni el esquema.
+
+Docker activo y health HTTP/DB OK. Frontend 51/51, backend 178 pasan/1 MySQL opt-in omitida, lint/build/sintaxis OK; warning de bundle grande previo. Check raíz bloqueado por copia Claude ppp1-mvp1 desactualizada, sin tocarla. Navegador chofer vacío a 360px claro/oscuro sin desbordes; no había envíos propios para comprobar tarjetas pobladas. Recorrido interactivo del paginado con 23 registros sintéticos, filtro y cambio de tamaño correcto; harness temporal retirado sin insertar datos. Jira KAN-33 En revisión y descripción actualizada con evidencia/límites. GitHub #37 conserva estado anterior hasta revisión/publicación. Cambios locales sin commit/push; B04/B05 no se implementaron. Se preservaron las modificaciones documentales de migración Jira que ya estaban al empezar.
+
+## Asignaciones y auditoría Jira (26/10/2026)
+
+Benjamín confirma que invitó a sus compañeros y autoriza asignar los tickets. Se verificaron las cinco cuentas asignables de KAN y se completaron 20 asignaciones faltantes. Consulta posterior confirma 44/44 responsables correctos: Santiago Filipeli 13, Sabrina Villano 10, Benjamin Abbatiello 7, tomaslaruina06 7 y Julián Ramos 7 (incluyen coordinación y pruebas propuestas Q/X). Comparación contra migracion-jira-mvp1.json: 44 IDs únicos, sin faltantes ni duplicados; 98 dependencias Blocks exactas, sin enlaces faltantes ni adicionales. KAN-1, KAN-2 y KAN-3 son registros previos ajenos al inventario MVP y se preservaron. No se modificaron estados en esta auditoría.
+
+## Limpieza de ejemplos Jira (26/10/2026)
+Con confirmación explícita del borrado irreversible, se eliminaron KAN-1 Task 1, KAN-2 Task 2 y KAN-3 Subtask 2.1. Consulta posterior completa del proyecto: 44 tickets, todos MVP1; ninguno de los tres ejemplos permanece. Las tareas del equipo se conservaron.
+
+## Seguimiento simultáneo Jira y GitHub Projects (26/10/2026)
+
+Benjamín pide usar ambos tableros mientras el equipo aprende a trabajar con tickets y evalúa cuál prefiere. En adelante, cada avance, cambio de estado, cierre y publicación debe reflejarse en el ticket correspondiente de Jira KAN y en el issue/GitHub Project del MVP. Usar la correspondencia docs/migracion-jira-mvp1.json; conservar enlaces al código y la evidencia/límites en ambos. La actualización es manual, sin sincronización automática configurada. No abandonar ninguno hasta nueva indicación del usuario, ni inferir actividad de compañeros. Si uno no puede actualizarse por acceso o error, informar cuál quedó pendiente.
+
+## Corrección de seguimiento B03 en GitHub (26/10/2026)
+Se corrige la omisión señalada por Benjamín: issue #37 pasa de Pendiente a En progreso en GitHub Projects y la descripción incorpora implementación local, evidencia, límites y enlace a Jira KAN-33. GitHub no tiene columna En revisión: En progreso cubre revisión/integración pendiente y equivale al En revisión de Jira en este caso. Guardado y estado verificados tras recargar. Sin commit/push.
+
+## Ajustes visuales B03 y paginado fijo (26/10/2026)
+Se revisó el reparto antes de implementar: cabecera/mapa de lectura del chofer pertenecen a B03; R03 de Sabrina conserva geocodificación, selección y confirmación sin modificaciones. Paginado/sidebar son ajustes compartidos explícitos. Paginado fijo 10 sin selector y controles compactos; sidebar trasladado fuera del contenedor escalado para fijarse al viewport, conservando dimensiones visuales. Cabecera del chofer azul marino, Ver mapa interno con consulta protegida propia y Google Maps separado. Referencia: OrderMapModal de branch-benjamin-1. Backend intacto en este ajuste.
+Verificación: 52 pruebas frontend, lint/build pasan; warning bundle grande previo. Sidebar a 1440x900 conserva top0/bottom900 al bajar639px. Chofer 360px claro/oscuro sin desborde. Paginado con23 registros sintéticos:10 por página sin selector. Diálogo con ID inexistente: rechazo, reintento y Escape correctos. Harness retirado, sin insertar datos. Mapa con pedido propio poblado pendiente por cuenta vacía. Jira KAN-33 conserva En revisión, GitHub #37 En progreso; descripciones actualizadas. Sin commit/push.
+
+## Cabecera compacta del chofer en PC (26/10/2026)
+Por pedido de Benjamín, driver-topbar queda centrada con max452px como el contenido móvil. A1440px ambos tienen x494/ancho452. Build pasa, warning preexistente bundle grande. Jira KAN-33 y GitHub #37 registran el ajuste; sin commit/push.
+
+## Corrección de apertura Ver mapa (26/10/2026)
+Reproducido cierre inmediato en MapaChofer bajo StrictMode: close del cleanup de efecto queda encolado y desmontaba el diálogo reabierto. onClose ahora verifica !dialog.open antes de avisar al padre. Harness temporal con StrictMode: antes desaparecía; después permanece, cierra con botón/Escape y reabre. ID inexistente, sin modificar datos; mapa propio poblado pendiente. Harness retirado. 52 pruebas frontend, lint/build pasan. GitHub #37 actualizado. Jira KAN-33 pendiente de actualizar por fallo de lectura del conector Atlassian en esta sesión. Sin commit/push.
+
+## Cierre técnico y publicación B03 (26/10/2026)
+Benjamín autoriza commit/push y finalizar B03 (#37 / KAN-33). Incluye vista móvil propia, paginado fijo10, mapa interno y corrección StrictMode, sidebar fijo y cabecera compacta. Frontend52/52, lint/build pasan nuevamente. Check raíz conserva fallo preexistente de copia Claude; UI poblada MySQL pendiente registrada, sin afirmar validación integral. Se publica en feature/benjamin-asignacion-entregas con referencias bidireccionales a ambos tickets. B04 sólo se explica, sin implementar.
+
+## B04 entrega/fallo y avance B05 pago (26/10/2026)
+Benjamín autoriza implementar B04 y agregar entrega fallida y pago posterior, verificando reparto. Pago pertenece a su B05, no a otro compañero; se registra en ticket separado. Elige explícitamente FALLIDA → EN PREPARACIÓN para revisión del operador, con motivo obligatorio. B04 implementa entrega propia, historial y reintentos idempotentes bajo transacción/bloqueo; B05 registro efectivo/transferencia y monto, único por pedido, sin acreditar ni cambiar a PAGADO (D04/Q02 pendiente). No se modifica módulo S06 ni esquema; conserva controles de nuevo despacho.
+
+Entrega detallada y límites en entrega-b04.md. Backend184 pasan/2opt-in omitidas; frontend53, lint/build y sintaxis pasan. Prueba MySQL real aislada B04/B05 ejecutada aparte y pasa (concurrencia/rollback/persistencia/aislamiento). UI sintética StrictMode360px claro/oscuro y1440px: confirmación, motivo obligatorio, fallo, pago con error/reintento e historial. Harness retirado y MySQL de prueba detenido, desarrollo intacto. No acredita UI+API+MySQL conjunta ni celular físico. Check raíz conserva fallo previo de copia Claude; warning bundle grande previo. Jira KAN-34 En revisión, KAN-35 En curso; GitHub #38/#39 En progreso, comentarios y estados verificados. Cambios locales sin commit/push.
+
+## Ajustes pedidos el26/10/2026: importe, historial y bloqueados
+Benjamín pide quitar monto del panel de pago y decide explícitamente dejar pendiente conectarlo al futuro importe del pedido; no modificar carga de Julián ni esquema. AccionChofer sólo permite elegir método, muestra aviso y deshabilita guardado para no inventar un importe ni enviar un pago incompleto. El contrato backend previo con monto se conserva como borrador no conectado; B05 sigue En progreso. Historial muestra estado actual y transiciones reales, sin fechas/usuario/observaciones ni movimientos sin cambio de estado; auditoría DB intacta. Resumen de asignaciones cuenta bloqueados sólo EN STOCK/EN PREPARACIÓN no habilitados: ya no suma EN ENVÍO/ENTREGADO/PAGADO. Caso de regresión mixto54 pruebas frontend; lint/build verificados en Docker. Sin commit/push.
+
+## Historial según branch-benjamin-1 (26/10/2026)
+Benjamín rechaza la lista genérica y pide recuperar referencia anterior. Se inspeccionaron DeliveryHistory de DeliveryActions.jsx y su CSS en origin/branch-benjamin-1. Se adapta la línea vertical con tarjetas de Entregado/Intento fallido, fecha de Buenos Aires, responsable y motivo del fallo. Sólo eventos de entrega/intento; no asignaciones, preparación inicial ni pago. Paginado10 conservado. La petición de referencia supera el ajuste anterior de ocultar fecha/usuario. API y auditoría intactas; sin fabricar campos receptor/pago que el evento actual no tiene. Frontend55, lint/build pasan; sin nueva prueba visual en esta corrección. Sin commit/push.
+
+## Ampliación del historial visual (26/10/2026)
+Benjamín aclara incluir también cambios de estado con la misma línea vertical de branch-benjamin-1. Ahora incluye creación, preparación, despacho y demás transiciones reales, además de entrega e intento fallido. Título anterior→nuevo para cambios, fecha/autor y motivo de fallo conservados; movimientos sin cambio de estado no se agregan. Paginado10 y auditoría intactos. Frontend55, lint/build pasan. Sin commit/push.
+
+## Etiquetas del historial aclaradas (26/10/2026)
+Benjamín aclara que cada entrada muestre sólo estado de destino: En stock, En preparación, Despachado, Entregado o Pagado; sin anterior ni flecha. Conserva todos los movimientos en línea vertical, fecha/autor y motivo del intento fallido (En preparación · Intento fallido). No cambia estado persistido EN ENVÍO, sólo etiqueta Despachado. Frontend55, lint/build pasan; sin commit/push.
+
+## Publicación B04 y planificación de importe (26/10/2026)
+Benjamín autoriza commit/push y actualizar tickets. B04 Hecho; B05 sigue En progreso por importe/acreditación pendientes. Revisadas44 tareas Jira y búsqueda GitHub: sólo B05 menciona monto, sin tarea específica de importe en carga. Se crea B07 (#53/KAN-48), asignada a Benjamín y Pendiente, con aceptación/migración/permisos/pruebas; depende J04/S02 y bloquea integración B05. No se implementan precios ni se duplica el pago. Publicación en feature/benjamin-asignacion-entregas con refs #38/#39 y KAN-34/KAN-35. Verificación vigente: frontend55, backend184/2opt-in omitidas; MySQL aislado pasa aparte; lint/build/sintaxis OK, check raíz falla por copia Claude previa.
+
+## B07 importe/tarifa y giro Caso7 (26/10/2026)
+Benjamín autoriza implementar importe manual al cargar, tarifa/km sólo admin, sugerencia pendiente por no tener sucursal/origen y recargo50% por fallo. PDF Caso7 agrega además jornada posterior y facturación del recargo al emisor. Implementación/migración/backup y límites en entrega-b07.md; decisiónD23 y fuentehash en fuentes.md. Cada fallo nuevo suma mitad del base, no compuesto, reenvío no duplica, programa mañana Buenos Aires y bloquea despacho hoy. AntiguosNULL, completar antes de finalizar; total servidor para pago sin monto cliente. Backend187/2opt-in omitidas; frontend57, lint/build/sintaxis OK; MySQL y HTTP+MySQL aislados pasan. Respaldo restaurado y migración002 conservativa ensayada antes de aplicar localmente, runner sin pendientes. UI360 claro/oscuro consultada, sin pedidos sintéticos en desarrollo ni tarifa ficticia. Check raíz copia Claude previa; bundle grande previo. Jira KAN-48 En revisión/GitHub #53 En progreso, B05 continúa por acreditaciónQ02; ambos actualizados. Sin commit/push.
+
+## Despacho manual de reintento (26/10/2026)
+Benjamín pide permitir despacho manual aunque próxima visita sea futura. Se elimina bloqueo por fecha del servidor y motivo de UI; se conservan próxima fecha/recargo e invariantes de dirección confirmada, preparación y chofer activo. La fecha no impide la decisión manual del operador. Esta decisión explícita supera la interpretación previa de bloquear hasta mañana. Backend187 pasan/2 opt-in omitidas; prueba unitaria cubre permiso y botón habilitado con fecha futura. Test MySQL opt-in adaptado al despacho manual e historial adicional, no reejecutado en esta corrección. Sin commit/push.
+
+## Publicación B07 y comienzo cierre B05 (26/10/2026)
+Benjamín autoriza commit/push B07 y avanzar con B05. B07 se publica con refs #53/KAN-48 y #39/KAN-35; sugerencia por distancia queda diferida explícitamente, despacho manual permitido antes de próxima fecha. Pruebas vigentes backend187/frontend57, lint/build y MySQL aislado pasan, check raíz copia Claude previa. B05 comienza luego de este commit: efectivo al confirmar cobro a PAGADO y transferencia informada hasta acreditación por administrador, conforme propuesta previa al pedido de avanzar. Sin acreditaciones de datos reales por el agente.
+
+## Cierre B05 implementado local (26/10/2026)
+B07 publicada62c199d943e2529ba00c41b9de7437b418605e5e con refs #53/KAN-48 y #39/KAN-35; cerrada en ambos tableros. B05 posterior local: efectivo confirmado lleva a PAGADO; transferencia informada requiere acreditación admin activo con confirmación en Más información. Total servidor, transacciones, idempotencia e historial. Sin migración. Backend190/2opt-in omitidas y frontend59 pasan, lint/build/sintaxis OK. MySQL aislado pasa aparte: efectivo/acreditación concurrentes y rollback, despacho manual futuro incluido. UI sintética StrictMode360 claro/oscuro probada; sin acreditar pagos reales ni banco/celular físico/UI+MySQL conjunta. Harness retirado y MySQL prueba detenido. Entrega-b05.md; Jira KAN-35 En revisión y GitHub #39 En progreso, Q02 de Santiago informado sin cerrar. B05 sin commit/push.
+
+## Acción visible y comprobantes B05 (26/10/2026)
+Benjamín pide sacar acreditación de Más información y permitir al chofer foto/archivo. Botón Acreditar transferencia en tarjeta admin, confirmación con comprobantes; Más información pago sólo lectura. Chofer adjunta opcionalmente al informar transferencia o luego en Entregados. JPG/PNG/WEBP/PDF5MB, validación real/tamaño/extensión/nombre en servidor; binario privado en tabla comprobantes_pago, sin dependencias ni enlaces públicos. Admin y chofer propio consultan, operador no; sólo chofer propio pendiente sube. SHA256 único por pago evita duplicado, conserva adjuntos previos; PDF descarga autenticada e imagen interna. Pago y carga separados: error de carga permite reintentar sin duplicar pago.
+Migración003 ensayada con respaldo restaurado aislado y conservación de pagos verificada; aplicada local y runner sin pendientes. Respaldo ignorado temp/respaldo-antes-comprobantes.sql, no publicar. MySQL/HTTP real aislado pasa bytes exactos, concurrencia/hash, permisos ajeno/operador, acreditación y rechazo nueva carga posterior. Backend193 pasan/3opt-in omitidas en suite; frontend61, lint/build/sintaxis OK. UI sintética StrictMode360: botón tarjeta, galería con PNG sintético, subida/lista/imagen, admin acredita y desaparece acción; no desborde. Harness retirado, sin comprobantes/pagos reales modificados. Límite5MB por archivo y formatos indicados, archivos en DB aumentan tamaño de respaldos; no antivirus ni banco. Sin commit/push, ambos tickets actualizados y B05 sigue En revisión/En progreso.
+
+## Comprobante opcional y pendiente visible (26/10/2026)
+Benjamín pide mantener comprobante opcional y marcar pendiente de subir si falta. Selector aclara opcional, sin required; transferencias muestran Comprobante pendiente de subir en chofer, tarjeta admin y detalle hasta contar un adjunto real. El conteo viene de DB, no estado local. Al subir cambia a adjuntado y refresca listado del chofer. Pendiente independiente de acreditación: se permite al dueño adjuntar también en PAGADO, sin cambiar pago; supera restricción anterior de subida sólo antes de acreditar. No aplica efectivo. Backend193/3opt-in omitidas y frontend62, lint/build pasan. Se ajustó prueba antigua que confundía WHERE interno de conteo con filtro de listado. MySQL/HTTP aislado prueba conteos0→1 en chofer/admin/detalle y adjunto posterior a acreditación. Sin migración nueva ni commit/push.
+
+## Asignaciones sin finalizados (26/10/2026)
+Benjamín pide limpiar Asignar choferes. Filtro de presentación conserva EN STOCK/EN PREPARACIÓN/EN ENVÍO y ENTREGADO sólo con transferencia pendiente de acreditar; oculta PAGADO y otros entregados. Así admin aún puede acreditar desde botón directo y al confirmar desaparece de la lista. Datos completos siguen en Tablero/chofer. Resumen y paginado se calculan sobre lista activa, sin borrar datos ni cambiar API. Frontend63, lint/build pasan; prueba de regresión con estados mezclados. Sin commit/push.
+
+## Vista previa del comprobante (26/10/2026)
+Benjamín pide preview. ComprobantesPedido abre imágenes/PDF dentro del panel (antes PDF sólo descargaba). PreviewComprobante reutilizable muestra nombre, imagen o visor PDF nativo, cierre y descarga; fallback de descarga para navegadores sin PDF embebido. SelectorComprobante muestra preview local al elegir antes de subir. URLs blob locales revocadas al cambiar/cerrar/desmontar, sin publicar archivos ni alterar permisos. Frontend64, lint/build pasan; pruebas de render imagen/PDF y descarga. Sin nueva revisión visual del visor PDF nativo en esta corrección; soporte depende del navegador. Sin commit/push.
+
+## Corrección del PDF en blanco (26/10/2026)
+La captura mostraba sólo el selector y el visor nativo quedaba blanco al abrirlo; se verificó en navegador. ComprobantesPedido abre automáticamente el primer adjunto y normaliza MIME, con indicador de carga y descarte de respuestas obsoletas. Se reemplaza object por PDF.js (dependencia pdfjs-dist, worker servido localmente y carga dinámica), canvas con navegación entre páginas y descarga conservada. No transmite documentos a un visor externo. PDF real del pedido6 visible en escritorio y360px sin cambiar pago/archivo; captura local ignorada temp/b05-pdf-visible.png. Frontend en Docker: lint sin advertencias,64 pruebas y build pasan; aviso previo bundle grande. npm audit --omit=dev:0 vulnerabilidades; instalación informa4 de desarrollo, no se actualizaron dependencias ajenas. Los comandos host fallaron por dependencias incompletas (vitest/router); verificación válida realizada en Docker. Sin commit/push.
+
+## Historial separado del chofer (26/10/2026)
+Benjamín pide separar entregados con pago confirmado y comprobante. Tres pestañas: En envío, Entregados con pendientes, Historial completo. PAGADO+transferencia requiere comprobante para historial; efectivo confirmado no necesita adjunto según alcance vigente. Clasificación y búsqueda/conteo/paginado sobre vista; no se cambian API/estados/permisos ni datos. Chips diferenciados para entrega, pago por registrar/acreditar/confirmado y comprobante pendiente/adjunto. Al refrescar luego de subir se reclasifica. Prueba de estados mezclados cubre acreditado sin archivo, archivo sin acreditar, efectivo y reclasificación. Docker lint,65 pruebas y build pasan (bundle grande previo). UI sintética StrictMode verificada escritorio y360 claro/oscuro, sin alterar pedidos reales; harness retirado. Captura local ignorada temp/b05-chofer-pendientes.png. Sin commit/push.
+
+## Registro y acreditación diferenciados (26/10/2026)
+Benjamín pide colores distintos y consulta si confirmación corresponde al chofer. Sin pago: ámbar Falta registrar el pago; transferencia informada: violeta Esperando acreditación de administración; confirmado: verde. Aviso informativo sin botón de acreditar para chofer. Revisados servidor/UI: acreditar sigue sólo ADMINISTRADOR; OPERADOR no tiene permiso, se informó al usuario sin ampliar acceso silenciosamente. Efectivo conserva confirmación de recepción por chofer conforme regla vigente, distinta de acreditación bancaria. Docker lint/65pruebas/build pasan; UI sintética claro/oscuro revisada, ningún pago real cambiado, harness retirado. Captura ignorada temp/b05-colores-pago.png. Sin commit/push.
+
+## Botones deshabilitados de pago/comprobante (26/10/2026)
+Usuario confirma que Adjuntar permanece deshabilitado aun eligiendo archivo. Se separa ocupado de subida del estado cargandoVista: una descarga previa lenta no bloquea elegir/subir archivo. Verificación sintética StrictMode con descarga que nunca resuelve: elegir PNG habilita botón, subida simulada confirma y muestra preview; no guarda datos reales. El cursor wait aplicado a todo botón disabled confundía faltante con carga; ahora not-allowed salvo guardado real. Pago sin importe muestra botón Falta cargar el importe y explica siguiente paso, no asigna precio ni permite pagar sin total. Se detecta y corrige ciclo de bloqueo anterior: completarImporte admite ENTREGADO baseNULL sin pago, conserva PAGADO/base existente/pago como conflictos, recargo/historial transaccionales. Admin/operador desde Asignaciones Más información; lista incluye ENTREGADO sin pago para acceder, PAGADO oculto. Dos tests backend cubren recuperación y rechazos/rollback. Docker backend195 pasan/3 opt-in omitidas; frontend66/lint/build pasan. Sintaxis Docker falla porque /scripts no está montado; se verifica host aparte. No se reejecutó integración MySQL del nuevo caso, no se cambió precio ni pago real. Capturas ignoradas temp/b05-comprobante-sin-bloqueo.png y b05-importe-faltante-claro.png; harness retirado. Sin commit/push.
+Verificación posterior: npm --prefix backend run check en host pasa (Sintaxis backend OK); git diff --check sin errores. Backend del nuevo caso cubierto por pruebas transaccionales con adaptador, no MySQL real en este ajuste.
+
+## Publicación B05 autorizada (26/10/2026)
+Benjamín autoriza commit/push B05 y detener Docker al terminar. Se agrupan cierre de pago/acreditación, comprobantes privados opcionales con migración003, preview PDF.js, pendientes/historial del chofer, recuperación de importe antiguo y ajustes de interfaz. Refs #39/KAN-35, rama feature/benjamin-asignacion-entregas. Verificaciones finales vigentes backend195/3opt-in omitidas, frontend66, lint/build y sintaxis host OK; MySQL aislado de pagos/comprobantes verificado antes, nuevo caso de recuperación sólo adaptador. Check raíz conserva bloqueo previo copia Claude; npm audit producción0, deuda dev4 y bundle grande registrados. No se incluyen temp/respaldo ni archivos reales. Planificación local B05 Hecho; se vinculará commit en ambos tickets tras push. Detención mediante compose stop, sin eliminar datos/volúmenes.
+
+## Revisión de continuidad y arranque (27/10/2026)
+
+Pedido de Benjamín: recuperar contexto, consultar Jira/GitHub Projects e iniciar Docker. Consulta actual de ambos tableros: B01–B05 y B07 Finalizado/Hecho; pendientes B06 (KAN-36/#40, ensayo móvil integral del chofer) y X04 (KAN-44/#48, prueba cruzada del núcleo de Santiago, bloqueada por dependencias en Projects). Las descripciones y la tabla inicial de planificación conservan estados históricos; no confundirlos con los campos actuales. B05 publicada en fbc3e68; checkout feature/benjamin-asignacion-entregas inicialmente limpio.
+
+Se revisaron AGENTS y skills locales, documentación de contexto, arquitectura, decisiones, tareas, fuentes, verificación y entregas. Docker compose config --quiet y up -d --build ejecutados; tres servicios activos, MySQL healthy en puerto host 3307. GET /api/health devuelve HTTP200 con http/db ok y frontend HTTP200 en 5173. Se conserva advertencia previa DUPLICADOS_VENTANA_HORAS ausente; no se cambia entorno ni se ejecutan migraciones/seed. No se borran datos/volúmenes. No se ejecuta B06/X04 ni se acreditan nuevas pruebas de negocio o celular físico. Próximo paso: B06, recorrido integrado con datos sintéticos y evidencia móvil, persistencia, permisos, entrega y pago; después coordinar X04. Sin cambios de producto, commit/push ni actualización de tickets.
+
+## B06 · pruebas solicitadas y regresión móvil (27/10/2026)
+
+Benjamín pide ejecutar todas las pruebas necesarias. Skill ppp1-verificar; informe en [entrega-b06.md](entrega-b06.md). Check raíz final pasa en host tras skills:sync (copias ignoradas) y npm ci de backend/frontend, sin cambios de manifests/lockfiles. Backend195/0fallos, frontend66/lint/build OK; cuatro integraciones MySQL opt-in ejecutadas aparte y pasan, incluida nueva flujo-chofer-mysql.test.js con login real/roles/IDs ajenos/dirección bloqueada/concurrencia/recargos/acreditación y recuperación real de importe antiguo (8 resultados exitosos padre+7subpruebas).
+
+UI real sobre Compose aislado con fixtures sintéticos: entrega/efectivo, fallo/motivo/recargo, transferencia opcional sin adjunto, preview PNG privado, acreditación admin e historial, mapa/Escape, paginado/búsqueda, recarga, error y recuperación al reiniciar backend. 360×800 claro/oscuro,320×740 y1440×900. Corregido desborde15px a320 por min-width global; después scrollWidth=clientWidth305, escritorio1425. Sin tocar permisos/API/esquema; contenedores de prueba detenidos, desarrollo activo e intacto. Capturas/logs sintéticos en temp ignorado.
+
+Límites: selector de archivo por UI bloqueado por permiso de extensión (no cambiado); subida/duplicados/permisos sí probados por HTTP/MySQL. Sin celular físico ni nueva revisión visual PDF real. Audit detecta backend5 (1crítica/4altas), frontend4altas, detalle informe; no audit fix fuera del alcance. B06 no cerrado automáticamente, X04 no ejecutada como revisión del integrante. Próximo paso humano: galería/selector en celular y revisar resultados; deuda de dependencias requiere remediación separada. Sin commit/push ni mensajes/cambios de tickets.
+
+## Paneles del chofer por IP HTTP (27/10/2026)
+
+Usuario reporta que Ver historial/Ver comprobante y otros botones rompen desde celular por IP. Causa reproducida: AccionChofer ejecutaba crypto.randomUUID al montar cualquier tipo de panel; por HTTP en IP de LAN no existe esa API, aunque sí en localhost. Cinco pruebas nuevas fallaron antes con TypeError y pasan después. Se genera UUIDv4 con crypto.getRandomValues compatible con ese contexto, conservado en useState para reintentos; sólo entrega/fallo requieren identificador, consulta/pago no. Sin Math.random, dependencia nueva ni cambios de contrato/permisos/datos.
+
+Frontend72 pruebas pasan; lint/build pasan. Ensayo real en Brave por IP HTTP y360px confirma isSecureContext=false/randomUUID=undefined: abre/cierra los cinco tipos y Escape/reapertura de historial funcionan bajo StrictMode. API del harness sintética y sin red real, no se mutaron pedidos; harness retirado. Captura ignorada temp/b06-panel-ip-corregido.png. Las pruebas B06 anteriores en localhost no cubrían la diferencia de contexto seguro; no acreditan este caso hasta esta corrección. Sin celular físico ni commit/push.
+
+## Publicación B06 autorizada (28/10/2026)
+
+Benjamín autoriza commit y push en feature/benjamin-asignacion-entregas y solicita instrucciones para abrir PR hacia MVP-1. Corte: regresión HTTP/MySQL del chofer, UUID compatible con HTTP por IP, pruebas de los cinco paneles y corrección de ancho mínimo móvil; informe entrega-b06.md y verificación actualizados. Check raíz ejecutado nuevamente pasa (backend195,4opt-in omitidas por defecto, lint/build/contexto/sintaxis); frontend72 pasan. Cuatro integraciones MySQL aisladas conservan evidencia previa, no reejecutadas en esta publicación. Se excluyen temporales, capturas, respaldos y secretos. Referencias #40/KAN-36 sin cierre automático ni modificación de tickets; límites físicos/selector y deuda de dependencias del informe se conservan. PR/merge no ejecutados: se entrega enlace de comparación e instrucciones al usuario.
