@@ -320,7 +320,6 @@ function PedidosCargaPage() {
             <div><dt>Importe del envío</dt><dd><ImportePedido pedido={pedido}/></dd></div>
             <div><dt>Estado del pedido</dt><dd>{pedido.estado}</dd></div>
           </dl>}
-          {pedido?.estado_validacion === 'CONFIRMADA' && <CompletarImporte pedido={pedido} onGuardado={setPedido}/>}
 
           {resultado && <div className={`geo-resultado ${tonoResultado(resultado.resultado)}`} role="status">
             <b>{ETIQUETAS_RESULTADO[resultado.resultado] || 'Búsqueda registrada'}</b>
@@ -343,6 +342,7 @@ function PedidosCargaPage() {
           {motivoGeo && <p className="geo-motivo">{motivoGeo}</p>}
           <button type="button" className="button confirm-button" onClick={confirmar} disabled={!puedeConfirmar || ocupado} aria-describedby="geo-ayuda" title={motivoConf || undefined}><Icon name="check" size={14}/> {confirmando ? 'Confirmando…' : 'Confirmar ubicación'}</button>
           {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
+          {pedido?.estado_validacion === 'CONFIRMADA' && <CompletarImporte pedido={pedido} onGuardado={setPedido}/>}
           {pedido && <button type="button" className="button button-outline correct-button" onClick={nuevaCarga} disabled={ocupado} title="Limpia el formulario para cargar un pedido nuevo">Cargar otro pedido</button>}
         </section>
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Una dirección sin confirmar no habilita el despacho.</small></div></div>

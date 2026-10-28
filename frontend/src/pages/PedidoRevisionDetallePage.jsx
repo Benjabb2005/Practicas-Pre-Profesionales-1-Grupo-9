@@ -230,7 +230,7 @@ function PedidoRevisionDetallePage({ pedidoId } = {}) {
           {motivoConf && <p className="geo-motivo">{motivoConf}</p>}
         </section>
         {pedido.estado_validacion === 'CONFIRMADA' && pedido.importe_base == null && <section className="panel" style={{ padding: 18 }}>
-          <h2>Completar importe</h2>
+          <div className="section-heading"><div><h2>Completar importe</h2></div></div>
           <CompletarImporte pedido={pedido} onGuardado={setPedido}/>
         </section>}
         <div className="safe-note"><span><Icon name="check" size={12}/></span><div><b>Despacho seguro</b><small>Cambiar calle o altura invalida la confirmación anterior.</small></div></div>

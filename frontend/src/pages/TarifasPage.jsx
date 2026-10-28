@@ -4,6 +4,7 @@ import { listarProvincias } from '../api/localidades.js'
 import { mensajeError } from '../api/client.js'
 import MapPreview from '../components/MapPreview.jsx'
 import './Pedidos.css'
+import './TarifasPage.css'
 
 const SUCURSAL_VACIA = { calle: '', altura: '', localidad: '', provincia: '' }
 
@@ -94,42 +95,42 @@ export default function TarifasPage() {
 
   const provinciaFueraDeLista = sucursal.provincia !== '' && !provincias.includes(sucursal.provincia)
 
-  return <main className="main-content"><header className="page-header"><div><h1>Tarifa de envío</h1><p>Configuración exclusiva del administrador.</p></div></header>
-    <div style={{ display: 'grid', gap: 16, maxWidth: 720 }}>
-      <section className="panel" style={{ padding: 24 }}>
-        <h2>Sucursal de salida</h2>
-        <p className="subtitle">Georef ubica la sucursal para calcular las sugerencias de envío.</p>
+  return <main className="main-content"><header className="page-header"><div><h1>Configuración de envíos</h1><p className="subtitle">Sucursal de salida y precio por km para sugerir el costo de cada envío.</p></div></header>
+    <div className="validation-column tarifas-layout">
+      <section className="panel tarifas-panel">
+        <div className="section-heading"><div><h2>Sucursal de salida</h2><p>Georef ubica la sucursal para calcular las sugerencias de envío.</p></div></div>
         {errorSucursal && <p role="alert" className="users-alert">{errorSucursal}</p>}
         {avisoSucursal && <p role="status" className="users-ok">{avisoSucursal}</p>}
         <form onSubmit={guardarDatosSucursal}>
           <div className="fields-grid">
-            <label className="form-field" htmlFor="sucursal-calle"><span>Calle *</span><input id="sucursal-calle" className={erroresSucursal.calle ? 'campo-error' : ''} required value={sucursal.calle} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.calle)} aria-describedby={erroresSucursal.calle ? 'error-sucursal-calle' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, calle: e.target.value }))}/>{erroresSucursal.calle && <small id="error-sucursal-calle" className="campo-ayuda" style={{ color: '#b42318' }}>{erroresSucursal.calle}</small>}</label>
-            <label className="form-field" htmlFor="sucursal-altura"><span>Altura *</span><input id="sucursal-altura" className={erroresSucursal.altura ? 'campo-error' : ''} required value={sucursal.altura} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.altura)} aria-describedby={erroresSucursal.altura ? 'error-sucursal-altura' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, altura: e.target.value }))}/>{erroresSucursal.altura && <small id="error-sucursal-altura" className="campo-ayuda" style={{ color: '#b42318' }}>{erroresSucursal.altura}</small>}</label>
-            <label className="form-field" htmlFor="sucursal-localidad"><span>Localidad *</span><input id="sucursal-localidad" className={erroresSucursal.localidad ? 'campo-error' : ''} required value={sucursal.localidad} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.localidad)} aria-describedby={erroresSucursal.localidad ? 'error-sucursal-localidad' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, localidad: e.target.value }))}/>{erroresSucursal.localidad && <small id="error-sucursal-localidad" className="campo-ayuda" style={{ color: '#b42318' }}>{erroresSucursal.localidad}</small>}</label>
+            <label className="form-field" htmlFor="sucursal-calle"><span>Calle *</span><input id="sucursal-calle" className={erroresSucursal.calle ? 'campo-error' : ''} required value={sucursal.calle} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.calle)} aria-describedby={erroresSucursal.calle ? 'error-sucursal-calle' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, calle: e.target.value }))}/>{erroresSucursal.calle && <small id="error-sucursal-calle" className="direccion-problema error">{erroresSucursal.calle}</small>}</label>
+            <label className="form-field" htmlFor="sucursal-altura"><span>Altura *</span><input id="sucursal-altura" className={erroresSucursal.altura ? 'campo-error' : ''} required value={sucursal.altura} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.altura)} aria-describedby={erroresSucursal.altura ? 'error-sucursal-altura' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, altura: e.target.value }))}/>{erroresSucursal.altura && <small id="error-sucursal-altura" className="direccion-problema error">{erroresSucursal.altura}</small>}</label>
+            <label className="form-field" htmlFor="sucursal-localidad"><span>Localidad *</span><input id="sucursal-localidad" className={erroresSucursal.localidad ? 'campo-error' : ''} required value={sucursal.localidad} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.localidad)} aria-describedby={erroresSucursal.localidad ? 'error-sucursal-localidad' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, localidad: e.target.value }))}/>{erroresSucursal.localidad && <small id="error-sucursal-localidad" className="direccion-problema error">{erroresSucursal.localidad}</small>}</label>
             <label className="form-field" htmlFor="sucursal-provincia"><span>Provincia *</span>
               <select id="sucursal-provincia" className={erroresSucursal.provincia ? 'campo-error' : ''} required value={sucursal.provincia} disabled={cargando || ocupadoSucursal} aria-invalid={Boolean(erroresSucursal.provincia)} aria-describedby={erroresSucursal.provincia ? 'error-sucursal-provincia' : undefined} onChange={(e) => setSucursal((actual) => ({ ...actual, provincia: e.target.value }))}>
                 <option value="">Elegí una provincia</option>
                 {provinciaFueraDeLista && <option value={sucursal.provincia}>{sucursal.provincia}</option>}
                 {provincias.map((provincia) => <option key={provincia} value={provincia}>{provincia}</option>)}
               </select>
-              {erroresSucursal.provincia && <small id="error-sucursal-provincia" className="campo-ayuda" style={{ color: '#b42318' }}>{erroresSucursal.provincia}</small>}
+              {erroresSucursal.provincia && <small id="error-sucursal-provincia" className="direccion-problema error">{erroresSucursal.provincia}</small>}
               {errorProvincias && <small className="campo-ayuda">{errorProvincias}</small>}
             </label>
           </div>
-          <button className="button button-primary" disabled={cargando || ocupadoSucursal}>{ocupadoSucursal ? 'Ubicando sucursal…' : 'Guardar sucursal'}</button>
+          <div className="order-actions"><button className="button button-primary" disabled={cargando || ocupadoSucursal}>{ocupadoSucursal ? 'Ubicando sucursal…' : 'Guardar sucursal'}</button></div>
         </form>
-        {tarifa?.sucursal_direccion && <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
+        {tarifa?.sucursal_direccion && <div className="tarifa-ubicacion">
           <p className="geo-direccion-enviada"><b>Georef ubicó la sucursal en:</b> {tarifa.sucursal_direccion}</p>
           <MapPreview latitud={tarifa.sucursal_latitud} longitud={tarifa.sucursal_longitud} etiqueta={tarifa.sucursal_direccion}/>
         </div>}
       </section>
 
-      <section className="panel" style={{ padding: 24 }}>
-        <h2>Precio por kilómetro</h2>
+      <section className="panel tarifas-panel">
+        <div className="section-heading"><div><h2>Precio por kilómetro</h2></div></div>
         {cargando && <p role="status">Cargando tarifa…</p>}{error && <p role="alert" className="users-alert">{error}</p>}{aviso && <p role="status" className="users-ok">{aviso}</p>}
-        <form onSubmit={guardar}><label className="form-field" htmlFor="tarifa-km"><span>Precio fijo por km (ARS)</span><input id="tarifa-km" inputMode="decimal" required pattern="[0-9]{1,10}([.,][0-9]{1,2})?" value={precio} onChange={e => setPrecio(e.target.value)} disabled={cargando || ocupado}/></label>
-          <button className="button button-primary" disabled={cargando || ocupado}>{ocupado ? 'Guardando…' : 'Guardar tarifa'}</button>
-          {error && <button type="button" className="button button-outline" disabled={ocupado || cargando} onClick={() => { setError(''); setCargando(true); setIntento(i => i + 1) }}>Reintentar consulta</button>}
+        <form className="tarifa-precio-form" onSubmit={guardar}><label className="form-field" htmlFor="tarifa-km"><span>Precio fijo por km (ARS)</span><input id="tarifa-km" inputMode="decimal" required pattern="[0-9]{1,10}([.,][0-9]{1,2})?" value={precio} onChange={e => setPrecio(e.target.value)} disabled={cargando || ocupado}/></label>
+          <div className="order-actions"><button className="button button-primary" disabled={cargando || ocupado}>{ocupado ? 'Guardando…' : 'Guardar tarifa'}</button>
+            {error && <button type="button" className="button button-outline" disabled={ocupado || cargando} onClick={() => { setError(''); setCargando(true); setIntento(i => i + 1) }}>Reintentar consulta</button>}
+          </div>
         </form>
       </section>
     </div>

@@ -51,13 +51,13 @@ export default function CompletarImporte({ pedido, onGuardado }) {
   }
 
   return <form onSubmit={guardar}>
-    {!puedeConsultar && <p style={{ color: 'var(--theme-muted)' }}>La sugerencia aparece cuando la ubicación esté confirmada.</p>}
-    {cargandoSugerencia && <p role="status" style={{ color: 'var(--theme-muted)' }}>Consultando importe sugerido…</p>}
-    {textoSugerencia && <p role="status" style={{ color: 'var(--theme-muted)' }}>{textoSugerencia}</p>}
-    {sugerenciaActual && !sugerenciaActual.disponible && <p style={{ color: 'var(--theme-muted)' }}>{sugerenciaActual.motivo}</p>}
+    {!puedeConsultar && <p className="geo-ayuda">La sugerencia aparece cuando la ubicación esté confirmada.</p>}
+    {cargandoSugerencia && <p className="geo-ayuda" role="status">Consultando importe sugerido…</p>}
+    {textoSugerencia && <p className="geo-ayuda" role="status">{textoSugerencia}</p>}
+    {sugerenciaActual && !sugerenciaActual.disponible && <p className="geo-ayuda">{sugerenciaActual.motivo}</p>}
     {errorSugerencia && <p role="alert">{errorSugerencia} <button type="button" className="button button-outline" onClick={() => setIntento((actual) => actual + 1)}>Reintentar sugerencia</button></p>}
     <label className="form-field" htmlFor={`importe-antiguo-${pedido.id}`}><span>Completar importe base pendiente (ARS)</span><input id={`importe-antiguo-${pedido.id}`} required inputMode="decimal" pattern="[0-9]{1,10}([.,][0-9]{1,2})?" value={importe} disabled={ocupado} onChange={e => setCampoImporte({ pedidoId: pedido.id, valor: e.target.value })}/></label>
-    <p>Si hubo intentos fallidos desde la nueva regla, se sumará el 50% del base por cada uno.</p>
+    <p className="geo-ayuda">Si hubo intentos fallidos desde la nueva regla, se sumará el 50% del base por cada uno.</p>
     {error && <p role="alert">{error}</p>}<button className="button button-primary" disabled={ocupado}>{ocupado ? 'Guardando…' : 'Guardar importe base'}</button>
   </form>
 }
