@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { importeParaPrecargar, textoImporteSugerido } from './importeSugerido.js'
+import { importeParaPrecargar, puedeCompletarImporte, puedeConsultarSugerencia, textoImporteSugerido } from './importeSugerido.js'
 
 it('presenta la sugerencia con moneda local, distancia y precio por km', () => {
   expect(textoImporteSugerido({
@@ -14,4 +14,15 @@ it('precarga un importe positivo, pero deja vacío el campo si no hay sugerencia
   expect(importeParaPrecargar({ disponible: true, importe_sugerido: '250.00' })).toBe('250.00')
   expect(importeParaPrecargar({ disponible: true, importe_sugerido: '0.00' })).toBe('')
   expect(importeParaPrecargar({ disponible: false, importe_sugerido: '250.00' })).toBe('')
+})
+
+it('permite completar pedidos antiguos sin dirección confirmada, pero consulta solo al confirmar', () => {
+  const pedidoViejo = { importe_base: null, estado: 'EN STOCK', estado_validacion: 'PENDIENTE' }
+  const confirmado = { ...pedidoViejo, estado_validacion: 'CONFIRMADA' }
+  const pagado = { ...confirmado, estado: 'PAGADO' }
+
+  expect(puedeCompletarImporte(pedidoViejo)).toBe(true)
+  expect(puedeConsultarSugerencia(pedidoViejo)).toBe(false)
+  expect(puedeConsultarSugerencia(confirmado)).toBe(true)
+  expect(puedeCompletarImporte(pagado)).toBe(false)
 })

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, mensajeError } from '../api/client.js'
 import { obtenerImporteSugerido } from '../api/pedidos.js'
-import { importeParaPrecargar, textoImporteSugerido } from './importeSugerido.js'
+import { importeParaPrecargar, puedeCompletarImporte, puedeConsultarSugerencia, textoImporteSugerido } from './importeSugerido.js'
 
 export default function CompletarImporte({ pedido, onGuardado }) {
   const [campoImporte, setCampoImporte] = useState({ pedidoId: pedido.id, valor: '' })
@@ -9,12 +9,13 @@ export default function CompletarImporte({ pedido, onGuardado }) {
   const [error, setError] = useState('')
   const [consulta, setConsulta] = useState({ clave: '', sugerencia: null, error: '' })
   const [intento, setIntento] = useState(0)
-  const puedeCompletar = pedido.importe_base == null && pedido.estado !== 'PAGADO' && !pedido.pago_metodo
+  const puedeCompletar = puedeCompletarImporte(pedido)
+  const puedeConsultar = puedeConsultarSugerencia(pedido)
   const claveConsulta = `${pedido.id}:${pedido.estado_validacion}:${puedeCompletar}:${intento}`
 
   useEffect(() => {
     let vigente = true
-    if (!puedeCompletar || pedido.estado_validacion !== 'CONFIRMADA') return undefined
+    if (!puedeConsultar) return undefined
     obtenerImporteSugerido(pedido.id)
       .then((sugerencia) => {
         if (!vigente) return
@@ -30,16 +31,16 @@ export default function CompletarImporte({ pedido, onGuardado }) {
         if (vigente) setConsulta({ clave: claveConsulta, sugerencia: null, error: mensajeError(fallo) })
       })
     return () => { vigente = false }
-  }, [claveConsulta, puedeCompletar, pedido.estado_validacion, pedido.id])
+  }, [claveConsulta, puedeConsultar, pedido.id])
 
   const consultaActual = consulta.clave === claveConsulta ? consulta : null
   const sugerenciaActual = consultaActual?.sugerencia ?? null
-  const cargandoSugerencia = puedeCompletar && pedido.estado_validacion === 'CONFIRMADA' && !consultaActual
+  const cargandoSugerencia = puedeConsultar && !consultaActual
   const errorSugerencia = consultaActual?.error ?? ''
   const importe = campoImporte.pedidoId === pedido.id ? campoImporte.valor : ''
   const textoSugerencia = textoImporteSugerido(sugerenciaActual)
 
-  if (!puedeCompletar || pedido.estado_validacion !== 'CONFIRMADA') return null
+  if (!puedeCompletar) return null
 
   async function guardar(e) {
     e.preventDefault(); if (ocupado) return
@@ -50,6 +51,7 @@ export default function CompletarImporte({ pedido, onGuardado }) {
   }
 
   return <form onSubmit={guardar}>
+    {!puedeConsultar && <p style={{ color: 'var(--theme-muted)' }}>La sugerencia aparece cuando la ubicación esté confirmada.</p>}
     {cargandoSugerencia && <p role="status" style={{ color: 'var(--theme-muted)' }}>Consultando importe sugerido…</p>}
     {textoSugerencia && <p role="status" style={{ color: 'var(--theme-muted)' }}>{textoSugerencia}</p>}
     {sugerenciaActual && !sugerenciaActual.disponible && <p style={{ color: 'var(--theme-muted)' }}>{sugerenciaActual.motivo}</p>}

@@ -7,6 +7,14 @@ function formatoImporte(valor, decimales) {
   }).format(numero)
 }
 
+export function puedeCompletarImporte(pedido) {
+  return pedido?.importe_base == null && pedido?.estado !== 'PAGADO' && !pedido?.pago_metodo
+}
+
+export function puedeConsultarSugerencia(pedido) {
+  return puedeCompletarImporte(pedido) && pedido?.estado_validacion === 'CONFIRMADA'
+}
+
 export function textoImporteSugerido(sugerencia) {
   if (!sugerencia?.disponible) return ''
   const importe = formatoImporte(sugerencia.importe_sugerido, 2)

@@ -13,8 +13,10 @@ se confirma la ubicación en el mapa.
 - Distancia en línea recta entre la sucursal y el destino confirmado.
 - Importe sugerido = km × precio por km. La persona lo acepta o lo cambia.
 - El importe deja de ser obligatorio al cargar el pedido.
-- Si el pedido no tiene importe, la sugerencia se consulta siempre que se muestre CompletarImporte
-  con dirección confirmada: en la carga, la revisión y el detalle de Asignaciones.
+- Si el pedido no tiene importe, la sugerencia se consulta en CompletarImporte cuando la dirección
+  está confirmada: en la carga, la revisión y el detalle de Asignaciones. Sin confirmación, el
+  formulario sigue disponible para completar pedidos antiguos, pero explica que la sugerencia aún
+  no está disponible.
 
 ## Fuera de alcance
 - Varias sucursales, distancia por calles, tarifas por zona.
@@ -29,3 +31,5 @@ se confirma la ubicación en el mapa.
   y el campo de importe viene completado con ese valor si es mayor que cero; sigue editable.
 - La sugerencia se consulta en carga, revisión y Asignaciones, sin opción para desactivarla.
 - Un pedido creado sin importe se puede completar después con el botón existente.
+- Completar el importe de un pedido no requiere confirmar su dirección; la confirmación solo
+  condiciona la consulta de la sugerencia.

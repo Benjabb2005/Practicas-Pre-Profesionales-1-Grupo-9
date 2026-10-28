@@ -320,7 +320,7 @@ function PedidosCargaPage() {
             <div><dt>Importe del envío</dt><dd><ImportePedido pedido={pedido}/></dd></div>
             <div><dt>Estado del pedido</dt><dd>{pedido.estado}</dd></div>
           </dl>}
-          {pedido && <CompletarImporte pedido={pedido} onGuardado={setPedido}/>}
+          {pedido?.estado_validacion === 'CONFIRMADA' && <CompletarImporte pedido={pedido} onGuardado={setPedido}/>}
 
           {resultado && <div className={`geo-resultado ${tonoResultado(resultado.resultado)}`} role="status">
             <b>{ETIQUETAS_RESULTADO[resultado.resultado] || 'Búsqueda registrada'}</b>
