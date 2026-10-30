@@ -1,6 +1,9 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { createPedidoService } = require("../src/services/PedidoService");
+const { createPedidoService: crearServicioBase } = require("../src/services/PedidoService");
+// Adaptador sintético: estas pruebas no consultan Internet.
+const createPedidoService = deps => crearServicioBase({ geocodeAdapter: { async geocodificar() { return { resultado: 'APPROXIMATE', candidatos: [{ latitud: -34.6, longitud: -58.4 }] }; } }, ...deps });
+
 
 const DIRECCION_VALIDA = {
     calle: "Córdoba",
@@ -87,27 +90,14 @@ test("una localidad que existe no suma advertencias y consulta con la provincia 
     assert.equal(pedidos.capturado.crear.direccion.estado_validacion, "VALIDA");
 });
 
-test("una localidad inexistente suma ADVERTENCIA LOCALIDAD_NO_ENCONTRADA sin bloquear", async () => {
-    const pedidos = reposPedidosFalsos();
-    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades: localidadesFalsas("NO_EXISTE") });
-
-    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { ...DIRECCION_VALIDA, localidad: "Rosario del Tala" } }, 7);
-
-    assert.deepEqual(codigos(resultado.problemas), ["LOCALIDAD_NO_ENCONTRADA"]);
-    assert.equal(resultado.problemas[0].gravedad, "ADVERTENCIA");
-    assert.equal(resultado.problemas[0].campo, "localidad");
-    assert.equal(pedidos.capturado.crear.direccion.estado_validacion, "VALIDA");
+test("alta rechazada con localidad NO_EXISTE sin persistir", async()=>{
+ const pedidos=reposPedidosFalsos();const servicio=createPedidoService({pedidos,clientes:clientesFalsos,localidades:localidadesFalsas('NO_EXISTE')});
+ await assert.rejects(servicio.crear({cliente_id:1,direccion:DIRECCION_VALIDA},7),e=>e.statusCode===400 && Boolean(e.campos.localidad));assert.equal(pedidos.capturado.crear,null);
 });
 
-test("si Georef no responde suma ADVERTENCIA LOCALIDAD_NO_VERIFICADA y no un ERROR", async () => {
-    const pedidos = reposPedidosFalsos();
-    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades: localidadesFalsas("NO_VERIFICADO") });
-
-    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: DIRECCION_VALIDA }, 7);
-
-    assert.deepEqual(codigos(resultado.problemas), ["LOCALIDAD_NO_VERIFICADA"]);
-    assert.equal(resultado.problemas[0].gravedad, "ADVERTENCIA");
-    assert.equal(pedidos.capturado.crear.direccion.estado_validacion, "VALIDA");
+test("alta rechazada con localidad NO_VERIFICADO sin persistir", async()=>{
+ const pedidos=reposPedidosFalsos();const servicio=createPedidoService({pedidos,clientes:clientesFalsos,localidades:localidadesFalsas('NO_VERIFICADO')});
+ await assert.rejects(servicio.crear({cliente_id:1,direccion:DIRECCION_VALIDA},7),e=>e.statusCode===503);assert.equal(pedidos.capturado.crear,null);
 });
 
 test("actualizar la dirección también avisa por la localidad sin cambiar el estado", async () => {
@@ -120,15 +110,9 @@ test("actualizar la dirección también avisa por la localidad sin cambiar el es
     assert.equal(pedidos.capturado.actualizarDireccion.direccion.estado_validacion, "VALIDA");
 });
 
-test("si la provincia ya es inválida no se consulta Georef", async () => {
-    const pedidos = reposPedidosFalsos();
-    const localidades = localidadesFalsas("EXISTE");
-    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos, localidades });
-
-    const resultado = await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { ...DIRECCION_VALIDA, provincia: "Narnia" } }, 7);
-
-    assert.deepEqual(codigos(resultado.problemas), ["PROVINCIA_INVALIDA"]);
-    assert.deepEqual(localidades.llamadas, []);
+test("provincia inválida rechaza alta sin consultar localidad ni persistir",async()=>{
+ const pedidos=reposPedidosFalsos();const localidades=localidadesFalsas('EXISTE');const servicio=createPedidoService({pedidos,clientes:clientesFalsos,localidades});
+ await assert.rejects(servicio.crear({cliente_id:1,direccion:{...DIRECCION_VALIDA,provincia:'Narnia'}},7),e=>e.statusCode===400);assert.deepEqual(localidades.llamadas,[]);assert.equal(pedidos.capturado.crear,null);
 });
 
 test("sin servicio de localidades no se consulta ni se agregan advertencias", async () => {

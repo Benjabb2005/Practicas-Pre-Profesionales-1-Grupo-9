@@ -4,7 +4,7 @@
 Las observaciones de roles y pantallas siguientes provienen del ZIP, de una sesión previa; no son pruebas repetidas por este agente. En esta preparación se abrió la URL en navegador y se verificó únicamente el login público: marca, mensaje, usuario/email, contraseña y botón de ingreso. No se proporcionó una sesión autenticada ni se usaron las cuentas locales contra la demo. El acceso textual web falló; el navegador sí cargó el login. No se probaron pedidos, guardado, mapas, pagos ni viewport móvil remoto.
 
 URL: https://demo-tp.vercel.app/
-Esta es la referencia visual final indicada por el usuario. Observación mediante navegador, sin examinar su implementación. No confundir presencia de botones con funcionamiento validado. No se crearon ni modificaron pedidos durante esta revisión.
+Esta es la referencia visual final indicada por Benjamín. Observación mediante navegador, sin examinar su implementación. No confundir presencia de botones con funcionamiento validado. No se crearon ni modificaron pedidos durante esta revisión.
 
 ## Login
 Marca MandáTodo / Sistema Logístico. Mensaje “Gestión simple. Entregas seguras.”. Usuario o email, contraseña, Iniciar sesión. El ZIP informa acceso previo a tres roles mediante el mecanismo seguro del navegador; esta integración solo volvió a observar el login público. No almacenar credenciales ni replicar cuentas hardcodeadas en la aplicación real.
@@ -65,9 +65,9 @@ Pantalla diferente del panel administrativo. Marca MandáTodo, saludo y nombre A
 Reinspeccionado al integrar el ZIP actualizado; no se modificó código de interfaz.
 frontend/src/App.jsx reproduce login, tablero vacío y formulario. La navegación usa estado React. Admin y operador entran a la misma identidad visible de operador; chofer se rechaza. No existe la vista vacía de chofer del relevamiento remoto. Rutas y Clientes están deshabilitados. Los filtros y búsqueda son visuales, el mapa es un placeholder, la alerta es estática y confirmar está siempre deshabilitado. No se observó selector de estado inicial en el formulario local. No hay guardado ni llamadas al backend. Los asteriscos de Field no aplican required al input. Esta inspección de código no equivale a una prueba visual en navegador.
 
-## Revisión pendiente por decisión del usuario
+## Revisión pendiente por decisión de Benjamín
 
-El 30/09/2026 el usuario indicó dejar pendiente el acceso de prueba. No había sesión autenticada disponible y no se recibió repositorio del prototipo. No se probaron pedidos poblados, validación exitosa, entregas ni pagos. Para retomar T08, habilitar sesión de prueba desde el navegador o aportar código autorizado, capturas/exportación sin credenciales ni datos personales. Nunca pedir contraseñas por chat. Registrar por flujo: rol, datos sintéticos, estado inicial, acción, resultado visible y evidencia; distinguir interfaz de persistencia y autorización real.
+El 30/09/2026 Benjamín indicó dejar pendiente el acceso de prueba. No había sesión autenticada disponible y no se recibió repositorio del prototipo. No se probaron pedidos poblados, validación exitosa, entregas ni pagos. Para retomar T08, habilitar sesión de prueba desde el navegador o aportar código autorizado, capturas/exportación sin credenciales ni datos personales. Nunca pedir contraseñas por chat. Registrar por flujo: rol, datos sintéticos, estado inicial, acción, resultado visible y evidencia; distinguir interfaz de persistencia y autorización real.
 
 ## Cambios locales implementados · 13/10/2026
 
@@ -117,3 +117,13 @@ El tablero dejó de ser una maqueta de contadores en cero y pasó a listar pedid
 - En la carga de pedidos el importe es opcional. Si se deja vacío, el alta no envía ese campo. La ayuda indica que el sistema sugiere un importe al confirmar la ubicación.
 - **Completar importe** permite guardar el valor pendiente mientras el pedido no esté pagado, incluso si es un pedido antiguo sin dirección confirmada. La sugerencia se consulta solo si la dirección está confirmada, en carga, revisión y el detalle de Asignaciones; si no lo está, se explica que la sugerencia aparece al confirmar la ubicación. Si la consulta no está disponible, se muestra el motivo y se mantiene la carga manual. Un importe sugerido igual a cero no se precarga.
 - Las pruebas de interfaz/API usan datos y respuestas simuladas; no llaman a Georef ni prueban el mapa contra una sesión autenticada. No se verificó visualmente en navegador ni en móvil en esta tarea.
+
+## Nueva experiencia aprobada · 30/10/2026
+La propuesta de Figma en página «03 · Nueva experiencia · Propuesta» pasa a orientar la renovación visual autorizada. Primera implementación en feature/nueva-experiencia-web: navegación superior, tablero con métricas reales/panel de acciones, carga con pasos y carga animada, lenguaje visual compartido y chofer renovado. Se conservan campos, rutas, guardas y operaciones de MVP-1, incluida sucursal/importe sugerido. El prototipo no reemplaza el flujo real de borrador, geocodificación y confirmación. Especificación frontend/specs/nueva-experiencia.md; evidencia y límites en entrega-nueva-experiencia.md. No se implementan exportación PDF ni mapa previo al guardado en esta entrega visual.
+
+### Detalle y actividad de la nueva experiencia (30/10)
+Ruta /pedidos/:id agrega detalle de lectura con estado, resumen, mapa y pestañas de historiales/pagos/comprobantes; /pedidos/:id/revision conserva edición y confirmación humana. Tablero incorpora actividad acotada a últimos8 pedidos por fecha disponible, hasta6 movimientos reales. Chofer conserva acciones y agrega resumen/detalle propio. Guardado separa carga animada de confirmación con código real y ubicación aún pendiente; movimiento reducido con opción explícita de reproducir. Ver spec nueva-experiencia y entrega-nueva-experiencia para alcance/límites.
+
+Revisión posterior desde Figma en Brave: actividad queda en lateral bajo Próximas acciones con3 eventos y confirmaciones geográficas reales; jornada de chofer adopta resumen marino3 columnas, mapa en primera tarjeta y barra inferior funcional. Más información en Asignaciones abre /pedidos/:id; resumen e historial con horas mantienen los datos ampliados desplegables. Carga guardar/despachar inicia recorrido automáticamente y sostiene éxito al menos3600ms, con pausa explícita; confirmación sigue condicionada a respuesta real. Ver registro de cierre y límites en tareas.md.
+
+Alta revisada30/10: ubicaciones no verificables se rechazan en servidor antes de crear el pedido; errores muestran campos públicos y conservan formulario/cliente. Confirmación humana sigue separada. Avisos geográficos y confirmación de guardado con contraste revisado en claro/oscuro; evidencia en tareas.md.

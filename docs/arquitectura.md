@@ -1,5 +1,9 @@
 # Arquitectura verificada · 30/09/2026
 
+## Cómo leer este documento · 28/10/2026
+
+Los apartados iniciales describen cortes históricos y no el estado completo de la aplicación actual. Para el módulo de Benjamín, el comportamiento vigente incluye asignación, preparación, despacho, vista propia del chofer, entrega/fallo, importes, pagos y comprobantes. Sus reglas están consolidadas en [decisiones](decisiones.md) y sus pruebas y límites en [B06](entrega-b06.md). B01–B07 están finalizados en Jira; no afirmamos merge a MVP-1 ni aprobación global de Q01–Q04.
+
 Reinspección para integrar `PPP1-contexto-para-Codex (1).zip`: base c574c75, rama main con seguimiento origin/main. Git **ya tenía cambios locales** al comenzar; se preservaron. Existían AGENTS.md raíz, frontend/AGENTS.md, adaptadores CLAUDE.md, seis skills, docs y scripts de verificación. No se encontró agent.md singular. La afirmación anterior de Git limpio correspondía a la preparación previa, no a esta integración.
 
 Se releyeron manifests/lockfiles, Compose, ambos Dockerfiles, SQL, backend y frontend. Esta integración modifica instrucciones y documentación; app.js, tests HTTP y scripts ya existían al inicio y no se atribuyen a esta tarea.
@@ -94,3 +98,6 @@ Límites vigentes: `database/init.sql` no se tocó ni se reaplicó; geolocalizac
 Se montan /api/asignaciones (ADMINISTRADOR/OPERADOR) y /api/chofer/pedidos (CHOFER) con listado y detalle propios. Asignar guarda chofer_id sin cambiar estado, exige dirección CONFIRMADA y chofer activo y registra historial en la misma transacción bajo FOR UPDATE. /asignaciones ofrece controles de asignación y /chofer consulta datos reales, sin acciones simuladas de entrega/pago. Contrato en frontend/specs/asignacion-chofer.md; todavía no hay API de despacho, entrega ni pago. B01 fue autorizada y completada el 25/10/2026: listado/guardado informan puede_asignar, motivo_bloqueo y puede_quitar; pantalla y API verificadas con MySQL aislado. La vista del chofer sigue siendo borrador y no acredita B03 terminada. Los merges remotos se trajeron hasta f87f6e1 el 25/10/2026.
 
 B02 (25/10/2026): PUT /api/asignaciones/:id/estado integra preparación/despacho con validarTransicion existente, chofer activo y confirmación. Relectura/bloqueo de pedido/dirección/chofer, cambio de estado e historial se realizan en una transacción de AsignacionRepository. La ruta no expone entrega ni pago. Reasignación/desasignación siguen restringidas al tramo previo al despacho.
+
+### Alta verificable (regla posterior vigente · 30/10)
+POST /api/pedidos comprueba formato/localidad y respuesta geográfica antes de crear pedido/dirección.400 por datos inválidos o ZERO_RESULTS,503 por proveedor no verificable/sin punto válido, sin persistir pedido. Resultado aproximado permite continuar sólo con revisión humana posterior; no confirma automáticamente ni garantiza existencia física. Container inyecta adaptador existente. Reemplaza para nuevas altas la admisión anterior de borradores inválidos por pedido explícito del usuario; no modifica registros heredados, edición ni esquema. Ver decisiones y tareas para evidencia/límites.

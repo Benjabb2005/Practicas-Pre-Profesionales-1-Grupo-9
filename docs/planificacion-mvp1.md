@@ -1,5 +1,9 @@
 # Planificación visual del MVP 1 — Grupo 9
 
+## Estado de lectura · 28/10/2026
+
+Conservamos los registros fechados como evidencia histórica. Los estados de tablero, autorizaciones y comportamientos de cortes anteriores pueden estar superados: B01–B07 están finalizados en Jira, mientras X04/KAN-44 sigue pendiente. Para las reglas actuales del módulo usamos [decisiones](decisiones.md) y para la verificación integral y sus límites usamos [B06](entrega-b06.md). Una prueba automatizada no acredita una prueba cruzada realizada por un integrante.
+
 Actualizado el 25/10/2026 sobre MVP-1 f87f6e1. 22 tareas cerradas por verificación técnica autorizada; 22 pendientes, ninguna en progreso.
 
 - [Tablero Kanban](https://github.com/users/Benjabb2005/projects/1/views/1)
@@ -9,13 +13,13 @@ Se eligió GitHub Projects: ya usa el repositorio y permite estados, responsable
 
 ## Criterios
 
-Pendiente: cierre no acreditado o trabajo no iniciado. En progreso: solo cuando el responsable confirme actividad. Hecho: implementación completa con evidencia técnica y autorización de revisión del usuario; no atribuye actividad actual de compañeros.
+Pendiente: cierre no acreditado o trabajo no iniciado. En progreso: solo cuando el responsable confirme actividad. Hecho: implementación completa con evidencia técnica y autorización de revisión de Benjamín; no atribuye actividad actual de compañeros.
 
-Los borradores locales que el asistente adelantó de asignación/chofer el 24/10 no fueron aprobados por el usuario. B01–B06 permanecen Pendiente y no se atribuyen como avance de Benjamín. No se modificó código de producto ni se retiraron esos borradores durante esta planificación.
+Los borradores locales generados con IA de asignación/chofer el 24/10 no fueron aprobados por Benjamín. B01–B06 permanecen Pendiente y no se atribuyen como avance de Benjamín. No se modificó código de producto ni se retiraron esos borradores durante esta planificación.
 
 Las dependencias indican requisitos para integrar/cerrar el entregable; no impiden diseñar contratos ni hacer pruebas aisladas en paralelo. Hay 33 tareas de módulo, 4 decisiones y 7 tareas de pruebas/integración. Las tareas transversales conservan un coordinador y participantes: cantidad de tarjetas no equivale a esfuerzo.
 
-Fuente: reparto de .agents/skills/ppp1-mvp1/SKILL.md y documentación. Pull hasta f87f6e1 (PR #6 de Julián y #7 de Sabrina). Las 33 tareas de módulo vienen del reparto; Q01–Q04 y X01–X07 son un desglose propuesto por el asistente pendiente de validación del equipo, no once asignaciones nuevas aprobadas. Georef reemplaza Nominatim según D06. Falta probar proveedor real, MySQL y flujo visual.
+Fuente: reparto de .agents/skills/ppp1-mvp1/SKILL.md y documentación. Pull hasta f87f6e1 (PR #6 de Julián y #7 de Sabrina). Las 33 tareas de módulo vienen del reparto; Q01–Q04 y X01–X07 son un desglose propuesto con asistencia de IA pendiente de validación del equipo, no once asignaciones nuevas aprobadas. Georef reemplaza Nominatim según D06. Falta probar proveedor real, MySQL y flujo visual.
 
 ## Santiago
 
@@ -260,9 +264,7 @@ Consultada el 25/10/2026 en fuentes oficiales:
 
 Fuentes: [GitHub Projects](https://github.com/features/issues), [dependencias en GitHub Free](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies), [Zoho](https://www.zoho.com/projects/zohoprojects-pricing.html), [comparador Zoho](https://www.zoho.com/projects/pricing-comparison.html), [ClickUp](https://help.clickup.com/hc/en-us/articles/32274881672599-Views-feature-availability-and-limits), [Trello](https://trello.com/pricing), [Asana](https://asana.com/pricing).
 
-
 [Mapa visual completo publicado en GitHub](https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/52). Documento de consulta separado de las 44 tareas.
-
 
 ## Rectificación tras el pull
 

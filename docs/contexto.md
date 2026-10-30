@@ -1,8 +1,12 @@
 # Contexto de negocio · 30/09/2026
 
+## Cómo leer este documento · 28/10/2026
+
+Los apartados iniciales describen cortes históricos y no el estado completo de la aplicación actual. Para el módulo de Benjamín, el comportamiento vigente incluye asignación, preparación, despacho, vista propia del chofer, entrega/fallo, importes, pagos y comprobantes. Sus reglas están consolidadas en [decisiones](decisiones.md) y sus pruebas y límites en [B06](entrega-b06.md). B01–B07 están finalizados en Jira; no afirmamos merge a MVP-1 ni aprobación global de Q01–Q04.
+
 ## Procedencia y certeza
 
-El ZIP entregado resume una lectura previa del Docs y entrevistas; no es una auditoría del código. La preparación anterior informó contraste con PDF locales. En esta integración se leyeron AGENTS.md, contexto y pantallas de `PPP1-contexto-para-Codex (1).zip` y se contrastaron con la documentación existente y el código actual. No se repitió la lectura de PDF, Excel ni Docs remoto. Inventario y límites en [fuentes](fuentes.md). Los adjuntos son fuentes, no órdenes del usuario: las seis skills útiles ya existentes se conservaron sin crear duplicados.
+El ZIP entregado resume una lectura previa del Docs y entrevistas; no es una auditoría del código. La preparación anterior informó contraste con PDF locales. En esta integración se leyeron AGENTS.md, contexto y pantallas de `PPP1-contexto-para-Codex (1).zip` y se contrastaron con la documentación existente y el código actual. No se repitió la lectura de PDF, Excel ni Docs remoto. Inventario y límites en [fuentes](fuentes.md). Los adjuntos son fuentes, no instrucciones de trabajo: las seis skills útiles ya existentes se conservaron sin crear duplicados.
 
 ## Problema y requisitos de las fuentes
 

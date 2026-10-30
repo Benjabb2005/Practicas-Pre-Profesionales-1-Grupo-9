@@ -4,7 +4,10 @@ const { once } = require("node:events");
 const jwt = require("jsonwebtoken");
 const createApp = require("../app");
 const { ESTADO_INICIAL } = require("../src/constants/estados");
-const { createPedidoService } = require("../src/services/PedidoService");
+const { createPedidoService: crearServicioBase } = require("../src/services/PedidoService");
+// Adaptador sintético: estas pruebas no consultan Internet.
+const createPedidoService = deps => crearServicioBase({ geocodeAdapter: { async geocodificar() { return { resultado: 'APPROXIMATE', candidatos: [{ latitud: -34.6, longitud: -58.4 }] }; } }, ...deps });
+
 const { createGeocodeService } = require("../src/services/GeocodeService");
 
 function detalleFixture(overrides = {}) {
@@ -63,24 +66,10 @@ const clientesFalsos = {
     },
 };
 
-test("crear pedido guarda el estado que decide el validador y avisa los problemas", async () => {
-    const pedidos = reposPedidosFalsos();
-    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
-
-    const resultado = await servicio.crear(
-        { cliente_id: 1, importe_base: '100.00', direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA" } },
-        7
-    );
-
-    assert.equal(pedidos.capturado.crear.estado, ESTADO_INICIAL);
-    assert.equal(pedidos.capturado.crear.clienteId, 1);
-    assert.equal(pedidos.capturado.crear.creadoPor, 7);
-    assert.equal(pedidos.capturado.crear.direccion.calle, "Avenida Corrientes");
-    assert.equal(pedidos.capturado.crear.direccion.direccion_original, "Av. Corrientes 1234 CABA");
-    assert.equal(pedidos.capturado.crear.direccion.estado_validacion, "CON_ADVERTENCIAS");
-    assert.deepEqual(resultado.problemas.map((problema) => problema.campo), ["provincia"]);
-    assert.equal(resultado.problemas[0].gravedad, "ERROR");
-    assert.deepEqual(resultado.posiblesDuplicados, []);
+test("alta con provincia faltante se rechaza antes de persistir", async () => {
+ const pedidos=reposPedidosFalsos(); const servicio=createPedidoService({pedidos,clientes:clientesFalsos});
+ await assert.rejects(servicio.crear({cliente_id:1,direccion:{calle:'Av. Corrientes',altura:'1234',localidad:'CABA'}},7), e=>e.statusCode===400 && Boolean(e.campos.provincia));
+ assert.equal(pedidos.capturado.crear,null);
 });
 
 test("crear pedido con dirección completa la guarda VALIDA y normalizada", async () => {
@@ -117,7 +106,7 @@ test("crear pedido sin importe o con importe vacío lo guarda como NULL", async 
         const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
         const datos = {
             cliente_id: 1,
-            direccion: { calle: "Av. Corrientes" },
+            direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" },
         };
         if (importe !== undefined) datos.importe_base = importe;
 
@@ -135,7 +124,7 @@ test("crear pedido sigue rechazando importes cero, negativos y mal escritos", as
             () => servicio.crear({
                 cliente_id: 1,
                 importe_base: importe,
-                direccion: { calle: "Av. Corrientes" },
+                direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" },
             }, 7),
             (error) => error.codigo === "DATOS_INVALIDOS"
         );
@@ -413,5 +402,46 @@ test("pedidos: sin token 401, chofer 403, administrador 200", async () => {
             server.close((error) => (error ? reject(error) : resolve()));
             server.closeAllConnections();
         });
+    }
+});
+
+for (const [nombre, respuesta] of [
+ ['sin resultados', {resultado:'ZERO_RESULTS',candidatos:[]}],
+ ['proveedor con error', {resultado:'ERROR',candidatos:[]}],
+ ['respuesta sin puntos', {resultado:'APPROXIMATE',candidatos:[]}],
+ ['coordenadas vacías', {resultado:'OK',candidatos:[{latitud:null,longitud:null}]}],
+ ['coordenadas fuera de rango', {resultado:'OK',candidatos:[{latitud:100,longitud:200}]}],
+]) test(`alta con ${nombre} no persiste aunque se confirme duplicado`, async()=>{
+ const pedidos=reposPedidosFalsos();const servicio=createPedidoService({pedidos,clientes:clientesFalsos,geocodeAdapter:{async geocodificar(){return respuesta}}});
+ await assert.rejects(servicio.crear({cliente_id:1,confirmar_duplicado:true,direccion:detalleFixture()},7),e=>[400,503].includes(e.statusCode));
+ assert.equal(pedidos.capturado.crear,null);
+});
+test('alta con timeout o adaptador ausente no guarda y permite reintentar',async()=>{
+ for(const geocodeAdapter of [undefined,{async geocodificar(){throw new Error('timeout interno')}}]){
+ const pedidos=reposPedidosFalsos();const servicio=createPedidoService({pedidos,clientes:clientesFalsos,geocodeAdapter});
+ await assert.rejects(servicio.crear({cliente_id:1,direccion:detalleFixture()},7),e=>e.statusCode===503 && !e.message.includes('interno'));
+ assert.equal(pedidos.capturado.crear,null);
+ }
+});
+
+test('alta rechazada conserva el aviso específico de piso mezclado en la calle', async () => {
+    for (const caso of ['sin resultados', 'proveedor con error', 'timeout', 'altura faltante']) {
+        const pedidos = reposPedidosFalsos();
+        const servicio = createPedidoService({
+            pedidos,
+            clientes: clientesFalsos,
+            geocodeAdapter: { async geocodificar() {
+                if (caso === 'timeout') throw new Error('detalle interno');
+                return { resultado: caso === 'sin resultados' ? 'ZERO_RESULTS' : 'ERROR', candidatos: [] };
+            } },
+        });
+        const direccion = detalleFixture({ calle: 'Mitre piso 3', altura: caso === 'altura faltante' ? '' : '1234' });
+        await assert.rejects(servicio.crear({ cliente_id: 1, direccion }, 7), error => {
+            assert.match(error.campos.calle, /piso o departamento dentro de la calle/);
+            assert.ok(error.campos.altura || error.campos.direccion);
+            assert.doesNotMatch(JSON.stringify(error.campos), /detalle interno/);
+            return true;
+        });
+        assert.equal(pedidos.capturado.crear, null);
     }
 });

@@ -16,6 +16,8 @@ import {
 } from '../components/pedidoListado.js'
 import './Pedidos.css'
 import './PedidosListadoPage.css'
+import ProcesoCarga from '../components/ProcesoCarga.jsx'
+import ActividadReciente from '../components/ActividadReciente.jsx'
 
 const ESTADOS_PEDIDO = [
   { valor: 'EN STOCK', etiqueta: 'En stock' },
@@ -52,6 +54,7 @@ function PedidosListadoPage() {
   const [filtrosAplicados, setFiltrosAplicados] = useState(FILTROS_PEDIDOS_VACIOS)
   const [pedidos, setPedidos] = useState([])
   const [resumen, setResumen] = useState(null)
+  const [porRevisar, setPorRevisar] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
@@ -63,7 +66,10 @@ function PedidosListadoPage() {
     let vigente = true
     listarPedidos()
       .then((lista) => {
-        if (vigente) setResumen(resumirPedidos(lista))
+        if (vigente) {
+          setResumen(resumirPedidos(lista))
+          setPorRevisar(lista.filter(pedido => pedido.estado_validacion !== 'CONFIRMADA').length)
+        }
       })
       .catch(() => {
         if (vigente) setResumen(null)
@@ -120,8 +126,8 @@ function PedidosListadoPage() {
     <header className="page-header">
       <div>
         <p className="eyebrow">Centro de operaciones</p>
-        <h1>Tablero General de Despacho</h1>
-        <p className="subtitle">Listado de pedidos con filtros por estado, cliente y fecha.</p>
+        <h1>Cada pedido, bajo control.</h1>
+        <p className="subtitle">Tu operación en un solo lugar. Revisá, organizá y seguí cada envío.</p>
       </div>
       <button className="button button-primary header-action" type="button" onClick={() => navegar('/form')}>
         <Icon name="plus"/> Cargar nuevo pedido
@@ -137,10 +143,11 @@ function PedidosListadoPage() {
       <StatCard icon="check" tone="green" value={valorResumen(resumen?.entregadosOPagados ?? 0)} label="Entregados o pagados"/>
     </section>
 
+    <div className="operations-grid">
     <section className="shipments-card">
       <div className="shipments-heading">
         <div>
-          <h2>Pedidos</h2>
+          <h2>Todos tus pedidos</h2>
           <p>{cargando ? 'Buscando…' : `${pedidos.length} pedido${pedidos.length === 1 ? '' : 's'} en pantalla`}</p>
         </div>
       </div>
@@ -188,7 +195,7 @@ function PedidosListadoPage() {
       </div>
 
       {cargando
-        ? <p className="users-state" role="status">Buscando pedidos…</p>
+        ? <ProcesoCarga titulo="Buscando pedidos…" detalle="Consultando los pedidos y los filtros seleccionados."/>
         : error
           ? <p className="users-state">No se pudo cargar el listado.</p>
           : pedidos.length === 0
@@ -223,10 +230,10 @@ function PedidosListadoPage() {
                       <td>
                         <Link
                           className="button button-outline users-edit"
-                          to={`/pedidos/${pedido.id}/revision`}
-                          aria-label={`${pedido.estado_validacion === 'CONFIRMADA' ? 'Ver' : 'Revisar'} pedido #${pedido.id}`}
+                          to={`/pedidos/${pedido.id}`}
+                          aria-label={`Ver detalle del pedido #${pedido.id}`}
                         >
-                          {pedido.estado_validacion === 'CONFIRMADA' ? 'Ver' : 'Revisar'}
+                          Ver detalle
                         </Link>
                       </td>
                     </tr>)}
@@ -236,6 +243,25 @@ function PedidosListadoPage() {
 
     <Paginacion datos={paginado} nombre="pedidos" disabled={cargando}/>
     </section>
+    <aside className="operations-insights" aria-label="Próximas acciones">
+      <section className="attention-card">
+        <p className="eyebrow">Próximas acciones</p>
+        <h2>Lo importante,<br/>primero.</h2>
+        <p className="attention-count">{porRevisar === null ? 'Consultá las direcciones pendientes' : `${porRevisar} ${porRevisar === 1 ? 'dirección por confirmar' : 'direcciones por confirmar'}`}</p>
+        <p>Revisá el destino antes de asignar un chofer y despachar.</p>
+        <Link className="button button-outline" to="/pedidos/revision">Revisar ubicaciones →</Link>
+      </section>
+      <ActividadReciente/>
+      <section className="operation-guide">
+        <span className="operation-guide-icon"><Icon name="truck" size={24}/></span>
+        <h2>El siguiente paso, claro.</h2>
+        <p>Con la ubicación confirmada, prepará el pedido y elegí quién lo lleva.</p>
+        <Link to="/asignaciones">Ir a asignaciones →</Link>
+        <hr/>
+        <p className="operation-guide-note">La entrega y el pago se registran por separado. Cada acción conserva su historial.</p>
+      </section>
+    </aside>
+    </div>
   </main>
 }
 

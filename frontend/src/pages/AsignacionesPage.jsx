@@ -1,6 +1,7 @@
 import Paginacion from '../components/Paginacion.jsx'
 import usePagination from '../components/usePagination.js'
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import MapPreview from '../components/MapPreview.jsx'
 import { obtenerPedido } from '../api/pedidos'
 import { listarAsignaciones, listarChoferes, asignarChofer, cambiarEstadoPedido } from '../api/asignaciones'
@@ -14,6 +15,8 @@ import PagoPedido from '../components/PagoPedido.jsx'
 import ComprobantesPedido from '../components/ComprobantesPedido.jsx'
 import {useAuth} from '../auth/useAuth.js'
 import EstadoComprobante from '../components/EstadoComprobante.jsx'
+import ProcesoCarga from '../components/ProcesoCarga.jsx'
+import { conCargaMinima } from '../components/cargaMinima.js'
 
 function ContenidoDetalle({ pedidoId, tipo, onActualizado }) {
   const [pedido, setPedido] = useState(null)
@@ -78,6 +81,7 @@ function ConfirmarDespacho({ pedido, ocupado, error, onCancelar, onConfirmar }) 
   return <dialog ref={ref} className="asignacion-detalle-modal" aria-labelledby="despacho-titulo" onCancel={e => { e.preventDefault(); if (!ocupado) onCancelar() }}>
     <div className="asignacion-detalle-contenido">
       <h2 id="despacho-titulo">¿Despachar el pedido #{pedido.id}?</h2>
+      {ocupado && <ProcesoCarga titulo="Tu pedido está saliendo…" detalle="Registrando el despacho y avisando al chofer. Esperá la confirmación del servidor."/>}
       <p>Chofer: <strong>{pedido.chofer_nombre}</strong></p>
       <p>{[pedido.calle, pedido.altura, pedido.localidad].filter(Boolean).join(' ')}</p>
       <p>Pasará a EN ENVÍO y aparecerá en los pedidos del chofer. Después del despacho no se podrá cambiar ni quitar el chofer.</p>
@@ -122,7 +126,7 @@ function FilaAsignacion({ pedido, choferes, onGuardar, onVerDireccion, onEstado,
       {pedido.estado === 'EN PREPARACIÓN' && <button className="button button-primary" disabled={ocupado || cambio || !pedido.puede_despachar} onClick={() => onDespachar(pedido)}>Despachar</button>}
       {cambio && <small>Guardá la selección de chofer antes de continuar.</small>}
       <button type="button" className="asignacion-revisar" disabled={ocupado} aria-label={`Ver mapa del pedido #${pedido.id}`} onClick={() => onVerDireccion({ id: pedido.id, tipo: 'mapa' })}>Ver mapa</button>
-      <button type="button" className="asignacion-revisar" disabled={ocupado} aria-label={`Más información del pedido #${pedido.id}`} onClick={() => onVerDireccion({ id: pedido.id, tipo: 'informacion' })}>Más información</button>
+      {ocupado ? <span className="asignacion-revisar" aria-disabled="true">Más información</span> : <Link className="asignacion-revisar" aria-label={`Más información del pedido #${pedido.id}`} to={`/pedidos/${pedido.id}`}>Más información →</Link>}
     </div>
   </article>
 }
@@ -155,7 +159,8 @@ export default function AsignacionesPage() {
   async function cambiarEstado(id, estado) {
     setOcupado(true); setError(''); setAviso('')
     try {
-      const pedido = await cambiarEstadoPedido(id, estado)
+      const solicitud = cambiarEstadoPedido(id, estado)
+      const pedido = await (estado === 'EN ENVÍO' ? conCargaMinima(solicitud) : solicitud)
       setDatos(actual => ({ ...actual, pedidos: actual.pedidos.map(p => p.id === id ? pedido : p) }))
       setAviso(`Pedido #${id}: ${pedido.estado}.`)
       setDespacho(null)

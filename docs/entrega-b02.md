@@ -1,5 +1,13 @@
 # Entrega B02 — Preparación y despacho
 
+## Lectura vigente · 28/10/2026
+
+Esta entrega forma parte del módulo de Benjamín publicado en `feature/benjamin-asignacion-entregas`. B01–B07 están finalizados en Jira; esto no acredita merge a `MVP-1`, ensayo físico de celular ni la prueba cruzada X04. Los apartados fechados de abajo conservan la evolución y las verificaciones de cada corte: sus estados de tablero, “sin commit/push” y restricciones luego reemplazadas son históricos. Para el comportamiento actual usamos [decisiones](decisiones.md) y [verificación B06](entrega-b06.md).
+
+Permitimos preparar un pedido EN STOCK aunque su dirección no esté confirmada. “Bloqueado” informa que no se puede asignar un chofer ni despachar; no impide la preparación interna. Preparar sólo cambia a EN PREPARACIÓN y registra historial. Despachar exige dirección CONFIRMADA, EN PREPARACIÓN y chofer activo. Benjamín ratificó este criterio el 28/10/2026. Reasignar o quitar chofer sigue limitado al tramo previo al despacho.
+
+## Registro histórico de la entrega
+
 Branch: `feature/benjamin-asignacion-entregas`. Fecha: 25/10/2026. Base: B01 ya publicada; no se hace merge a MVP-1.
 
 ## Cambios para quien usa la aplicación
@@ -33,7 +41,7 @@ Bloqueado se muestra rojo, En envío azul y habilitados/estados finales verde, e
 - Frontend: 47/47, lint y build pasan; warning preexistente de chunk mayor a 500 kB.
 - Sintaxis backend, diff y configuración Compose pasan. Puerto 3307 accesible y servicios levantados con MySQL healthy.
 - Navegador: pantalla/controles y correcciones visuales comprobados; no se alteraron pedidos existentes. Despacho completo por clic con un pedido sintético en UI todavía no verificado.
-- Fixtures propios limpiados en base aislada; sin modificaciones de datos del usuario, secretos, archivos temporales ni volúmenes.
+- Fixtures propios limpiados en base aislada; sin modificaciones de datos de desarrollo, secretos, archivos temporales ni volúmenes.
 - `npm run check` raíz mantiene el bloqueo previo por copia Claude de ppp1-mvp1 desactualizada; las verificaciones técnicas anteriores se ejecutaron por separado.
 
 ## Siguiente tarea: B03, pendiente de plan

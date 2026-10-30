@@ -18,6 +18,10 @@ import { confirmarDireccion, crearPedido, geocodificarPedido, pedidosDuplicadosD
 import ImportePedido from '../components/ImportePedido.jsx'
 import CompletarImporte from '../components/CompletarImporte.jsx'
 import './Pedidos.css'
+import ProcesoCarga from '../components/ProcesoCarga.jsx'
+import { conCargaMinima } from '../components/cargaMinima.js'
+import { cambiarEstadoPedido } from '../api/asignaciones'
+import PedidoGuardado from '../components/PedidoGuardado.jsx'
 
 const RESULTADOS = {
   OK: 'El proveedor encontró una coincidencia precisa.',
@@ -77,9 +81,22 @@ function PedidosCargaPage() {
   const [guardando, setGuardando] = useState(false)
   const [geocodificando, setGeocodificando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
+  const [preparando, setPreparando] = useState(false)
+  const [guardadoVisible, setGuardadoVisible] = useState(null)
   const [versionFormulario, setVersionFormulario] = useState(0)
 
-  const ocupado = guardando || geocodificando || confirmando
+  const ocupado = guardando || geocodificando || confirmando || preparando
+  const puedePreparar = !ocupado && pedido?.estado === 'EN STOCK' && pedido.estado_validacion === 'CONFIRMADA'
+  async function preparar() {
+    if (ocupado || pedido?.estado !== 'EN STOCK' || pedido.estado_validacion !== 'CONFIRMADA') return
+    setPreparando(true); setError(''); setAviso('')
+    try {
+      const actualizado = await cambiarEstadoPedido(pedido.id, 'EN PREPARACIÓN')
+      setPedido(actual => ({ ...actual, ...actualizado }))
+      setAviso('Pedido en preparación. Asigná un chofer en Asignación y despacho para continuar.')
+    } catch (e) { setError(mensajeError(e)) }
+    finally { setPreparando(false) }
+  }
   const puedeGeocodificar = Boolean(pedido) && pedido.estado_validacion === 'VALIDA'
   const puedeConfirmar = puedeGeocodificar && tieneCoordenadas(pedido)
   const motivoGeo = motivoGeocodificar(pedido, ocupado)
@@ -136,8 +153,9 @@ function PedidosCargaPage() {
       const cuerpo = { cliente_id: clienteId, canal_origen: canalOrigen, observaciones: observaciones || null, direccion }
       if (importeBase.trim()) cuerpo.importe_base = importeBase.trim().replace(',', '.')
       if (confirmarDuplicado) cuerpo.confirmar_duplicado = true
-      const data = await crearPedido(cuerpo)
+      const data = await conCargaMinima(crearPedido(cuerpo))
       setPedido(data.pedido)
+      setGuardadoVisible(data.pedido)
       setProblemas(data.problemas || [])
       setResultado(null)
       setDuplicados([])
@@ -163,7 +181,8 @@ function PedidosCargaPage() {
         setError('')
         return
       }
-      setError(mensajeError(fallo))
+      const campos = fallo.response?.data?.error?.campos
+      setError(campos ? Object.values(campos).flat().join(' ') : mensajeError(fallo))
     } finally {
       setGuardando(false)
     }
@@ -244,14 +263,24 @@ function PedidosCargaPage() {
   const candidatosPaginados = usePagination(resultado?.candidatos ?? [], pedido?.id, 5)
   return <main className="main-content form-page">
     <header className="page-header">
-      <div><p className="eyebrow">Nuevo envío</p><h1>Carga Manual de Pedido</h1><p className="subtitle">Buscá al cliente frecuente por DNI, nombre o teléfono, o cargá sus datos como cliente nuevo. Después completá la dirección y confirmá la ubicación antes de despachar.</p></div>
+      <div><p className="eyebrow">Pedidos / Nuevo pedido</p><h1>Un envío empieza con una buena dirección.</h1><p className="subtitle">Elegí al cliente, completá los datos y revisá el destino antes de despachar.</p></div>
       <button className="button button-outline header-action" onClick={() => navegar('/pedidos/revision')}>Bandeja de revisión</button>
     </header>
+
+    <ol className="order-journey" aria-label="Progreso del pedido">
+      <li className={!pedido ? 'current' : 'complete'} aria-current={!pedido ? 'step' : undefined}><span>{pedido ? '✓' : '1'}</span>Cliente y pedido</li>
+      <li className={pedido?.estado_validacion === 'CONFIRMADA' ? 'complete' : pedido ? 'current' : ''} aria-current={pedido && pedido.estado_validacion !== 'CONFIRMADA' ? 'step' : undefined}><span>{pedido?.estado_validacion === 'CONFIRMADA' ? '✓' : '2'}</span>Revisar ubicación</li>
+      <li className={pedido?.estado === 'EN PREPARACIÓN' ? 'complete' : ''}><button type="button" className="journey-action" onClick={preparar} disabled={!puedePreparar}><span>{pedido?.estado === 'EN PREPARACIÓN' ? '✓' : '3'}</span>{preparando ? 'Preparando…' : pedido?.estado === 'EN PREPARACIÓN' ? 'En preparación' : puedePreparar ? 'Preparar pedido →' : 'Listo para preparar'}</button></li>
+      {pedido?.estado === 'EN PREPARACIÓN' && <li className="journey-next"><Link className="button button-primary" to="/asignaciones"><Icon name="truck" size={18}/>Asignar chofer →</Link></li>}
+    </ol>
+    {guardando && <ProcesoCarga pantalla titulo="Un momento. Ya estamos en camino." detalle="Estamos guardando los datos del pedido."/>}
+    {!guardando && guardadoVisible && <PedidoGuardado pedido={guardadoVisible} onContinuar={() => setGuardadoVisible(null)}/>}
+    {!guardando && (geocodificando || confirmando) && <ProcesoCarga titulo={confirmando ? 'Confirmando la ubicación…' : 'Buscando el destino…'} detalle={confirmando ? 'Registrando tu confirmación en el historial.' : 'Consultando el mapa. La revisión final sigue en tus manos.'}/>}
 
     {error && <p className="users-alert" role="alert">{error}</p>}
     {aviso && <p className="users-ok" role="status">{aviso}</p>}
 
-    <div className="order-layout">
+    <div className="order-layout" aria-busy={ocupado}>
       <section className="panel order-panel">
         <div className="section-heading"><span className="step-number">1</span><div><h2>Cliente y dirección de entrega</h2><p>Los campos marcados con * son obligatorios.</p></div></div>
         <ClienteSelector key={versionFormulario} cliente={cliente} onSeleccionar={seleccionarCliente} bloqueado={Boolean(pedido) || ocupado}/>

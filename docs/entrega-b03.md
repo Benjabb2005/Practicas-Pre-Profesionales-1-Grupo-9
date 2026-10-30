@@ -1,6 +1,14 @@
 # B03 y paginado — 26/10/2026
 
-Implementación local solicitada por Benjamín en feature/benjamin-asignacion-entregas. Cierre y publicación autorizados el 26/10/2026. Referencias: GitHub #37 y Jira KAN-33.
+## Lectura vigente · 28/10/2026
+
+Esta entrega forma parte del módulo de Benjamín publicado en `feature/benjamin-asignacion-entregas`. B01–B07 están finalizados en Jira; esto no acredita merge a `MVP-1`, ensayo físico de celular ni la prueba cruzada X04. Los apartados fechados de abajo conservan la evolución y las verificaciones de cada corte: sus estados de tablero, “sin commit/push” y restricciones luego reemplazadas son históricos. Para el comportamiento actual usamos [decisiones](decisiones.md) y [verificación B06](entrega-b06.md).
+
+La vista actual del chofer incluye En envío, Entregados e Historial, con entrega y pago de B04/B05. La descripción inicial de B03 sólo cubría consulta de pendientes. El tamaño de página vigente es 10. El formato horario ambiguo se registra como corrección pendiente en KAN-51.
+
+## Registro histórico de la entrega
+
+Implementamos el alcance del módulo de Benjamín en feature/benjamin-asignacion-entregas. Cierre y publicación autorizados el 26/10/2026. Referencias: GitHub #37 y Jira KAN-33.
 
 La vista /chofer reutiliza GET /api/chofer/pedidos, con identidad del JWT y filtro SQL de chofer propio, estado EN ENVÍO y dirección CONFIRMADA. Se conservan el cliente, teléfono, dirección completa, entre calles, CP e indicaciones. Se agregan búsqueda sin distinguir tildes por pedido/cliente/dirección, cantidad pendiente, hora de consulta, actualización/reintento y paginado. No muestra avances ni conexión ficticia. El enlace externo sólo admite coordenadas confirmadas, finitas y dentro de rango. B04/B05 quedan fuera.
 

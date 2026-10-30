@@ -5,7 +5,10 @@ const jwt = require("jsonwebtoken");
 const createApp = require("../app");
 const { ESTADO_INICIAL } = require("../src/constants/estados");
 const { CANALES, CANAL_PREDETERMINADO } = require("../src/constants/canales");
-const { createPedidoService, claveDireccion, direccionEquivalente } = require("../src/services/PedidoService");
+const { createPedidoService: crearServicioBase, claveDireccion, direccionEquivalente } = require("../src/services/PedidoService");
+// Adaptador sintético: estas pruebas no consultan Internet.
+const createPedidoService = deps => crearServicioBase({ geocodeAdapter: { async geocodificar() { return { resultado: 'APPROXIMATE', candidatos: [{ latitud: -34.6, longitud: -58.4 }] }; } }, ...deps });
+
 const { createGeocodeService } = require("../src/services/GeocodeService");
 const { createPedidosController } = require("../src/controllers/pedidos.controller");
 const { createPedidoRepository } = require("../src/repositories/PedidoRepository");
@@ -31,7 +34,7 @@ function detalleFixture(overrides = {}) {
         latitud: null,
         longitud: null,
         nivel_confianza: null,
-        direccion_original: "Av. Corrientes 1234 CABA",
+        direccion_original: "Av. Corrientes 1234 CABA CABA",
         ...overrides,
     };
 }
@@ -81,7 +84,7 @@ test("crear pedido guarda un borrador EN STOCK con canal, observaciones y sin du
             cliente_id: 1, importe_base: '100.00',
             canal_origen: CANALES.WHATSAPP,
             observaciones: "Dejar en portería",
-            direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA" },
+            direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" },
         },
         7
     );
@@ -91,7 +94,7 @@ test("crear pedido guarda un borrador EN STOCK con canal, observaciones y sin du
     assert.equal(pedidos.capturado.crear.canalOrigen, CANALES.WHATSAPP);
     assert.equal(pedidos.capturado.crear.observaciones, "Dejar en portería");
     assert.equal(pedidos.capturado.crear.creadoPor, 7);
-    assert.equal(pedidos.capturado.crear.direccion.direccion_original, "Av. Corrientes 1234 CABA");
+    assert.equal(pedidos.capturado.crear.direccion.direccion_original, "Av. Corrientes 1234 CABA CABA");
     assert.deepEqual(resultado.posiblesDuplicados, []);
 });
 
@@ -99,7 +102,7 @@ test("crear pedido sin canal usa la carga manual como origen", async () => {
     const pedidos = reposPedidosFalsos();
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
-    await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { calle: "Av. Corrientes" } }, 7);
+    await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" } }, 7);
 
     assert.equal(pedidos.capturado.crear.canalOrigen, CANAL_PREDETERMINADO);
     assert.equal(pedidos.capturado.crear.observaciones, null);
@@ -186,16 +189,10 @@ test("una localidad distinta no se considera el mismo domicilio", async () => {
     assert.equal(pedidos.capturado.crear.clienteId, 1);
 });
 
-test("sin altura no se arriesga un aviso de duplicado", async () => {
-    const pedidos = reposPedidosFalsos({ candidatos: [candidatoDuplicado({ altura: null })] });
-    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
-
-    await servicio.crear({
-        cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Av. H. Yrigoyen", localidad: "CABA", provincia: "CABA" },
-    }, 7);
-
-    assert.equal(pedidos.capturado.crear.clienteId, 1);
+test("sin altura se rechaza el alta incluso con confirmar duplicado", async () => {
+ const pedidos=reposPedidosFalsos({candidatos:[candidatoDuplicado({altura:null})]});const servicio=createPedidoService({pedidos,clientes:clientesFalsos});
+ await assert.rejects(servicio.crear({cliente_id:1,confirmar_duplicado:true,direccion:{calle:'Av. H. Yrigoyen',localidad:'CABA',provincia:'CABA'}},7),e=>e.statusCode===400 && Boolean(e.campos.altura));
+ assert.equal(pedidos.capturado.crear,null);
 });
 
 test("la ventana de duplicados se puede configurar", async () => {
@@ -204,7 +201,7 @@ test("la ventana de duplicados se puede configurar", async () => {
 
     await servicio.crear({
         cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Av. Corrientes", altura: "1234" },
+        direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" },
     }, 7);
 
     assert.equal(pedidos.capturado.candidatos.ventanaHoras, 6);
@@ -351,7 +348,7 @@ test("el controlador no acepta un estado impuesto por el cliente", async () => {
                 canal_origen: CANALES.CORREO,
                 observaciones: "  Dejar en recepción  ",
                 confirmar_duplicado: true,
-                direccion: { calle: "Av. Corrientes", altura: "1234" },
+                direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" },
                 estado: "PAGADO",
             },
             usuario: { id: 7 },
@@ -438,7 +435,7 @@ test("el controlador rechaza una confirmación de duplicado que no sea booleana"
             body: {
                 cliente_id: 1, importe_base: '100.00',
                 confirmar_duplicado: "true",
-                direccion: { calle: "Av. Corrientes", altura: "1234" },
+                direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" },
             },
             usuario: { id: 7 },
         }, {}),
@@ -568,7 +565,7 @@ test("pedidos: el chofer no puede crear pedidos", async () => {
         const respuesta = await fetch(`${baseUrl}/api/pedidos`, {
             method: "POST",
             headers: { authorization: `Bearer ${tokenChofer}`, "content-type": "application/json" },
-            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "WHATSAPP", direccion: { calle: "Av. Corrientes" } }),
+            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "WHATSAPP", direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" } }),
             signal: AbortSignal.timeout(3000),
         });
 
@@ -585,7 +582,7 @@ test("pedidos: un canal de origen fuera del catálogo responde 400", async () =>
         const respuesta = await fetch(`${baseUrl}/api/pedidos`, {
             method: "POST",
             headers: { authorization: `Bearer ${tokenAdmin}`, "content-type": "application/json" },
-            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "PALOMA", direccion: { calle: "Av. Corrientes" } }),
+            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "PALOMA", direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA", provincia: "CABA" } }),
             signal: AbortSignal.timeout(3000),
         });
 

@@ -1,4 +1,4 @@
-const { noEncontrado, errorValidacion, conflictoDuplicado } = require("../lib/errors");
+const { noEncontrado, errorValidacion, conflictoDuplicado, servicioNoDisponible } = require("../lib/errors");
 const { ESTADO_INICIAL } = require("../constants/estados");
 const { CANAL_PREDETERMINADO } = require("../constants/canales");
 const { normalizarDireccion: normalizarCamposDireccion } = require("./NormalizadorDireccion");
@@ -132,6 +132,7 @@ function createPedidoService({
     pedidos,
     clientes,
     localidades,
+    geocodeAdapter,
     ventanaDuplicadosHoras = VENTANA_DUPLICADOS_HORAS,
 }) {
     const ventanaHoras = Number.isInteger(ventanaDuplicadosHoras) && ventanaDuplicadosHoras > 0
@@ -169,7 +170,31 @@ function createPedidoService({
 
             const preparada = prepararDireccion(direccion);
             const { estado, problemas } = validarDireccion(preparada);
+            // Conservar los avisos específicos aunque el alta se rechace antes de guardar.
+            const camposDireccion = Object.fromEntries(problemas.map(p => [p.campo, p.mensaje]));
+            const ubicacionNoVerificada = () => {
+                const error = servicioNoDisponible('No pudimos verificar la ubicación. No se guardó el pedido; reintentá en unos instantes.');
+                error.campos = { ...camposDireccion, direccion: error.mensaje };
+                return error;
+            };
+            const errores = problemas.filter(p => p.gravedad === 'ERROR');
+            if (errores.length) throw errorValidacion(camposDireccion);
             const problemasLocalidad = await advertenciasLocalidad(localidades, preparada);
+            if (problemasLocalidad.some(p => p.codigo === 'LOCALIDAD_NO_ENCONTRADA')) {
+                throw errorValidacion({ ...camposDireccion, localidad: 'La localidad no existe en la provincia indicada. Corregila antes de guardar.' });
+            }
+            if (problemasLocalidad.length || !geocodeAdapter) throw ubicacionNoVerificada();
+            let ubicacion;
+            try { ubicacion = await geocodeAdapter.geocodificar(preparada); }
+            catch { throw ubicacionNoVerificada(); }
+            if (ubicacion?.resultado === 'ZERO_RESULTS') throw errorValidacion({ ...camposDireccion, direccion: 'No encontramos esa ubicación. Revisá calle, altura, localidad y provincia antes de guardar.' });
+            const candidatos = Array.isArray(ubicacion?.candidatos) ? ubicacion.candidatos : [ubicacion];
+            const tienePunto = candidatos.some(c => {
+                if (c?.latitud == null || c?.longitud == null || String(c.latitud).trim() === '' || String(c.longitud).trim() === '') return false;
+                const latitud = Number(c.latitud), longitud = Number(c.longitud);
+                return Number.isFinite(latitud) && Number.isFinite(longitud) && Math.abs(latitud) <= 90 && Math.abs(longitud) <= 180;
+            });
+            if (!['OK', 'APPROXIMATE'].includes(ubicacion?.resultado) || !tienePunto) throw ubicacionNoVerificada();
             const direccionValidada = { ...preparada, estado_validacion: estado };
 
             const posiblesDuplicados = await buscarDuplicados(cliente_id, preparada);

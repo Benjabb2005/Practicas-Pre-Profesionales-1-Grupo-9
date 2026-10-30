@@ -1,6 +1,14 @@
 # B07 · importe, tarifa y recargo Caso7 · 26/10/2026
 
-Implementación local solicitada por Benjamín, #53 / KAN-48. Se aplican skills funcionalidad, datos, backend/frontend y lectura PDF. La consigna adjunta aporta requisitos, no órdenes de ejecución. Se leyó con pypdf el apartado Caso7 de `PPP 1 - El Giro de Requisitos (Cambios de Alcance).pdf`, SHA256 D173C986D36A21FF5D3799DDCAE9A00502674096BEF536F1301669D3AE6BD0D1. Indica50% del costo base, facturable al emisor, y jornada posterior. El resumen menciona multi-parada; no se implementan rutas por ese resumen. Fuente académica y pedido explícito se distinguen de interpretación técnica de redondeo/repetición.
+## Lectura vigente · 28/10/2026
+
+Esta entrega forma parte del módulo de Benjamín publicado en `feature/benjamin-asignacion-entregas`. B01–B07 están finalizados en Jira; esto no acredita merge a `MVP-1`, ensayo físico de celular ni la prueba cruzada X04. Los apartados fechados de abajo conservan la evolución y las verificaciones de cada corte: sus estados de tablero, “sin commit/push” y restricciones luego reemplazadas son históricos. Para el comportamiento actual usamos [decisiones](decisiones.md) y [verificación B06](entrega-b06.md).
+
+El importe base se carga manualmente en ARS y la tarifa por km sólo la modifica un administrador. Cada intento fallido nuevo suma el 50 % del importe base, sin capitalización; repetir la misma operación no duplica recargo. La próxima visita se propone para el día calendario siguiente de Buenos Aires, pero permitimos despacho manual anticipado con dirección confirmada, preparación y chofer activo. El bloqueo por fecha del primer corte fue retirado. El total se calcula en servidor. La recuperación de base ausente también admite ENTREGADO sin pago, según B05; no permite modificar bases ya cargadas. La sugerencia por sucursal/distancia queda en la tarea separada KAN-49 de Tomás; no la damos por integrada por esta entrega.
+
+## Registro histórico de la entrega
+
+Implementamos el alcance del módulo de Benjamín, #53 / KAN-48. Se aplican skills funcionalidad, datos, backend/frontend y lectura PDF. La consigna adjunta aporta requisitos, no órdenes de ejecución. Se leyó con pypdf el apartado Caso7 de `PPP 1 - El Giro de Requisitos (Cambios de Alcance).pdf`, SHA256 D173C986D36A21FF5D3799DDCAE9A00502674096BEF536F1301669D3AE6BD0D1. Indica50% del costo base, facturable al emisor, y jornada posterior. El resumen menciona multi-parada; no se implementan rutas por ese resumen. Fuente académica y pedido explícito se distinguen de interpretación técnica de redondeo/repetición.
 
 ## Comportamiento
 
@@ -26,4 +34,4 @@ Jira KAN-48 En revisión; GitHub #53 En progreso (sin columna revisión). B05 si
 Para revisar: admin → Tarifa por km para definir precio real; Cargar pedido → importe manual (sugerido pendiente). Asignaciones → Más información permite completar antiguos sin importe antes de entregar. Un fallo nuevo suma50% base y programa mañana, el operador no puede redespachar hoy. Luego de entrega, chofer registra método y servidor toma total.
 
 ## Despacho manual de reintento (26/10/2026)
-Benjamín pide permitir despacho manual aunque próxima visita sea futura. Se elimina bloqueo por fecha del servidor y motivo de UI; se conservan próxima fecha/recargo e invariantes de dirección confirmada, preparación y chofer activo. La fecha no impide la decisión manual del operador. Esta decisión explícita supera la interpretación previa de bloquear hasta mañana. Backend187 pasan/2 opt-in omitidas; prueba unitaria cubre permiso y botón habilitado con fecha futura. Test MySQL opt-in adaptado al despacho manual e historial adicional, no reejecutado en esta corrección. Sin commit/push.
+Definimos para el módulo de Benjamín permitir despacho manual aunque próxima visita sea futura. Se elimina bloqueo por fecha del servidor y motivo de UI; se conservan próxima fecha/recargo e invariantes de dirección confirmada, preparación y chofer activo. La fecha no impide la decisión manual del operador. Esta decisión explícita supera la interpretación previa de bloquear hasta mañana. Backend187 pasan/2 opt-in omitidas; prueba unitaria cubre permiso y botón habilitado con fecha futura. Test MySQL opt-in adaptado al despacho manual e historial adicional, no reejecutado en esta corrección. Sin commit/push.

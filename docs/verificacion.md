@@ -1,5 +1,9 @@
 # Verificación y evidencia · 30/09/2026
 
+## Estado de lectura · 28/10/2026
+
+Conservamos los registros fechados como evidencia histórica. Los estados de tablero, autorizaciones y comportamientos de cortes anteriores pueden estar superados: B01–B07 están finalizados en Jira, mientras X04/KAN-44 sigue pendiente. Para las reglas actuales del módulo usamos [decisiones](decisiones.md) y para la verificación integral y sus límites usamos [B06](entrega-b06.md). Una prueba automatizada no acredita una prueba cruzada realizada por un integrante.
+
 ## B06 · actualización 27/10/2026
 
 Evidencia completa en [entrega B06](entrega-b06.md). Check raíz host pasa tras sincronizar copias ignoradas de skills y reconstruir dependencias con npm ci desde lockfiles. Backend195 pasan/4integraciones opt-in omitidas por defecto, frontend66/lint/build pasan. Las cuatro integraciones se ejecutaron aparte en MySQL aislado: asignaciones, entregas/pagos, comprobantes y nueva regresión HTTP integral de chofer (8 resultados exitosos: padre+7subpruebas). UI real→API→MySQL: efectivo, transferencia/acreditación admin, fallo/recargo, historial, mapa, recarga y recuperación de caída. Móvil320/360 y escritorio1440, claro/oscuro; desborde15px a320 corregido y revisado. Desarrollo intacto, pruebas detenidas.
@@ -198,7 +202,7 @@ Ejecutado sobre la rama `feature/clientes-registro-pedidos-duplicados`, con Node
 
 Cobertura de los criterios del ABM: búsqueda por nombre/DNI/teléfono/email, alta y edición con normalización, DNI duplicado como conflicto, teléfono/email repetido como aviso, baja sólo sin pedidos y guardas de rol. El smoke real cubrió health, login, listado, alta, DNI repetido, edición, baja sin pedidos y los mensajes 409 de DNI repetido y baja con pedido. La baja con pedidos se ejecutó contra MySQL real creando y limpiando un pedido de prueba; el caso de carrera que dispara `ER_ROW_IS_REFERENCED_2` no se provocó y queda cubierto sólo por la traducción del servicio.
 
-Límites: no se probó con Docker ni en navegador; no hay prueba end-to-end de interfaz ni verificación visual responsive. La búsqueda SQL, el ABM y los mensajes 409 se probaron contra MySQL 8.0 local, no contra el contenedor 8.4. El error de FK por carrera al borrar no se provocó. D07 queda implementada localmente por pedido del equipo, con validación académica pendiente.
+Límites: no se probó con Docker ni en navegador; no hay prueba end-to-end de interfaz ni verificación visual responsive. La búsqueda SQL, el ABM y los mensajes 409 se probaron contra MySQL 8.0 local, no contra el contenedor 8.4. El error de FK por carrera al borrar no se provocó. D07 queda implementada localmente como alcance del equipo, con validación académica pendiente.
 
 ## Búsqueda de clientes en la carga de pedido — punto 2 (20/10/2026, OpenCode)
 
@@ -342,7 +346,7 @@ Diagnóstico: en `frontend/src/components/MapPreview.jsx`, `Number(null)` devuel
 
 Cobertura de la corrección: el mapa no se abre sin coordenadas; el resultado de la búsqueda se informa con un bloque visible y un estado de accesibilidad; sólo un resultado con punto habilita la confirmación; la confirmación sigue siendo humana; «Cargar otro pedido» limpia los campos controlados y remonta el selector para borrar su búsqueda interna. La interfaz se acredita con la prueba de la función pura, lint, build, revisión de código y smoke de API.
 
-Límites: el usuario confirmó visualmente que el mapa ya muestra calles. El ajuste posterior confirmó el flujo de búsqueda automática y el estado del botón; no se verificó específicamente el recentrado ni el viewport móvil, y no hay prueba de interacción DOM. El mapa depende de Internet para las teselas y Nominatim tiene límites de uso; el smoke respetó una pausa entre consultas. Guardar un pedido sigue creando un borrador `EN STOCK` sin exigir geocodificación; cambiarlo requiere una definición de alcance (D09). D08 y D11 siguen abiertos. El smoke está en `temp/smoke-geo-validacion.cjs`, ignorado por Git.
+Límites: Benjamín confirmó visualmente que el mapa ya muestra calles. El ajuste posterior confirmó el flujo de búsqueda automática y el estado del botón; no se verificó específicamente el recentrado ni el viewport móvil, y no hay prueba de interacción DOM. El mapa depende de Internet para las teselas y Nominatim tiene límites de uso; el smoke respetó una pausa entre consultas. Guardar un pedido sigue creando un borrador `EN STOCK` sin exigir geocodificación; cambiarlo requiere una definición de alcance (D09). D08 y D11 siguen abiertos. El smoke está en `temp/smoke-geo-validacion.cjs`, ignorado por Git.
 
 ## Ajuste de búsqueda automática y estado visual del botón — 21/10/2026, aceptado 22/10/2026 (OpenCode)
 
@@ -442,7 +446,7 @@ Límites: el check raíz en host sigue bloqueado por copias de skills desactuali
 
 ## Recuperación del acceso administrador (22/10/2026)
 
-Pedido explícito del usuario: restablecer solo la contraseña de admin@mandatodo.com usando SEED_ADMIN_PASSWORD del entorno local. Se actualizó el hash de una cuenta activa ADMINISTRADOR en mandatodo_mvp1; sin modificar otras cuentas ni la base anterior. No se registran secretos.
+Pedido explícito de Benjamín: restablecer solo la contraseña de admin@mandatodo.com usando SEED_ADMIN_PASSWORD del entorno local. Se actualizó el hash de una cuenta activa ADMINISTRADOR en mandatodo_mvp1; sin modificar otras cuentas ni la base anterior. No se registran secretos.
 
 Corregido backend/src/middleware/errorHandler.js: AppError hereda message de Error; devolver error.mensaje omitía el texto y la UI mostraba un error genérico. Se agregó una aserción HTTP en backend/test/auth.test.js para exigir el mensaje de credenciales incorrectas. Backend reiniciado; npm test dentro de Docker: 125/125. No se verificó visualmente en navegador.
 
@@ -477,13 +481,13 @@ Proveedor: dirección pública Av. Corrientes 1234, CABA, respondió APPROXIMATE
 
 Navegador: login de administrador, tablero real con pedidos, formulario de carga y mapa Leaflet con punto e historial de un pedido confirmado; lecturas sin modificar pedidos existentes. No se publican datos personales ni capturas de esas pantallas en GitHub. S02/S07 también se apoyan en evidencia previa documentada de migración/seed e importación real idempotente (apartados 13/10), no reejecutada sobre desarrollo.
 
-No cerradas: S01 requiere consolidar reparaciones locales y arranque reproducible para equipo; S04 permisos de entrega/pago aún sin flujo completo; S06 decisiones de transición y operaciones completas pendientes; R03 falta verificar selección múltiple/corrección de ubicación de punta a punta en UI; R08 no tiene integración final con despacho/asignación. B01–B06 conservan borrador previo no aprobado, faltan acciones reales de despacho/entrega/pago y prueba móvil integral. Q01–Q04 y X01–X07 siguen propuestas/decisiones/pruebas de integrantes pendientes; esta auditoría del asistente no acredita pruebas cruzadas realizadas por ellos.
+No cerradas: S01 requiere consolidar reparaciones locales y arranque reproducible para equipo; S04 permisos de entrega/pago aún sin flujo completo; S06 decisiones de transición y operaciones completas pendientes; R03 falta verificar selección múltiple/corrección de ubicación de punta a punta en UI; R08 no tiene integración final con despacho/asignación. B01–B06 conservan borrador previo no aprobado, faltan acciones reales de despacho/entrega/pago y prueba móvil integral. Q01–Q04 y X01–X07 siguen propuestas/decisiones/pruebas de integrantes pendientes; esta auditoría automatizada no acredita pruebas cruzadas realizadas por ellos.
 
 Límite adicional: check raíz sigue bloqueado por copia Claude ppp1-mvp1 desactualizada; sintaxis backend, suites, lint/build se verificaron por separado. No commit ni push.
 
 ## B01 — Asignación manual autorizada y verificada (25/10/2026)
 
-Pedido explícito de Benjamín: implementar pantalla y API de asignación manual y explicar cómo ver los cambios. Se revisó y completó el borrador previo sobre MVP-1 f87f6e1; B01 queda Hecho localmente. B02–B06 siguen pendientes y no se acredita su implementación completa.
+Definición del módulo de Benjamín: implementar pantalla y API de asignación manual y explicar cómo ver los cambios. Se revisó y completó el borrador previo sobre MVP-1 f87f6e1; B01 queda Hecho localmente. B02–B06 siguen pendientes y no se acredita su implementación completa.
 
 Backend: AsignacionRepository conserva SQL parametrizado, selección de choferes activos y transacción con bloqueo de pedido/dirección/chofer. AsignacionService devuelve puede_asignar, motivo_bloqueo y puede_quitar en listado y guardado, usando CONFIRMADA y estados previos al despacho. El PUT vuelve a validar aunque se eluda UI; asigna sin adelantar estado y registra historial una sola vez por cambio. Endpoints GET /api/asignaciones, GET /api/asignaciones/choferes, PUT /api/asignaciones/:id para administrador/operador. Sin cambios de esquema ni nueva máquina de estados.
 
@@ -493,7 +497,7 @@ Verificación real: backend 175/175 y una MySQL opt-in omitida por defecto; fron
 
 Navegador real: /asignaciones carga 4 pedidos (2 habilitados/2 bloqueados) y 2 choferes activos del entorno. Filtro reduce a los habilitados; elegir chofer habilita Guardar. Se restableció selección sin escribir sobre pedidos existentes. Revisado a viewport angosto (319 px): tarjetas/controles caben en layout mínimo global de 320 px. No se acredita prueba exhaustiva de todos los estados visuales ni prueba poblada de /chofer.
 
-Límite preexistente: npm run check raíz detenido por copia Claude ppp1-mvp1 desactualizada; verificaciones técnicas se ejecutaron por separado. No commit, push ni cambios de datos del usuario. Para ver: iniciar como administrador/operador → menú Asignar choferes → elegir uno de los pedidos con dirección confirmada y chofer activo → Guardar asignación → Actualizar/recargar comprueba persistencia. Asignar no despacha.
+Límite preexistente: npm run check raíz detenido por copia Claude ppp1-mvp1 desactualizada; verificaciones técnicas se ejecutaron por separado. No commit, push ni cambios de datos de desarrollo. Para ver: iniciar como administrador/operador → menú Asignar choferes → elegir uno de los pedidos con dirección confirmada y chofer activo → Guardar asignación → Actualizar/recargar comprueba persistencia. Asignar no despacha.
 
 ## Vista compacta de asignaciones (25/10/2026)
 
@@ -507,7 +511,7 @@ Pedido explícito: reutilizar el patrón modal de branch-benjamin-1, crear branc
 
 Verificación: 42 pruebas frontend, lint y build Docker pasan; warning de chunk grande preexistente. Navegador real: abrir pedidos confirmados/no confirmados, cerrar con Escape y botón, URL /asignaciones estable y foco devuelto al botón correcto. No se modificaron pedidos existentes. Persistencia/API de B01 conservan verificación previa. Cierre por fondo implementado, no probado por clic en esta sesión; escritorio no revisado visualmente.
 
-Branch creada desde MVP-1 f87f6e1: feature/benjamin-asignacion-entregas; nombre cubre próximas entregas del módulo sin exigir branch por tarjeta. Publicación autorizada por el usuario, sin merge a MVP-1. Se separan reparaciones locales de acceso/entorno y asignación/documentación. Se conserva la base local de consulta propia del chofer; B02–B06 siguen pendientes, no se acreditan entrega/pago ni el cierre de B03 por incluir ese borrador. No se incluyen .env, contraseñas, respaldos ni archivos temporales.
+Branch creada desde MVP-1 f87f6e1: feature/benjamin-asignacion-entregas; nombre cubre próximas entregas del módulo sin exigir branch por tarjeta. Publicación autorizada por Benjamín, sin merge a MVP-1. Se separan reparaciones locales de acceso/entorno y asignación/documentación. Se conserva la base local de consulta propia del chofer; B02–B06 siguen pendientes, no se acreditan entrega/pago ni el cierre de B03 por incluir ese borrador. No se incluyen .env, contraseñas, respaldos ni archivos temporales.
 
 ## Separación de mapa e información (25/10/2026)
 
@@ -531,8 +535,12 @@ API PUT /api/asignaciones/:id/estado, cuerpo estricto con estado EN PREPARACIÓN
 
 UI /asignaciones: encabezado Asignación y despacho, secuencia de los cinco estados, botones Preparar/Despachar, etiqueta Reasignar cuando ya hay chofer, Quitar chofer y confirmación de despacho con pedido/chofer/dirección. Evita cambios de estado mientras hay selección de chofer sin guardar. Estado y botones se actualizan al responder el servidor. Modal cancelable con Escape y Cancelar; no permite cerrar/enviar doble mientras guarda.
 
-Verificación: backend 178 pasan, 0 fallan, 1 opt-in omitida por defecto; frontend 47/47, lint y build OK (warning preexistente de chunk >500 kB). MySQL opt-in 1/1: reasignación/desasignación, rollback real, concurrentes preparación/despacho con una sola escritura e historial, rechazo de dirección cambiada/chofer inactivo, aislamiento de consulta propia y cambios posteriores bloqueados; fixtures propios limpiados. HTTP/MySQL aislado temp/b02-http-mysql.cjs: administrador prepara, operador despacha, consulta propia chofer y nueva lectura persisten, saltos/ENTREGADO-PAGADO/rol chofer/cuerpo inválido rechazados. Sin modificar pedidos del usuario. Logs ignorados temp/b02-backend.log, temp/b02-frontend.log. Navegador real: login y pantalla con Preparar, Reasignar y Quitar chofer según datos vigentes; no se pulsaron mutaciones sobre pedidos existentes. Despacho por clic con pedido sintético en UI queda sin verificar; API y persistencia sí probadas. Check raíz mantiene bloqueo preexistente de copia Claude ppp1-mvp1 desactualizada.
+Verificación: backend 178 pasan, 0 fallan, 1 opt-in omitida por defecto; frontend 47/47, lint y build OK (warning preexistente de chunk >500 kB). MySQL opt-in 1/1: reasignación/desasignación, rollback real, concurrentes preparación/despacho con una sola escritura e historial, rechazo de dirección cambiada/chofer inactivo, aislamiento de consulta propia y cambios posteriores bloqueados; fixtures propios limpiados. HTTP/MySQL aislado temp/b02-http-mysql.cjs: administrador prepara, operador despacha, consulta propia chofer y nueva lectura persisten, saltos/ENTREGADO-PAGADO/rol chofer/cuerpo inválido rechazados. Sin modificar pedidos existentes. Logs ignorados temp/b02-backend.log, temp/b02-frontend.log. Navegador real: login y pantalla con Preparar, Reasignar y Quitar chofer según datos vigentes; no se pulsaron mutaciones sobre pedidos existentes. Despacho por clic con pedido sintético en UI queda sin verificar; API y persistencia sí probadas. Check raíz mantiene bloqueo preexistente de copia Claude ppp1-mvp1 desactualizada.
 
 Puerto Docker: 3306 local ocupado por proceso 3980. Se usó override temporal sin publicación y después, por pedido explícito, se cambió docker-compose.yml a MYSQL_HOST_PORT:-3307. .env.example y README documentan localhost:3307 para host y mysql:3306 interno. docker compose up -d confirma mysql healthy y 3307→3306; no se detuvo MySQL local, borraron datos/volúmenes ni cambiaron credenciales. Para iniciar normalmente usar docker compose up -d sin override.
 
 B02 queda implementada y verificada técnicamente en la branch local feature/benjamin-asignacion-entregas. No se hizo commit ni push en este pedido. B03–B06 siguen pendientes.
+
+## Revisión documental · 28/10/2026
+
+Consolidamos reglas vigentes y separamos los registros históricos de B02–B07; documentamos que preparar no habilita asignación ni despacho. KAN-51/GitHub #56 registran el formato horario pendiente; no se cambió código. npm run context:check y git diff --check pasan; enlaces locales modificados revisados. Esta tarea no vuelve a acreditar las pruebas de negocio, MySQL o celular de sesiones anteriores.

@@ -52,6 +52,7 @@ function createContainer({ db, config, georef } = {}) {
         estadoPedidoService: createEstadoPedidoService({ repositorio: createEstadoPedidoRepository(db) }),
         clienteService: createClienteService({ clientes }),
         pedidoService: createPedidoService({
+            geocodeAdapter,
             pedidos,
             clientes,
             localidades: localidadService,

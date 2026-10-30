@@ -1,6 +1,14 @@
 # B06 · verificación técnica del chofer · 27/10/2026
 
-Pedido de Benjamín: ejecutar las pruebas del módulo. Referencias KAN-36/#40. Skill ppp1-verificar y reglas de frontend/backend. Sin commit/push ni cambios en tableros.
+## Lectura vigente · 28/10/2026
+
+Esta entrega forma parte del módulo de Benjamín publicado en `feature/benjamin-asignacion-entregas`. B01–B07 están finalizados en Jira; esto no acredita merge a `MVP-1`, ensayo físico de celular ni la prueba cruzada X04. Los apartados fechados de abajo conservan la evolución y las verificaciones de cada corte: sus estados de tablero, “sin commit/push” y restricciones luego reemplazadas son históricos. Para el comportamiento actual usamos [decisiones](decisiones.md) y [verificación B06](entrega-b06.md).
+
+El cierre técnico fue aceptado y publicado el 28/10/2026 en `70b09ea`; KAN-36/#40 quedaron finalizados. Se conservan los límites de celular físico, selección desde galería y dependencias indicados abajo. X04/KAN-44 sigue pendiente. El párrafo histórico que propone no marcar Hecho queda superado por este cierre, sin atribuir pruebas humanas no realizadas.
+
+## Registro histórico de la entrega
+
+Alcance de la entrega de Benjamín: ejecutar las pruebas del módulo. Referencias KAN-36/#40. Skill ppp1-verificar y reglas de frontend/backend. Sin commit/push ni cambios en tableros.
 
 ## Entorno
 

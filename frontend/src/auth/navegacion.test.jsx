@@ -8,6 +8,9 @@ import ChoferPedidosPage from '../pages/ChoferPedidosPage.jsx'
 const estado = vi.hoisted(() => ({ usuario: null, desde: '/' }))
 
 vi.mock('./useAuth', () => ({ useAuth: () => ({ usuario: estado.usuario, cargando: false }) }))
+// Esta prueba cubre permisos/navegación sin DOM ni Leaflet; el mapa real se
+// verifica en el navegador con los pedidos sintéticos.
+vi.mock('../components/MapPreview.jsx', () => ({ default: () => createElement('div', null, 'Mapa de prueba') }))
 vi.mock('react-router-dom', () => ({
   Navigate: ({ to }) => createElement('a', { href: to }, 'Destino'),
   useLocation: () => ({ pathname: '/', state: { desde: estado.desde } }),
