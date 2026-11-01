@@ -536,3 +536,80 @@ Verificación: backend 178 pasan, 0 fallan, 1 opt-in omitida por defecto; fronte
 Puerto Docker: 3306 local ocupado por proceso 3980. Se usó override temporal sin publicación y después, por pedido explícito, se cambió docker-compose.yml a MYSQL_HOST_PORT:-3307. .env.example y README documentan localhost:3307 para host y mysql:3306 interno. docker compose up -d confirma mysql healthy y 3307→3306; no se detuvo MySQL local, borraron datos/volúmenes ni cambiaron credenciales. Para iniciar normalmente usar docker compose up -d sin override.
 
 B02 queda implementada y verificada técnicamente en la branch local feature/benjamin-asignacion-entregas. No se hizo commit ni push en este pedido. B03–B06 siguen pendientes.
+
+## X01 · Prueba cruzada del módulo de dirección de Tomás (01/11/2026)
+
+Estado: ejecutada por el asistente a pedido de Julián (responsable de X01). Cubre T01 a T06 en la capa de reglas. No acredita el cierre de Tomás ni la validación integral del MVP.
+
+Método: se corrieron 45 casos y 22 casos de borde directamente contra `NormalizadorDireccion` y `ValidadorDireccion` del backend (Node 24), sin base, sin red y sin credenciales. Los resultados esperados se definieron desde los criterios de T02 y T03 de `docs/planificacion-mvp1.json`, no desde lo que devuelve el código. En cada caso se verificó también que la normalización sea idempotente y que no modifique la entrada. Cobertura: éxito (E), faltantes (F), inconsistentes (I) y límites geográficos documentables (L).
+
+Resultado de la batería principal: 45 de 45 casos como se esperaba, 0 diferencias.
+
+| ID | Tipo | Caso | Estado obtenido | Problemas obtenidos | Resultado |
+|---|---|---|---|---|---|
+| E01 | Éxito | Av. Corrientes 1234, CABA | VALIDA | — | OK |
+| E02 | Éxito | Dirección de Claypole con CP letra+4 | VALIDA | — | OK |
+| E03 | Éxito | Todo en mayúsculas | VALIDA | — | OK |
+| E04 | Éxito | Altura con bis | VALIDA | — | OK |
+| E05 | Éxito | Altura con separador de miles | VALIDA | — | OK |
+| E06 | Éxito | Calle con ordinal (1° de Mayo) | VALIDA | — | OK |
+| E07 | Éxito | Calle tipo+número (Calle 50) | VALIDA | — | OK |
+| E08 | Éxito | Abreviatura Gral. expandida | VALIDA | — | OK |
+| E09 | Éxito | Provincia como 'Capital Federal' | VALIDA | — | OK |
+| E10 | Éxito | Acentos y ñ conservados | VALIDA | — | OK |
+| E11 | Éxito | CPA completo | VALIDA | — | OK |
+| E12 | Éxito | Espacios de más | VALIDA | — | OK |
+| F01 | Faltantes | Sin calle | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:calle | OK |
+| F02 | Faltantes | Sin altura | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:altura | OK |
+| F03 | Faltantes | Sin localidad | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:localidad | OK |
+| F04 | Faltantes | Sin provincia | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:provincia | OK |
+| F05 | Faltantes | Todo vacío | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:altura, CAMPO_OBLIGATORIO:calle, CAMPO_OBLIGATORIO:localidad, CAMPO_OBLIGATORIO:provincia | OK |
+| F06 | Faltantes | Campos sólo con espacios | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:altura, CAMPO_OBLIGATORIO:calle | OK |
+| F07 | Faltantes | Campos ausentes (undefined) | CON_ADVERTENCIAS | CAMPO_OBLIGATORIO:altura, CAMPO_OBLIGATORIO:localidad, CAMPO_OBLIGATORIO:provincia | OK |
+| F08 | Faltantes | CP vacío es opcional | VALIDA | — | OK |
+| I01 | Inconsistente | Altura 0 | CON_ADVERTENCIAS | ALTURA_CERO:altura | OK |
+| I02 | Inconsistente | Altura 0 bis | CON_ADVERTENCIAS | ALTURA_CERO:altura | OK |
+| I03 | Inconsistente | Altura S/N | CON_ADVERTENCIAS | ALTURA_SIN_NUMERO:altura | OK |
+| I04 | Inconsistente | Altura 'sin numero' | CON_ADVERTENCIAS | ALTURA_SIN_NUMERO:altura | OK |
+| I05 | Inconsistente | Altura con letras | CON_ADVERTENCIAS | ALTURA_NO_NUMERICA:altura | OK |
+| I06 | Inconsistente | Altura numérica con letra pegada | CON_ADVERTENCIAS | ALTURA_NO_NUMERICA:altura | OK |
+| I07 | Inconsistente | Altura negativa | CON_ADVERTENCIAS | ALTURA_NO_NUMERICA:altura | OK |
+| I08 | Inconsistente | Intersección en la calle | VALIDA | INTERSECCION_EN_CALLE:calle | OK |
+| I09 | Inconsistente | Esquina en la calle | VALIDA | INTERSECCION_EN_CALLE:calle | OK |
+| I10 | Inconsistente | 'Yrigoyen' no es intersección | VALIDA | — | OK |
+| I11 | Inconsistente | Piso dentro de la calle | VALIDA | DATOS_MEZCLADOS_EN_CALLE:calle | OK |
+| I12 | Inconsistente | Depto dentro de la calle | VALIDA | DATOS_MEZCLADOS_EN_CALLE:calle | OK |
+| I13 | Inconsistente | Altura al final de la calle | VALIDA | DATOS_MEZCLADOS_EN_CALLE:calle | OK |
+| I14 | Inconsistente | Teléfono dentro de la calle | VALIDA | DATOS_MEZCLADOS_EN_CALLE:calle | OK |
+| I15 | Inconsistente | Piso con grado (Alsina 5°) | VALIDA | DATOS_MEZCLADOS_EN_CALLE:calle | OK |
+| I16 | Inconsistente | CABA con provincia Buenos Aires | VALIDA | CABA_PROVINCIA_CONFUNDIDA:localidad | OK |
+| I17 | Inconsistente | Provincia inventada | CON_ADVERTENCIAS | PROVINCIA_INVALIDA:provincia | OK |
+| I18 | Inconsistente | Provincia 'capital' sola | CON_ADVERTENCIAS | PROVINCIA_INVALIDA:provincia | OK |
+| I19 | Inconsistente | CP demasiado corto | VALIDA | CP_FORMATO_INVALIDO:codigo_postal | OK |
+| I20 | Inconsistente | CP con letras | VALIDA | CP_FORMATO_INVALIDO:codigo_postal | OK |
+| I21 | Inconsistente | CPA de otra provincia (C en Buenos Aires) | VALIDA | CP_NO_COINCIDE_PROVINCIA:codigo_postal | OK |
+| I22 | Inconsistente | CP B1849 con provincia Córdoba | VALIDA | CP_NO_COINCIDE_PROVINCIA:codigo_postal | OK |
+| I23 | Inconsistente | Varios errores a la vez | CON_ADVERTENCIAS | ALTURA_CERO:altura, CAMPO_OBLIGATORIO:localidad, CP_FORMATO_INVALIDO:codigo_postal, INTERSECCION_EN_CALLE:calle, PROVINCIA_INVALIDA:provincia | OK |
+| L01 | Límite | Rosario en provincia de Buenos Aires (Rosario es de Santa Fe) | VALIDA | — | OK |
+| L02 | Límite | CP de 4 dígitos que no corresponde a la localidad | VALIDA | — | OK |
+
+Los casos L01 y L02 son límites que T03 pide documentar y no detectar: una localidad que no pertenece a la provincia (Rosario en Buenos Aires) y un CP de 4 dígitos que no corresponde a la localidad pasan sin aviso. En el alta, `PedidoService` suma la advertencia `LOCALIDAD_NO_ENCONTRADA` si Georef no reconoce la localidad en esa provincia, pero eso depende de la red y es sólo informativo.
+
+### Hallazgos de los casos de borde
+
+| ID | Caso | Obtenido | Severidad | Observación |
+|---|---|---|---|---|
+| H1 | Localidad `<b>Lanús</b>` | `VALIDA` sin avisos; se guarda `<b>lanús</b>` | Baja | No se validan caracteres. React escapa el texto, así que no hay ejecución, pero entra basura al dato y a lo que se envía al proveedor. |
+| H2 | Altura `99999999999` | `VALIDA` sin avisos | Baja | No hay tope de altura razonable; una altura irreal llega al geocodificador. |
+| H3 | Calle de un solo carácter (`a`) | `VALIDA` sin avisos | Baja | No hay largo mínimo de calle. |
+| H4 | Calle `Calle 5 B` | `DATOS_MEZCLADOS_EN_CALLE` (ADVERTENCIA) | Muy baja | Posible falso positivo; sólo avisa, no bloquea. |
+| H5 | Ruta con altura `KM 45` | `ALTURA_NO_NUMERICA` (ERROR) | Informativa | La forma `Ruta 2 km 45` en la calle sí se acepta; en la altura no. Documentar la forma esperada para rutas. |
+| H6 | Diseño de estados | Sólo un ERROR deja `CON_ADVERTENCIAS`; una ADVERTENCIA (intersección, datos mezclados, CABA/Buenos Aires confundida, CP inconsistente) deja `VALIDA` | Informativa | El nombre `CON_ADVERTENCIAS` no coincide con el comportamiento. Esas direcciones se pueden geocodificar y confirmar; la confirmación humana sigue siendo el control. Es una decisión a registrar, no un bug confirmado. |
+
+Sin diferencia en: abreviaturas de provincia (`Bs. As.`, `Pcia. de Buenos Aires`, `Sgo. del Estero`), CP en minúsculas o con espacio, `Av. del Libertador`, `9 de Julio`, `Juan B. Justo`, formas de `S/N` (`S / N`, `s/n.`) y rechazo de dígitos de ancho completo.
+
+### Límites de esta prueba
+- No se probó el formulario en navegador: campos en rojo o amarillo, corrección y revalidación (T04) quedan para revisión visual manual.
+- No se probó el guardado contra MySQL ni la regla "sólo `VALIDA` se geocodifica" por HTTP (T05); está cubierta por las pruebas automáticas existentes del backend.
+- Los resultados esperados son un criterio del asistente; conviene que Tomás los revise.
+- La batería no se agregó como prueba automática del repo.
