@@ -11,6 +11,8 @@ import { DIRECCION_VACIA, motivoConfirmar, motivoGeocodificar, tieneCoordenadas 
 import { CLIENTE_VACIO, datosDeCliente, describirCoincidenciasClientes } from '../components/cliente.js'
 import { CANALES_ORIGEN, CANAL_PREDETERMINADO, etiquetaCanal } from '../components/canal.js'
 import MapPreview from '../components/MapPreview.jsx'
+import PrevisualizacionUbicacion from '../components/PrevisualizacionUbicacion.jsx'
+import { usePrevisualizacionUbicacion } from '../components/usePrevisualizacionUbicacion.js'
 import EstadoValidacionBadge from '../components/EstadoValidacionBadge.jsx'
 import { mensajeError } from '../api/client'
 import { crearCliente } from '../api/clientes'
@@ -41,7 +43,7 @@ function tonoResultado(resultado) {
 
 function ayudaValidacion(pedido, buscando = false) {
   if (buscando) return 'Buscando la dirección en Georef…'
-  if (!pedido) return 'Guardá el borrador para buscar el punto en el mapa y confirmar la ubicación.'
+  if (!pedido) return 'La ubicación del mapa es tentativa. Guardá el pedido para confirmarla antes de despachar.'
   if (pedido.estado_validacion === 'CONFIRMADA') return 'La ubicación ya está confirmada y el despacho está habilitado.'
   if (pedido.estado_validacion === 'VALIDA') {
     return 'Revisá el punto en el mapa. Si es correcto, confirmá la ubicación para habilitar el despacho.'
@@ -78,6 +80,19 @@ function PedidosCargaPage() {
   const [geocodificando, setGeocodificando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
   const [versionFormulario, setVersionFormulario] = useState(0)
+  const [elegidoPrevio, setElegidoPrevio] = useState({ datos: null, indice: null })
+
+  // Búsqueda tentativa mientras se completa la dirección; se apaga al guardar.
+  const previsualizacion = usePrevisualizacionUbicacion(direccion, { activa: !pedido })
+  // La elección vale sólo para el resultado que la originó: uno nuevo la descarta.
+  const indiceElegido = elegidoPrevio.datos === previsualizacion.datos ? elegidoPrevio.indice : null
+  const candidatosPrevios = previsualizacion.fase === 'lista' ? previsualizacion.datos?.candidatos ?? [] : []
+  const puntoPrevio = candidatosPrevios.length === 1
+    ? candidatosPrevios[0]
+    : candidatosPrevios.find((candidato) => candidato.indice === indiceElegido) ?? null
+  const mensajeMapaPrevio = previsualizacion.fase === 'lista' && candidatosPrevios.length > 1 && !puntoPrevio
+    ? 'Elegí una de las ubicaciones posibles para verla en el mapa.'
+    : 'Completá la dirección y el mapa mostrará una ubicación tentativa.'
 
   const ocupado = guardando || geocodificando || confirmando
   const puedeGeocodificar = Boolean(pedido) && pedido.estado_validacion === 'VALIDA'
@@ -306,14 +321,19 @@ function PedidosCargaPage() {
       <aside className="validation-column">
         <section className="panel geo-panel">
           <div className="section-heading"><span className="step-number">2</span><div><h2>Validación Geográfica</h2><p>La confirmación final siempre es humana.</p></div></div>
-          <MapPreview latitud={pedido?.latitud} longitud={pedido?.longitud} etiqueta={pedido?.direccion_original} buscando={geocodificando}/>
+          {pedido
+            ? <MapPreview latitud={pedido.latitud} longitud={pedido.longitud} etiqueta={pedido.direccion_original} buscando={geocodificando}/>
+            : <MapPreview latitud={puntoPrevio?.latitud} longitud={puntoPrevio?.longitud} etiqueta={puntoPrevio ? `Ubicación tentativa: ${puntoPrevio.direccion}` : undefined} mensajeVacio={mensajeMapaPrevio}/>}
 
           {pedido
             ? <div className="validacion-estado">
                 <span>Estado de la dirección</span>
                 <EstadoValidacionBadge estado={pedido.estado_validacion}/>
               </div>
-            : <div className="address-alert"><Icon name="alert" size={15}/><div><b>Sin pedido guardado</b><span>Guardá el borrador para buscar el punto y confirmar la ubicación.</span></div></div>}
+            : <>
+                <div className="address-alert"><Icon name="alert" size={15}/><div><b>Sin pedido guardado</b><span>El punto del mapa es tentativo. Guardá el pedido para confirmar la ubicación y habilitar el despacho.</span></div></div>
+                <PrevisualizacionUbicacion previsualizacion={previsualizacion} indiceElegido={indiceElegido} onElegir={(indice) => setElegidoPrevio({ datos: previsualizacion.datos, indice })} onReintentar={previsualizacion.reintentar}/>
+              </>}
 
           {pedido && <dl className="detalle-datos pedido-resumen">
             <div><dt>Canal de origen</dt><dd>{etiquetaCanal(pedido.canal_origen)}</dd></div>

@@ -754,3 +754,14 @@ La parte frontend agrega la configuración de la sucursal con errores por campo,
 Corrección de pedidos antiguos: Completar importe sigue visible para pedidos sin importe que todavía no estén pagados, aunque su dirección no esté confirmada. En ese caso no consulta la sugerencia y muestra que aparece al confirmar la ubicación. En la carga, el formulario solo se muestra después de confirmar; revisión y Asignaciones conservan su comportamiento. Se agregaron pruebas de la condición de completar y consultar. `npm test` en `frontend/`: 76 pruebas aprobadas en 18 archivos; `npm run lint` y `npm run build` pasan. El build conserva el aviso de chunks mayores a 500 kB. No se verificó en navegador.
 
 La pantalla de tarifas se muestra como «Configuración de envíos», con el subtítulo de sucursal y precio por km. El menú usa el ícono de engranaje. Se alinearon los encabezados, los espaciados de formularios y los errores de campo con las clases de estilo existentes.
+
+## Previsualización automática de ubicación en la carga (01/11/2026)
+
+Estado: implementada en backend y frontend; sin commit, push ni deploy. Motivo: devolución del profesor del 28/10/2026 (carga más dinámica). Spec: `frontend/specs/previsualizacion-ubicacion.md`; contrato en `docs/arquitectura.md`.
+
+- `backend/src/services/GeocodeService.js`: `previsualizar(direccion)` normaliza y valida con los módulos del alta, no consulta al proveedor si faltan calle, altura o provincia (`INCOMPLETA`) y devuelve candidatos sin persistir ni cambiar estados. Se extrajo `candidatosDeSalida`, compartida con `geocodificar`.
+- `backend/src/controllers/pedidos.controller.js` y `routes/pedidos.routes.js`: `POST /api/pedidos/previsualizar-ubicacion`, sólo ADMINISTRADOR y OPERADOR.
+- Frontend: `buscadorTentativo.js` (debounce 500 ms, cancelación, descarte de respuestas atrasadas), hook `usePrevisualizacionUbicacion`, `PrevisualizacionUbicacion.jsx`, `api/pedidos.js` y `PedidosCargaPage.jsx`. `MapPreview` acepta `mensajeVacio`.
+- Pruebas: `backend/test/previsualizar-ubicacion.test.js` (7) y `frontend/src/components/buscadorTentativo.test.js` (8 con temporizadores falsos).
+
+Límites: no se probó en navegador (escritorio ni móvil), contra Georef real ni la recarga tras guardar. Con varios candidatos, al guardar el flujo existente vuelve a pedir la elección. Observaciones ajenas: Georef no reconoce a Claypole como localidad censal y no tiene Belisario Roldan en esa zona, así que esa dirección devuelve ZERO_RESULTS; `backend/test/geocode.test.js` importa `../src/geocode/nominatim`, que ya no existe.

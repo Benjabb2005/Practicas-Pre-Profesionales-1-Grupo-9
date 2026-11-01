@@ -41,6 +41,13 @@ export async function geocodificarPedido(id, indiceCandidato) {
   return data
 }
 
+// Búsqueda tentativa del destino sin pedido persistido. El servidor valida,
+// normaliza y consulta al proveedor; no guarda nada ni confirma la dirección.
+export async function previsualizarUbicacion(direccion, signal) {
+  const { data } = await api.post('/pedidos/previsualizar-ubicacion', direccion, { signal })
+  return data
+}
+
 export async function rechazarUbicacion(id) {
   const { data } = await api.post(`/pedidos/${id}/rechazar-ubicacion`)
   return data.pedido

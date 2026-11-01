@@ -1,5 +1,25 @@
 const { noEncontrado, conflicto } = require("../lib/errors");
 const { componerDireccionOriginal } = require("./PedidoService");
+const { normalizarDireccion } = require("./NormalizadorDireccion");
+const { validarDireccion } = require("./ValidadorDireccion");
+
+// Datos mínimos para que una búsqueda tentativa tenga sentido. Localidad y código
+// postal mejoran el resultado pero no se exigen para previsualizar.
+const CAMPOS_PREVISUALIZACION = ["calle", "altura", "provincia"];
+
+// Los proveedores devuelven `candidatos` o, en la forma simple, un solo punto.
+function candidatosDeSalida(salida, direccionEnviada) {
+    if (salida.candidatos) return salida.candidatos;
+    const hayPunto = Number.isFinite(Number(salida.latitud)) && Number.isFinite(Number(salida.longitud));
+    if (!hayPunto) return [];
+    return [{
+        indice: 0,
+        latitud: Number(salida.latitud),
+        longitud: Number(salida.longitud),
+        nivelConfianza: salida.nivelConfianza || (salida.resultado === "OK" ? "ALTO" : "MEDIO"),
+        direccion: salida.direccion_normalizada || direccionEnviada,
+    }];
+}
 
 // Geocodificación y confirmación. Invariante central: ningún resultado automático
 // deja una dirección CONFIRMADA; solo la acción humana de confirmar habilita despacho.
@@ -44,11 +64,7 @@ function createGeocodeService({ pedidos, adapter }) {
             let nivelConfianza = null;
             let latitud = null;
             let longitud = null;
-            const candidatos = salida.candidatos || (
-                Number.isFinite(Number(salida.latitud)) && Number.isFinite(Number(salida.longitud))
-                    ? [{ indice: 0, latitud: Number(salida.latitud), longitud: Number(salida.longitud), nivelConfianza: salida.nivelConfianza || (salida.resultado === "OK" ? "ALTO" : "MEDIO"), direccion: salida.direccion_normalizada || direccionEnviada }]
-                    : []
-            );
+            const candidatos = candidatosDeSalida(salida, direccionEnviada);
             const seleccionado = indiceCandidato === null
                 ? (candidatos.length === 1 ? candidatos[0] : null)
                 : candidatos.find((candidato) => candidato.indice === indiceCandidato);
@@ -80,6 +96,28 @@ function createGeocodeService({ pedidos, adapter }) {
                 candidatos: candidatos.length > 1 && !seleccionado ? candidatos : [],
                 ambiguo: candidatos.length > 1 && !seleccionado,
                 pedido: await pedidos.obtenerDetalle(pedidoId),
+            };
+        },
+
+        // Búsqueda tentativa sin pedido: no persiste nada ni toca estados. Reutiliza el
+        // normalizador, el validador y el proveedor del servidor.
+        async previsualizar(direccionCruda) {
+            const direccion = normalizarDireccion(direccionCruda);
+            const { problemas } = validarDireccion(direccion);
+            const bloqueantes = problemas.filter((problema) => problema.gravedad === "ERROR" && CAMPOS_PREVISUALIZACION.includes(problema.campo));
+            const base = { proveedor: adapter.nombre, tentativa: true, problemas };
+            if (bloqueantes.length) {
+                return { ...base, resultado: "INCOMPLETA", motivo: bloqueantes[0].mensaje, ambiguo: false, candidatos: [] };
+            }
+
+            const salida = await adapter.geocodificar(direccion);
+            const candidatos = candidatosDeSalida(salida, componerDireccionOriginal(direccion) || direccion.calle);
+            return {
+                ...base,
+                resultado: salida.resultado,
+                motivo: salida.motivo ?? null,
+                ambiguo: candidatos.length > 1,
+                candidatos,
             };
         },
 
