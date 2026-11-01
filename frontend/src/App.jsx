@@ -37,7 +37,7 @@ function Sidebar({ usuario, onLogout }) {
   ]
   if (rol === 'ADMINISTRADOR') {
     items.splice(2, 0, { to: '/usuarios', label: 'Usuarios', icon: 'users' })
-    items.push({ to: '/tarifas', label: 'Tarifa por km', icon: 'truck' })
+    items.push({ to: '/tarifas', label: 'Configuración de envíos', icon: 'settings' })
   }
 
   return <aside className="sidebar">

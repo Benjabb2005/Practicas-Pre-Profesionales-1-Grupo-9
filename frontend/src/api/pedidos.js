@@ -13,6 +13,11 @@ export async function obtenerPedido(id) {
   return data.pedido
 }
 
+export async function obtenerImporteSugerido(id) {
+  const { data } = await api.get(`/pedidos/${id}/importe-sugerido`)
+  return data
+}
+
 export async function crearPedido(cuerpo) {
   const { data } = await api.post('/pedidos', cuerpo)
   return data

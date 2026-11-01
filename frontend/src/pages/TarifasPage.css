@@ -1,0 +1,4 @@
+.tarifas-layout { max-width: 720px; }
+.tarifas-panel { padding: 22px; }
+.tarifas-panel form { margin-top: 8px; }
+.tarifa-ubicacion { display: grid; gap: 8px; margin-top: 16px; }
