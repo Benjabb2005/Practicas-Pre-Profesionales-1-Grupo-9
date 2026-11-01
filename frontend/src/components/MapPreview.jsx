@@ -17,13 +17,13 @@ function CentrarMapa({ lat, lon }) {
 // Mapa de sólo lectura (Leaflet sobre teselas de OpenStreetMap). Muestra el punto
 // geocodificado; no permite arrastrar el marcador: la corrección se hace en el
 // formulario y la confirmación es siempre del operador.
-function MapPreview({ latitud, longitud, etiqueta, buscando = false }) {
+function MapPreview({ latitud, longitud, etiqueta, buscando = false, mensajeVacio = '' }) {
   const coordenadas = coordenadasDeMapa(latitud, longitud)
 
   if (!coordenadas) {
     return <div className="map-placeholder">
       <div className="map-grid"/>
-      <div className="map-empty"><Icon name="pin" size={21}/><span>Sin coordenadas todavía.<br/>{buscando ? 'Buscando la dirección en OpenStreetMap…' : 'Buscá la dirección en el mapa para ver el punto.'}</span></div>
+      <div className="map-empty"><Icon name="pin" size={21}/><span>Sin coordenadas todavía.<br/>{mensajeVacio || (buscando ? 'Buscando la dirección en OpenStreetMap…' : 'Buscá la dirección en el mapa para ver el punto.')}</span></div>
     </div>
   }
 

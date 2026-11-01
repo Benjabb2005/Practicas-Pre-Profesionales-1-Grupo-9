@@ -30,6 +30,18 @@ const esquemaCrear = z.object({
     direccion: esquemaDireccion,
 });
 
+// La previsualización acepta una dirección a medio completar: la calle vacía no es un
+// 400, sino un resultado INCOMPLETA que el servidor explica.
+const esquemaPrevisualizar = z.object({
+    calle: textoOpcional(150),
+    altura: textoOpcional(20),
+    piso_depto: textoOpcional(30),
+    entre_calles: textoOpcional(150),
+    localidad: textoOpcional(100),
+    provincia: textoOpcional(100),
+    codigo_postal: textoOpcional(10),
+});
+
 const esquemaId = z.object({ id: z.coerce.number().int().positive() });
 const esquemaGeocodificar = z.object({ indice_candidato: z.coerce.number().int().nonnegative().optional() }).optional();
 
@@ -111,6 +123,12 @@ function createPedidosController({ pedidoService, geocodeService, sugerenciaImpo
             const { id } = validar(esquemaId, req.params);
             const datos = validar(esquemaGeocodificar, req.body ?? {}) || {};
             res.json(await geocodeService.geocodificar(id, req.usuario?.id, datos.indice_candidato ?? null));
+        },
+
+        async previsualizarUbicacion(req, res) {
+            if (!geocodeService) throw servicioNoDisponible();
+            const direccion = validar(esquemaPrevisualizar, req.body ?? {});
+            res.json(await geocodeService.previsualizar(direccion));
         },
 
         async rechazarUbicacion(req, res) {

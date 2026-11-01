@@ -10,6 +10,19 @@ export const DIRECCION_VACIA = {
   codigo_postal: '',
 }
 
+// Mínimo para buscar una ubicación útil: calle, altura y provincia. Es sólo para
+// no disparar consultas inútiles; el servidor decide si la dirección sirve.
+export function direccionBuscable(direccion) {
+  return ['calle', 'altura', 'provincia'].every((campo) => String(direccion?.[campo] ?? '').trim() !== '')
+}
+
+// Identifica los datos que cambian la ubicación. Piso/depto y entre calles no
+// mueven el punto, así que no reinician la búsqueda.
+export function claveBusqueda(direccion) {
+  return JSON.stringify(['calle', 'altura', 'localidad', 'provincia', 'codigo_postal']
+    .map((campo) => String(direccion?.[campo] ?? '').trim().toLowerCase()))
+}
+
 // Las coordenadas sólo existen si el proveedor las encontró. Un null o un
 // valor ausente no alcanza para confirmar la ubicación.
 export function tieneCoordenadas(pedido) {
