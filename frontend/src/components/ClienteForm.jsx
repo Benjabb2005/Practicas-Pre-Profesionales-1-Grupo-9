@@ -9,7 +9,7 @@ function ClienteForm({ valor, onChange, onSubmit, onCancel, enviando = false, mo
       <span className="step-number">{editando ? '✎' : '+'}</span>
       <div>
         <h2 id="cliente-form-title">{editando ? 'Editar cliente' : 'Nuevo cliente'}</h2>
-        <p>{editando ? 'Corregí los datos y guardá los cambios.' : 'Completá los datos del cliente. El nombre es obligatorio.'}</p>
+        <p>{editando ? 'Corregí los datos y guardá los cambios.' : 'Completá los datos del cliente. Nombre, DNI y teléfono son obligatorios.'}</p>
       </div>
     </div>
 
@@ -24,9 +24,9 @@ function ClienteForm({ valor, onChange, onSubmit, onCancel, enviando = false, mo
         autoComplete="off"
       />
 
-      <label htmlFor="cliente-dni">DNI</label>
+      <label htmlFor="cliente-dni">DNI *</label>
       <input
-        id="cliente-dni"
+        id="cliente-dni" required
         value={valor.dni}
         onChange={(event) => onChange('dni', event.target.value)}
         placeholder="Con o sin puntos"
@@ -35,9 +35,9 @@ function ClienteForm({ valor, onChange, onSubmit, onCancel, enviando = false, mo
         autoComplete="off"
       />
 
-      <label htmlFor="cliente-telefono">Teléfono</label>
+      <label htmlFor="cliente-telefono">Teléfono *</label>
       <input
-        id="cliente-telefono"
+        id="cliente-telefono" required
         value={valor.telefono}
         onChange={(event) => onChange('telefono', event.target.value)}
         placeholder="Ej. 11 5555-5555"
@@ -46,7 +46,7 @@ function ClienteForm({ valor, onChange, onSubmit, onCancel, enviando = false, mo
         autoComplete="off"
       />
 
-      <label htmlFor="cliente-email">Email</label>
+      <label htmlFor="cliente-email">Email (opcional)</label>
       <input
         id="cliente-email"
         type="email"

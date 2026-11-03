@@ -12,6 +12,7 @@ import { motivoConfirmar, motivoGeocodificar, tieneCoordenadas } from '../compon
 import { mensajeError } from '../api/client'
 import { actualizarDireccion, confirmarDireccion, geocodificarPedido, obtenerPedido, rechazarUbicacion } from '../api/pedidos'
 import './Pedidos.css'
+import ExportarPedido from '../components/ExportarPedido.jsx'
 
 function direccionDesdePedido(pedido) {
   return {
@@ -165,6 +166,7 @@ function PedidoRevisionDetallePage({ pedidoId } = {}) {
       <Link className="button button-outline header-action" to="/pedidos/revision">Volver a la bandeja</Link>
     </header>}
 
+    <ExportarPedido pedidoId={pedido.id}/>
     {error && <p className="users-alert" role="alert">{error}</p>}
     {aviso && <p className="users-ok" role="status">{aviso}</p>}
 

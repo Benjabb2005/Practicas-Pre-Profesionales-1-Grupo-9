@@ -38,6 +38,7 @@ function condicionesCliente(cliente) {
 
 const { conflicto, noEncontrado } = require('../lib/errors');
 const { recargoPorIntentos } = require('../lib/importes');
+const { recordarDireccion } = require('../lib/direccionesCliente');
 function createPedidoRepository(db) {
     return {
         async crear({ codigo, clienteId, canalOrigen, estado, observaciones, creadoPor, direccion, importeBase }) {
@@ -66,6 +67,7 @@ function createPedidoRepository(db) {
                         direccion.estado_validacion ?? "PENDIENTE",
                     ]
                 );
+                await recordarDireccion(conexion, clienteId, direccion);
                 await conexion.commit();
                 return pedido.insertId;
             } catch (error) {

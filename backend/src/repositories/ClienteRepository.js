@@ -1,7 +1,16 @@
 // Acceso a la tabla clientes para el alta y la búsqueda desde el formulario de
 // carga. Solo SQL parametrizado; no devuelve contraseñas ni datos sensibles.
+const { direccionesUnicas } = require('../lib/direccionesCliente');
 function createClienteRepository(db) {
     return {
+        async direcciones(id) {
+            const [guardadas] = await db.query(`SELECT direccion_original,calle,altura,piso_depto,entre_calles,
+                localidad,provincia,codigo_postal FROM direcciones_cliente WHERE cliente_id=? ORDER BY created_at DESC,id DESC`, [id]);
+            const [historicas] = await db.query(`SELECT d.direccion_original,d.calle,d.altura,d.piso_depto,d.entre_calles,
+                d.localidad,d.provincia,d.codigo_postal FROM direcciones d JOIN pedidos p ON p.id=d.pedido_id
+                WHERE p.cliente_id=? ORDER BY p.created_at DESC,p.id DESC`, [id]);
+            return direccionesUnicas([...guardadas, ...historicas]);
+        },
         async listar({ busqueda } = {}) {
             if (busqueda) {
                 const patron = `%${busqueda}%`;

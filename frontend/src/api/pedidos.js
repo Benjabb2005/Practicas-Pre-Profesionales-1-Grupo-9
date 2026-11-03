@@ -18,6 +18,10 @@ export async function obtenerImporteSugerido(id) {
   return data
 }
 
+export async function sugerirImporteDuranteCarga(punto, signal) {
+  return (await api.post('/pedidos/importe-sugerido', punto, { signal })).data
+}
+
 export async function crearPedido(cuerpo) {
   const { data } = await api.post('/pedidos', cuerpo)
   return data

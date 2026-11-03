@@ -14,6 +14,8 @@ import PagoPedido from '../components/PagoPedido.jsx'
 import ComprobantesPedido from '../components/ComprobantesPedido.jsx'
 import {useAuth} from '../auth/useAuth.js'
 import EstadoComprobante from '../components/EstadoComprobante.jsx'
+import ExportarPedido from '../components/ExportarPedido.jsx'
+import { datosMasInformacion } from '../components/datosMasInformacion.js'
 
 function ContenidoDetalle({ pedidoId, tipo, onActualizado }) {
   const [pedido, setPedido] = useState(null)
@@ -30,19 +32,13 @@ function ContenidoDetalle({ pedidoId, tipo, onActualizado }) {
   const direccion = [pedido.calle, pedido.altura, pedido.localidad, pedido.provincia].filter(Boolean).join(' ')
   if(tipo==='pago'||tipo==='comprobantes')return <div className="asignacion-detalle-contenido">{tipo==='pago'&&<PagoPedido pedido={pedido} confirmacionInicial onActualizado={p=>{setPedido(p);onActualizado()}}/>}<ComprobantesPedido pedidoId={pedidoId}/></div>
   if (tipo === 'mapa') return <div className="asignacion-detalle-contenido asignacion-solo-mapa">
+    <ExportarPedido pedidoId={pedidoId}/>
     <MapPreview latitud={pedido.latitud} longitud={pedido.longitud} etiqueta={direccion}/>
     <p>{direccion || 'Sin dirección registrada'}</p>
     <p className="asignacion-detalle-nota">{pedido.estado_validacion === 'CONFIRMADA' ? 'Ubicación confirmada.' : 'Ubicación pendiente de confirmación humana.'}</p>
   </div>
-  const datos = [
-    ['Cliente', pedido.cliente_nombre], ['DNI', pedido.cliente_dni],
-    ['Teléfono', pedido.cliente_telefono], ['Email', pedido.cliente_email],
-    ['Dirección', direccion], ['Piso / Depto', pedido.piso_depto],
-    ['Código postal', pedido.codigo_postal], ['Entre calles', pedido.entre_calles],
-    ['Estado del pedido', pedido.estado], ['Validación', pedido.estado_validacion],
-    ['Canal de origen', pedido.canal_origen], ['Observaciones', pedido.observaciones],
-  ]
-  return <div className="asignacion-detalle-contenido"><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl><ImportePedido pedido={pedido}/><CompletarImporte pedido={pedido} onGuardado={setPedido}/><PagoPedido pedido={pedido} soloLectura/><HistorialPedido key={`${pedidoId}-${pedido.estado}`} pedidoId={pedidoId} operador/></div>
+  const datos = datosMasInformacion(pedido)
+  return <div className="asignacion-detalle-contenido"><ExportarPedido pedidoId={pedidoId}/><dl className="asignacion-datos">{datos.map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor || 'No informado'}</dd></div>)}</dl><ImportePedido pedido={pedido}/><CompletarImporte pedido={pedido} onGuardado={setPedido}/><PagoPedido pedido={pedido} soloLectura/><HistorialPedido key={`${pedidoId}-${pedido.estado}`} pedidoId={pedidoId} operador/></div>
 }
 
 function DetalleDireccion({ pedidoId, tipo, onClose, onActualizado }) {

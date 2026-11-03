@@ -70,3 +70,33 @@ test("variantes de calle: abrevia la primera palabra, ignora el tipo y no toca c
     assert.deepEqual(variantesDeCalle("Avenida Mitre"), []);
     assert.deepEqual(variantesDeCalle(""), []);
 });
+
+test('CABA: los alias Capital/Capital Federal/CABA consultan sin localidad y conservan provincia', async () => {
+    for (const localidad of ['Capital', 'Capital Federal', 'CABA', 'Ciudad Autónoma de Buenos Aires', 'Ciudad de Buenos Aires']) {
+        const entrada = { calle: 'Calle de prueba', altura: '123', localidad, provincia: 'Ciudad Autónoma de Buenos Aires' };
+        let consulta;
+        const fetchImpl = async url => {
+            consulta = url;
+            return { ok: true, status: 200, json: async () => ({ direcciones: url.searchParams.has('localidad') ? [] : [dato('Calle de prueba')] }) };
+        };
+        const resultado = await createGeorefProvider({ fetchImpl }).geocodificar(entrada);
+        assert.equal(resultado.resultado, 'APPROXIMATE');
+        assert.equal(consulta.searchParams.get('provincia'), 'Ciudad Autónoma de Buenos Aires');
+        assert.equal(consulta.searchParams.has('localidad'), false);
+        assert.equal(entrada.localidad, localidad);
+    }
+});
+
+test('no elimina barrios de CABA ni localidades llamadas Capital en otras provincias', async () => {
+    for (const entrada of [
+        { calle: 'Prueba', altura: '123', localidad: 'Balvanera', provincia: 'CABA' },
+        { calle: 'Prueba', altura: '123', localidad: 'Capital', provincia: 'Córdoba' },
+        { calle: 'Prueba', altura: '123', localidad: 'Capital', provincia: 'Buenos Aires' },
+    ]) {
+        const consultas = [];
+        const fetchImpl = async url => { consultas.push(url); return { ok: true, status: 200, json: async () => ({ direcciones: [] }) }; };
+        await createGeorefProvider({ fetchImpl }).geocodificar(entrada);
+        assert.equal(consultas[0].searchParams.get('localidad'), entrada.localidad);
+        assert.equal(consultas[0].searchParams.get('provincia'), entrada.provincia);
+    }
+});

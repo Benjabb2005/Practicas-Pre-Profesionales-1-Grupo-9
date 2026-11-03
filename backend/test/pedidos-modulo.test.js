@@ -68,7 +68,7 @@ function reposPedidosFalsos({ detalle, candidatos = [] } = {}) {
 
 const clientesFalsos = {
     async buscarPorId(id) {
-        return id === 1 ? { id: 1, nombre: "Cliente" } : null;
+        return id === 1 ? { id: 1, nombre: "Cliente", dni: "20123456", telefono: "1155555555", email: "fixture@example.test" } : null;
     },
 };
 
@@ -81,7 +81,7 @@ test("crear pedido guarda un borrador EN STOCK con canal, observaciones y sin du
             cliente_id: 1, importe_base: '100.00',
             canal_origen: CANALES.WHATSAPP,
             observaciones: "Dejar en portería",
-            direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA" },
+            direccion: { codigo_postal: "1043", calle: "Av. Corrientes", altura: "1234", localidad: "CABA" },
         },
         7
     );
@@ -99,7 +99,7 @@ test("crear pedido sin canal usa la carga manual como origen", async () => {
     const pedidos = reposPedidosFalsos();
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
-    await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { calle: "Av. Corrientes" } }, 7);
+    await servicio.crear({ cliente_id: 1, importe_base: '100.00', direccion: { codigo_postal: "1043", calle: "Av. Corrientes" } }, 7);
 
     assert.equal(pedidos.capturado.crear.canalOrigen, CANAL_PREDETERMINADO);
     assert.equal(pedidos.capturado.crear.observaciones, null);
@@ -127,7 +127,7 @@ test("un pedido con la misma dirección normalizada no se crea sin confirmación
     await assert.rejects(
         () => servicio.crear({
             cliente_id: 1, importe_base: '100.00',
-            direccion: { calle: "Av. Hipólito Yrigoyen", altura: "1234", localidad: "CABA", provincia: "CABA" },
+            direccion: { codigo_postal: "1043", calle: "Av. Hipólito Yrigoyen", altura: "1234", localidad: "CABA", provincia: "CABA" },
         }, 7),
         (error) => {
             assert.equal(error.statusCode, 409);
@@ -148,7 +148,7 @@ test("confirmar el duplicado crea el pedido y devuelve el existente para mostrar
 
     const resultado = await servicio.crear({
         cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Avenida Hipólito Yrigoyen", altura: "1234", localidad: "CABA", provincia: "CABA" },
+        direccion: { codigo_postal: "1043", calle: "Avenida Hipólito Yrigoyen", altura: "1234", localidad: "CABA", provincia: "CABA" },
         confirmar_duplicado: true,
     }, 7);
 
@@ -168,7 +168,7 @@ test("una altura distinta no se considera el mismo domicilio", async () => {
 
     await servicio.crear({
         cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Av. H. Yrigoyen", altura: "9999", localidad: "CABA", provincia: "CABA" },
+        direccion: { codigo_postal: "1043", calle: "Av. H. Yrigoyen", altura: "9999", localidad: "CABA", provincia: "CABA" },
     }, 7);
 
     assert.equal(pedidos.capturado.crear.clienteId, 1);
@@ -180,7 +180,7 @@ test("una localidad distinta no se considera el mismo domicilio", async () => {
 
     await servicio.crear({
         cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Av. H. Yrigoyen", altura: "1234", localidad: "Córdoba", provincia: "Córdoba" },
+        direccion: { codigo_postal: "1043", calle: "Av. H. Yrigoyen", altura: "1234", localidad: "Córdoba", provincia: "Córdoba" },
     }, 7);
 
     assert.equal(pedidos.capturado.crear.clienteId, 1);
@@ -192,7 +192,7 @@ test("sin altura no se arriesga un aviso de duplicado", async () => {
 
     await servicio.crear({
         cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Av. H. Yrigoyen", localidad: "CABA", provincia: "CABA" },
+        direccion: { codigo_postal: "1043", calle: "Av. H. Yrigoyen", localidad: "CABA", provincia: "CABA" },
     }, 7);
 
     assert.equal(pedidos.capturado.crear.clienteId, 1);
@@ -204,7 +204,7 @@ test("la ventana de duplicados se puede configurar", async () => {
 
     await servicio.crear({
         cliente_id: 1, importe_base: '100.00',
-        direccion: { calle: "Av. Corrientes", altura: "1234" },
+        direccion: { codigo_postal: "1043", calle: "Av. Corrientes", altura: "1234" },
     }, 7);
 
     assert.equal(pedidos.capturado.candidatos.ventanaHoras, 6);
@@ -351,7 +351,7 @@ test("el controlador no acepta un estado impuesto por el cliente", async () => {
                 canal_origen: CANALES.CORREO,
                 observaciones: "  Dejar en recepción  ",
                 confirmar_duplicado: true,
-                direccion: { calle: "Av. Corrientes", altura: "1234" },
+                direccion: { codigo_postal: "1043", calle: "Av. Corrientes", altura: "1234" },
                 estado: "PAGADO",
             },
             usuario: { id: 7 },
@@ -438,7 +438,7 @@ test("el controlador rechaza una confirmación de duplicado que no sea booleana"
             body: {
                 cliente_id: 1, importe_base: '100.00',
                 confirmar_duplicado: "true",
-                direccion: { calle: "Av. Corrientes", altura: "1234" },
+                direccion: { codigo_postal: "1043", calle: "Av. Corrientes", altura: "1234" },
             },
             usuario: { id: 7 },
         }, {}),
@@ -449,7 +449,7 @@ test("el controlador rechaza una confirmación de duplicado que no sea booleana"
 test("crear pedido con cliente inexistente se rechaza", async () => {
     const servicio = createPedidoService({ pedidos: reposPedidosFalsos(), clientes: clientesFalsos });
     await assert.rejects(
-        () => servicio.crear({ cliente_id: 99, importe_base: '100.00', direccion: { calle: "X" } }, 1),
+        () => servicio.crear({ cliente_id: 99, importe_base: '100.00', direccion: { codigo_postal: "1043", calle: "X" } }, 1),
         (error) => error.codigo === "DATOS_INVALIDOS"
     );
 });
@@ -458,7 +458,7 @@ test("cambiar la dirección de un pedido confirmado invalida la confirmación", 
     const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1 }) });
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
-    const resultado = await servicio.actualizarDireccion(10, { calle: "Av. de Mayo", altura: "450" });
+    const resultado = await servicio.actualizarDireccion(10, { codigo_postal: "1043", calle: "Av. de Mayo", altura: "450" });
 
     assert.equal(resultado.invalidada, true);
     assert.equal(pedidos.capturado.actualizarDireccion.opciones.invalidar, true);
@@ -568,7 +568,7 @@ test("pedidos: el chofer no puede crear pedidos", async () => {
         const respuesta = await fetch(`${baseUrl}/api/pedidos`, {
             method: "POST",
             headers: { authorization: `Bearer ${tokenChofer}`, "content-type": "application/json" },
-            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "WHATSAPP", direccion: { calle: "Av. Corrientes" } }),
+            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "WHATSAPP", direccion: { codigo_postal: "1043", calle: "Av. Corrientes" } }),
             signal: AbortSignal.timeout(3000),
         });
 
@@ -585,7 +585,7 @@ test("pedidos: un canal de origen fuera del catálogo responde 400", async () =>
         const respuesta = await fetch(`${baseUrl}/api/pedidos`, {
             method: "POST",
             headers: { authorization: `Bearer ${tokenAdmin}`, "content-type": "application/json" },
-            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "PALOMA", direccion: { calle: "Av. Corrientes" } }),
+            body: JSON.stringify({ cliente_id: 1, importe_base: '100.00', canal_origen: "PALOMA", direccion: { codigo_postal: "1043", calle: "Av. Corrientes" } }),
             signal: AbortSignal.timeout(3000),
         });
 

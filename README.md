@@ -4,6 +4,31 @@ Caso 7: normalización y geolocalización de direcciones de envío. La IA implem
 
 **Estado:** frontend de demostración, backend con respuesta HTTP básica y conexión MySQL, SQL inicial sin migraciones. Todavía no hay flujo de pedidos persistido ni autenticación real. Ver [arquitectura](docs/arquitectura.md).
 
+## Copia local aislada MVP-1 · 31/10/2026
+
+Esta configuración reemplaza los puertos de los ejemplos históricos de abajo.
+Proyecto Compose: `mandatodo-mvp1-aislado`; volumen MySQL:
+`mandatodo-mvp1-aislado_mysql_data`; base: `mandatodo_mvp1_aislado`.
+Contenedores y red pertenecen a este proyecto; no se comparten datos con otras copias.
+
+- Web: http://localhost:5174
+- API y estado de MySQL: http://localhost:3001/api/health
+- MySQL desde el host: 127.0.0.1:3308
+
+Desde esta carpeta: `docker compose up -d` para iniciar y
+`docker compose stop` para detener conservando datos. No usar `down -v`.
+Las cuatro migraciones y las cuentas de prueba ya están creadas en la base nueva.
+Las credenciales de seed están en el archivo local `.env` (SEED_*_PASSWORD);
+las cuentas son admin@mandatodo.com, operador@mandatodo.com y chofer@mandatodo.com.
+Los secretos de MySQL y JWT se generaron para esta copia y no se versionan.
+
+También quedaron dependencias instaladas y archivos locales ignorados
+`backend/.env` y `frontend/.env` para ejecución nativa.
+Primero detener los servicios backend/frontend de Docker para liberar los puertos:
+`docker compose stop backend frontend`. Luego, en terminales separadas:
+`npm --prefix backend run dev` y `npm --prefix frontend run dev`.
+MySQL sigue en Docker; Vite carga su proxy y puerto desde `frontend/.env`.
+
 ## Empezar con IA
 
 Abrir **esta carpeta** como proyecto. Leer [AGENTS.md](AGENTS.md) y [guía de desarrollo](docs/desarrollo-ia.md). Las reglas de trabajo están en `AGENTS.md` de la raíz y se complementan con [frontend/AGENTS.md](frontend/AGENTS.md) y [backend/AGENTS.md](backend/AGENTS.md) según la carpeta que toques. Configuración por herramienta y comprobación de contexto: [docs/agentes.md](docs/agentes.md). Primera tarea propuesta: T01 en [tareas](docs/tareas.md).

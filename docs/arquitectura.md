@@ -96,3 +96,29 @@ Límites vigentes: `database/init.sql` no se tocó ni se reaplicó; geolocalizac
 Se montan /api/asignaciones (ADMINISTRADOR/OPERADOR) y /api/chofer/pedidos (CHOFER) con listado y detalle propios. Asignar guarda chofer_id sin cambiar estado, exige dirección CONFIRMADA y chofer activo y registra historial en la misma transacción bajo FOR UPDATE. /asignaciones ofrece controles de asignación y /chofer consulta datos reales, sin acciones simuladas de entrega/pago. Contrato en frontend/specs/asignacion-chofer.md; todavía no hay API de despacho, entrega ni pago. B01 fue autorizada y completada el 25/10/2026: listado/guardado informan puede_asignar, motivo_bloqueo y puede_quitar; pantalla y API verificadas con MySQL aislado. La vista del chofer sigue siendo borrador y no acredita B03 terminada. Los merges remotos se trajeron hasta f87f6e1 el 25/10/2026.
 
 B02 (25/10/2026): PUT /api/asignaciones/:id/estado integra preparación/despacho con validarTransicion existente, chofer activo y confirmación. Relectura/bloqueo de pedido/dirección/chofer, cambio de estado e historial se realizan en una transacción de AsignacionRepository. La ruta no expone entrega ni pago. Reasignación/desasignación siguen restringidas al tramo previo al despacho.
+
+## Exportación de pedidos · KAN-52 (02/11/2026)
+
+GET /api/exportaciones/pedidos/:id requiere sesión y admite ADMINISTRADOR/OPERADOR y CHOFER sólo para pedido propio. El repositorio valida usuario activo/rol vigente en la consulta y lee pedido/pago/historial de estados e intentos geográficos en una misma fotografía REPEATABLE READ. No devuelve archivos comprobantes ni datos de autenticación; Cache-Control no-store. No hay escritura de negocio ni migración. ExportarPedido consulta ese endpoint desde revisión/Asignaciones/historial del chofer y carga jsPDF dinámicamente para guardar A4 paginado; mapa independiente disponible. Sin mapa se puede descargar pedido con aviso. Canvas usa teselas de la vista OSM y atribución, sin nuevos servicios de geocodificación. Revisión visual/CORS real pendiente por pedido del usuario.
+
+Ajuste de presentación KAN-52 (02/11/2026): la descarga de información ahora replica
+Más información mediante campos compartidos con el panel y su historial visible;
+la descarga de mapa sólo contiene dirección e imagen con atribución integrada.
+El endpoint conserva la fotografía de lectura y añade conteo de comprobantes para
+el estado de pago visible; no se exportan los archivos. Información no solicita mapa.
+
+## KAN-56 · sugerencia con punto tentativo durante carga (02/11/2026)
+
+POST /api/pedidos/importe-sugerido (ADMINISTRADOR/OPERADOR) recibe latitud/longitud numéricas finitas en rango, sin precio/importe del cliente. Estima con sucursal/tarifa del servidor reutilizando cálculo de sugerencia confirmada; devuelve disponible/motivo o distancia_km/precio_km/importe_sugerido y tentativa:true. No lee/escribe pedidos ni confirma ubicación; sin migración. useImporteDuranteCarga consulta sólo con punto vigente único/elegido, cancela y descarta respuestas viejas. Campo automático se invalida inmediatamente al cambiar ubicación; edición manual se conserva hasta elección explícita de Usar importe sugerido. GET /pedidos/:id/importe-sugerido sigue requiriendo confirmación. La estimación tentativa no habilita despacho ni reemplaza revisión humana.
+
+Georef CABA (02/11/2026): el adaptador omite localidad únicamente para los alias
+Capital/Capital Federal/CABA/Ciudad Autónoma de Buenos Aires/Ciudad de Buenos Aires
+cuando provincia ya es CABA; mantiene provincia como filtro y conserva datos de
+entrada. Barrios concretos y otras provincias no cambian. Evita cero resultados
+por enviar el nombre de la ciudad como localidad de Georef.
+
+## KAN-54 · libreta de direcciones por cliente (02/11/2026)
+
+Migración005 agrega direcciones_cliente: snapshot normalizado/original, SHA256 de siete campos y unique(cliente_id,clave), FK a clientes. No contiene coordenadas ni confirmación. PedidoRepository.crear agrega la dirección en su propia transacción, con no-op en duplicado; error revierte alta completa. ClienteRepository.direcciones combina en lectura libreta y direcciones de pedidos existentes, normaliza/deduplica y devuelve sólo campos reutilizables. GET /api/clientes/:id/direcciones requiere admin/operador y cliente válido, Cache-Control no-store. No usa domicilio libre ni modifica snapshots anteriores.
+
+Cargar pedido monta DireccionesCliente por cliente para cancelar respuestas viejas y limpiar selección; elegir copia campos mediante lista permitida, nunca geo/confirmación. Otra dirección/cambio de cliente limpia dirección e importe manual; previsualización y sugerencia actuales se recalculan. Las cuentas/estados/permisos del resto no cambian.005 aplicada a copia local con respaldo/restauración y conservación verificados; runbook docs/migracion-direcciones-cliente.md.

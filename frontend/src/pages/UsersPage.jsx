@@ -89,16 +89,16 @@ function UsersPage() {
     {formulario && <section className="panel users-form-panel" aria-labelledby="users-form-title">
       <div className="section-heading"><span className="step-number">{formulario.id ? '✎' : '+'}</span><div><h2 id="users-form-title">{formulario.id ? 'Editar usuario' : 'Nuevo usuario'}</h2><p>{formulario.id ? 'Dejá la contraseña vacía para no cambiarla.' : 'Completá los datos. La contraseña debe tener al menos 8 caracteres.'}</p></div></div>
       <form className="access-form users-form" onSubmit={guardar}>
-        <label htmlFor="user-nombre">Nombre</label>
+        <label htmlFor="user-nombre">Nombre *</label>
         <input id="user-nombre" value={formulario.nombre} onChange={(event) => cambiar('nombre', event.target.value)} required minLength={2}/>
 
-        <label htmlFor="user-email">Email</label>
+        <label htmlFor="user-email">Email *</label>
         <input id="user-email" type="email" autoComplete="off" value={formulario.email} onChange={(event) => cambiar('email', event.target.value)} required/>
 
-        <label htmlFor="user-password">Contraseña {formulario.id ? '(opcional)' : ''}</label>
+        <label htmlFor="user-password">Contraseña {formulario.id ? '(opcional)' : '*'}</label>
         <input id="user-password" type="password" autoComplete="new-password" value={formulario.password} onChange={(event) => cambiar('password', event.target.value)} required={!formulario.id} minLength={formulario.id ? undefined : 8}/>
 
-        <label htmlFor="user-rol">Rol</label>
+        <label htmlFor="user-rol">Rol *</label>
         <select id="user-rol" value={formulario.rol} onChange={(event) => cambiar('rol', event.target.value)}>
           {ROLES.map((rol) => <option key={rol.valor} value={rol.valor}>{rol.etiqueta}</option>)}
         </select>

@@ -16,6 +16,7 @@ function createPedidosRouter(container = {}) {
     router.get("/", controller.listar);
     router.post("/", controller.crear);
     router.post("/previsualizar-ubicacion", controller.previsualizarUbicacion);
+    router.post('/importe-sugerido', controller.sugerirImporteDuranteCarga);
     router.put('/:id/importe', controller.completarImporte);
     router.get("/:id/importe-sugerido", controller.sugerirImporte);
     router.get("/:id", controller.obtener);

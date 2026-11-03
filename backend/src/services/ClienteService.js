@@ -1,8 +1,9 @@
 const { errorValidacion, conflicto, noEncontrado } = require("../lib/errors");
+const { validarContactoObligatorio } = require('../lib/contactoCliente');
 
 // Normaliza el DNI quitando únicamente los separadores admitidos: puntos,
 // espacios y guiones. Otros caracteres se rechazan para no inventar un DNI a
-// partir de una entrada inválida. Vacío se guarda como NULL.
+// partir de una entrada inválida. Vacío normaliza a NULL; el alta/edición lo rechaza.
 function normalizarDni(valor) {
     if (valor === undefined || valor === null) return null;
     const texto = String(valor).trim();
@@ -30,11 +31,12 @@ function esDuplicadoDeDni(error) {
     return error?.code === "ER_DUP_ENTRY" || error?.errno === 1062;
 }
 
-// Valida y normaliza los campos editables. El nombre es el único obligatorio;
-// los datos opcionales vacíos se guardan como NULL.
+// Nombre y datos de contacto obligatorios para altas/ediciones manuales.
+// La lectura/importación histórica conserva datos anteriores sin inventarlos.
 function normalizarDatos({ nombre, dni, telefono, email, tipo, domicilio }) {
     const nombreLimpio = String(nombre ?? "").trim();
     if (!nombreLimpio) throw errorValidacion({ nombre: "El nombre es obligatorio." });
+    validarContactoObligatorio({ dni, telefono, email });
 
     const dniNormalizado = normalizarDni(dni);
     if (dni !== undefined && dni !== null && String(dni).trim() !== "" && !dniNormalizado) {
@@ -68,6 +70,10 @@ function createClienteService({ clientes }) {
     }
 
     return {
+        async direcciones(id) {
+            if (!await clientes.buscarPorId(id)) throw noEncontrado('El cliente no existe.');
+            return clientes.direcciones(id);
+        },
         async listar(filtros = {}) {
             return clientes.listar(filtros);
         },
@@ -89,7 +95,7 @@ function createClienteService({ clientes }) {
         },
 
         // PUT con los campos editables. Los que no vienen conservan el valor
-        // actual; los que vienen vacíos se limpian (por ejemplo, borrar el DNI).
+        // actual; los obligatorios no se pueden vaciar.
         async actualizar(id, datos) {
             const actual = await clientes.buscarPorId(id);
             if (!actual) throw noEncontrado("El cliente no existe.");

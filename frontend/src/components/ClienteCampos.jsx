@@ -14,6 +14,7 @@ function ClienteCampos({ valor = CLIENTE_VACIO, onChange, bloqueado = false }) {
         placeholder={campo.placeholder}
         autoComplete="off"
         type={campo.clave === 'email' ? 'email' : 'text'}
+        required={campo.requerido}
         disabled={bloqueado}
       />
     </label>)}

@@ -127,7 +127,7 @@ export default function TarifasPage() {
       <section className="panel tarifas-panel">
         <div className="section-heading"><div><h2>Precio por kilómetro</h2></div></div>
         {cargando && <p role="status">Cargando tarifa…</p>}{error && <p role="alert" className="users-alert">{error}</p>}{aviso && <p role="status" className="users-ok">{aviso}</p>}
-        <form className="tarifa-precio-form" onSubmit={guardar}><label className="form-field" htmlFor="tarifa-km"><span>Precio fijo por km (ARS)</span><input id="tarifa-km" inputMode="decimal" required pattern="[0-9]{1,10}([.,][0-9]{1,2})?" value={precio} onChange={e => setPrecio(e.target.value)} disabled={cargando || ocupado}/></label>
+        <form className="tarifa-precio-form" onSubmit={guardar}><label className="form-field" htmlFor="tarifa-km"><span>Precio fijo por km (ARS) *</span><input id="tarifa-km" inputMode="decimal" required pattern="[0-9]{1,10}([.,][0-9]{1,2})?" value={precio} onChange={e => setPrecio(e.target.value)} disabled={cargando || ocupado}/></label>
           <div className="order-actions"><button className="button button-primary" disabled={cargando || ocupado}>{ocupado ? 'Guardando…' : 'Guardar tarifa'}</button>
             {error && <button type="button" className="button button-outline" disabled={ocupado || cargando} onClick={() => { setError(''); setCargando(true); setIntento(i => i + 1) }}>Reintentar consulta</button>}
           </div>

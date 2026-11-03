@@ -97,6 +97,16 @@ function createPedidosController({ pedidoService, geocodeService, sugerenciaImpo
             res.json(await sugerenciaImporteService.sugerir(id));
         },
 
+        async sugerirImporteDuranteCarga(req, res) {
+            if (!sugerenciaImporteService) throw servicioNoDisponible();
+            const punto = validar(z.object({
+                latitud: z.number().finite().min(-90).max(90),
+                longitud: z.number().finite().min(-180).max(180),
+            }).strict(), req.body ?? {});
+            res.set('Cache-Control', 'no-store');
+            res.json(await sugerenciaImporteService.sugerirDuranteCarga(punto));
+        },
+
         async crear(req, res) {
             if (!pedidoService) throw servicioNoDisponible();
             const datos = validar(esquemaCrear, req.body ?? {});

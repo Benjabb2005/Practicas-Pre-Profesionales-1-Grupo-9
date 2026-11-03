@@ -83,6 +83,17 @@
 :root[data-theme="dark"] .clientes-delete:hover { background: #492932; }
 :root[data-theme="dark"] .clientes-confirm { background: #40242c; border-color: #70404b; }
 :root[data-theme="dark"] .clientes-confirm h2 { color: #ffb5ad; }
+/* El aviso de duplicados tiene tarjetas propias: no mezclar fondos claros
+   heredados con el texto claro del tema oscuro. */
+:root[data-theme="dark"] .duplicate-alert { background: #332b1c; border-color: #806636; color: var(--theme-text); }
+:root[data-theme="dark"] .duplicate-alert-heading,
+:root[data-theme="dark"] .duplicate-alert-heading b { color: #f2d09b; }
+:root[data-theme="dark"] .duplicate-list li { background: var(--theme-surface); border-color: #665538; }
+:root[data-theme="dark"] .duplicate-list b { color: var(--theme-text); }
+:root[data-theme="dark"] .duplicate-list :is(span, small) { color: #c4cbd5; }
+:root[data-theme="dark"] .duplicate-alert p { color: #d4d9e1; }
+:root[data-theme="dark"] .duplicate-alert .paginacion { border-color: #665538; color: #c4cbd5; margin-bottom: 10px; }
+:root[data-theme="dark"] .duplicate-alert .paginacion button:disabled { opacity: 1; background: var(--theme-raised); color: var(--theme-muted); }
 :root[data-theme="dark"] .clientes-ok { background: #1b4236; color: #b1e2ca; border-color: #4a9876; }
 :root[data-theme="dark"] :is(.login-shell, .login-panel) { background: var(--theme-background); color: var(--theme-text); }
 :root[data-theme="dark"] .login-brand { background: #0c1b30; }

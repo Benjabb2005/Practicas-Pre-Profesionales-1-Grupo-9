@@ -613,3 +613,95 @@ Sin diferencia en: abreviaturas de provincia (`Bs. As.`, `Pcia. de Buenos Aires`
 - No se probó el guardado contra MySQL ni la regla "sólo `VALIDA` se geocodifica" por HTTP (T05); está cubierta por las pruebas automáticas existentes del backend.
 - Los resultados esperados son un criterio del asistente; conviene que Tomás los revise.
 - La batería no se agregó como prueba automática del repo.
+
+## KAN-44 / X04 · corte inicial (02/11/2026)
+
+Base actualizada por fast-forward a 1d5f12f, con configuración aislada local preservada. npm run check aprobado: contexto, sintaxis, backend223/227 (4 opt-in omitidas), lint/build; frontend84/84 en 19 archivos. Contra API/MySQL reales a través del proxy web se aprobaron 19 comprobaciones de health, login de tres roles, restauración de sesión, errores 401 y restricciones 403/200 en usuarios, asignaciones y pedidos de chofer. Matriz independiente de EstadoPedidoService: 51 casos aprobados de transiciones y confirmación. Sin mutaciones de negocio ni secretos en salida. Detalle y límites en el apartado KAN-44 de tareas.md. Las transiciones se verificaron como reglas, no como escritura HTTP/MySQL; tampoco se acredita recorrido visual, migración/importación real ni cierre integral de X04. El build mantiene aviso de chunk mayor a 500 kB. Scripts/logs en temp/kan44-*. No se reproduce la ausencia del adaptador Nominatim mencionada en una nota previa.
+
+## KAN-51/KAN-52 · implementación para prueba conjunta (02/11/2026)
+
+KAN-44 sigue pendiente por pedido del usuario. Horarios24h y exportación implementados sin cierre de tickets. npm run check pasa: contexto, sintaxis,232 pruebas backend (228 aprobadas/4 opt-in omitidas), lint y build. Frontend:101/101 en21 archivos. Incluye medianoche/mediodía, fechas ausentes/inválidas, PDF sin ubicación/historial,150 movimientos, campo de varias páginas y PNG sintético con atribución/condición. Matriz de exportación HTTP contra Docker/MySQL:401 sin sesión,400 ID inválido y404 inexistente en tres roles,200 admin/operador con historiales completos contrastados contra endpoints originales,404 chofer ajeno. Lecturas solamente, sin modificar datos del usuario.
+
+Frontend Docker reconstruido con jsPDF4.2.1; web5174 responde200 y MySQL permanece healthy. No se probó descarga desde navegador, CORS/teselas reales ni presentación escritorio/móvil; quedan para prueba conjunta solicitada. Ninguna prueba sintética acredita esos casos. npm audit informa11 hallazgos en dependencias preexistentes y ninguno en jspdf/dependencias nuevas; fuera de alcance de este corte, sin audit fix. Build conserva aviso de chunk mayor a500kB. git diff --check pasa. Scripts/logs temporales temp/kan52-http.cjs y temp/funcionalidades-*. Sin commit/push ni cierre en Jira.
+
+## KAN-52 · ajuste de contenido (02/11/2026)
+
+Por corrección explícita del usuario, las descargas quedan separadas: información replica Más información (campos/importes/pago/historial visible sin recorte por página) y mapa únicamente dirección e imagen con atribución integrada. La prueba de PDF comprueba que no se agregan datos geográficos/metadatos al primero y que el texto del segundo es únicamente la dirección. Pruebas frontend102/102 pasan. Los criterios históricos de PDF integral y condición/coordenadas en mapa quedan superados por este pedido. Validación visual/red real permanece pendiente.
+
+Validación del ajuste: npm run check completo aprobado (backend228 aprobadas/4 opt-in omitidas, contexto/sintaxis/lint/build); frontend102/102. HTTP de exportación repetido contra Docker/MySQL conserva permisos y respuestas correctas. git diff --check aprobado. Cambios disponibles por bind mount de desarrollo, sin modificar datos ni recrear MySQL; visual/red real pendiente para prueba conjunta.
+
+## KAN-56 · importe antes de guardar (02/11/2026)
+
+npm run check aprobado: contexto, sintaxis, backend239 (235 aprobadas/4 opt-in omitidas), lint/build; frontend108/108 en22 archivos. Backend enfocado16/16 aprobado. Cobertura de fórmula de sugerencia compartida, centavos/redondeo, máximo, cero, configuración, coordenadas, roles, cancelación, candidato vigente, respuestas tardías y conservación manual. HTTP real mediante proxy5174:401/403/400 según permisos/cuerpo; admin/operador200 informan configuración faltante. No se alteró configuración ni datos de pedidos. Cálculo positivo probado con fixtures de servicio, sin MySQL ni red; no se acredita visual/proveedor real. Regresión visual y guardado manual conjunto pendientes por decisión del usuario. git diff --check OK; aviso heredado de chunk grande. Evidencia temporal temp/kan56-*. Sin commit/push.
+
+## Georef CABA / Capital (02/11/2026)
+
+Reproducción real: Corrientes3247 con localidad Capital/CABA completa devuelve0; sin ese filtro pero manteniendo provincia CABA devuelve1 candidato. Ajuste sólo de alias de ciudad en CABA, preservando barrio específico y Capital en otras provincias. Dos regresiones añadidas. npm run check completo pasa: backend241 (237 aprobadas/4 opt-in omitidas), contexto/sintaxis/lint/build; aviso heredado de bundle grande. Consulta real por API Docker a la misma dirección de la captura retorna APPROXIMATE con1 candidato. Sin guardar sucursal ni pedido. git diff --check pasa; pendiente revisión del punto y guardado por el usuario.
+
+## KAN-54 · direcciones por cliente (02/11/2026)
+
+Check completo pasa: backend246 (241 aprobadas/5 opt-in omitidas), contexto/sintaxis/lint/build. Frontend113/113 en23 archivos. Nueva prueba MySQL opt-in1/1 ejecutada aparte en base nueva con001–005: libreta persistente, histórico, duplicado normalizado/reintentos/concurrencia, pisos/referencias, clientes separados, lectura otra conexión, rollback y pedido previo sin cambios. Prueba unitaria de cliente inexistente inicialmente falló por método ubicado en normalizador; corregido y4/4 enfocadas pasaron, además de check completo.
+
+Respaldo consistente y restauración ensayados antes de005, tabla creada dos veces en copia sin alterar registros anteriores. Migración local ejecutada y runner repetido sin pendientes, conteos previos preservados y schema_migrations suma1. No se escribieron pedidos/clientes de prueba en base local; sólo bases separadas. API real de lectura:admin/operador200 con direcciones históricas y campos sin confirmación/coordenadas,401/403/400/404 según caso. Visual/móvil y flujo conjunto pendientes. git diff --check aprobado; aviso heredado de bundle grande. Runbook migracion-direcciones-cliente.md; respaldo y evidencia temp/kan54-* ignorados. Sin commit/push.
+
+## Selector frecuente compacto (02/11/2026)
+
+Frontend116/116 en24 archivos; lint/build aprobados. Navegador con componente real/API simulada: sin lista inicial, búsqueda3resultados, seleccionar/resumen, Cambiar vacío, contenedor360px sin overflow (ancho360/contenido358) y escritorio. Captura sintética ignorada temp/selector-compacto-escritorio.png; harness retirado, pestaña cerrada, sin mutaciones reales. No acredita recorrido autenticado ni viewport físico de celular. git diff --check pasa; aviso heredado de bundle grande.
+
+Selector de cliente (02/11/2026):116/116 frontend, lint/build OK. Navegador aislado con
+7fixtures: clic vacío muestra exactamente5, nombre/campo comparten familia y8px,
+blur14px, Escape/clic externo cierran, Seleccionar actualiza resumen. Sin datos reales
+ni llamadas de negocio; captura temp/selector-cinco-desenfoque.png. Harness eliminado.
+
+KAN-57 réplica de rama:116/116 frontend, lint/build pasan. Navegador con API sintética
+confirma búsqueda, selección/aviso, tamaños13/14/14/12px y sin panel flotante. Captura
+temp/selector-branch-benjamin-1.png, harness/pestaña retirados, sin datos reales.
+
+## Contacto y código postal obligatorios · 02/11/2026
+
+npm run check correcto: contexto, sintaxis backend, 246 pruebas backend aprobadas y 5 opt-in omitidas, lint y build frontend. Frontend: 116 pruebas aprobadas en 24 archivos. Nuevas pruebas verifican rechazo sin escrituras al faltar DNI/teléfono/email o código postal y bloqueo de pedidos nuevos con cliente histórico incompleto. git diff --check sin errores. Advertencia preexistente de bundle mayor a 500 kB. Sin migraciones ni modificaciones de datos reales; integración MySQL opt-in no reejecutada en este ajuste.
+
+
+## Fondo difuminado de clientes · 02/11/2026
+
+Lint y build frontend correctos; aviso previo de bundle grande. Cambio sólo CSS, sin nuevas pruebas de comportamiento. Pendiente comparación visual en escritorio y móvil; no se verificó con navegador en este ajuste.
+
+## Cierre de lista de clientes · 02/11/2026
+
+Lint, build y 116 pruebas frontend correctos. Se revisaron manejadores de foco, pointerdown externo, Escape y limpieza de listeners/consulta al cerrar. No se ejecutó interacción visual en navegador; las pruebas existentes no acreditan eventos DOM. Advertencia de bundle grande preexistente.
+
+## Fondo más distintivo de clientes · 02/11/2026
+
+Lint y build frontend correctos. Ajuste CSS de color; sin pruebas nuevas ni comparación visual en navegador. Aviso de bundle grande preexistente.
+
+## Fondo de clientes igual a página · 02/11/2026
+
+Lint y build frontend correctos; ajuste de una propiedad CSS. Sin comparación visual en navegador. Advertencia de bundle grande preexistente.
+
+## Igualar lista al panel · 03/11/2026
+
+Lint y build frontend correctos; color vinculado a la misma variable que el panel contenedor. Sin comparación visual en navegador. Aviso de bundle grande preexistente.
+
+## Color de referencia medido · 03/11/2026
+
+Imagen de referencia medida con System.Drawing: RGB 23,25,30 (#17191e), coincide con theme-background oscuro. Lint/build frontend correctos. Sin inspección visual en navegador; warning de bundle grande previo.
+
+## Lista con fondo plano · 03/11/2026
+
+Lint/build frontend correctos; sólo CSS. No se verificó visualmente en navegador. Advertencia previa de bundle grande.
+
+## Compensación de contraste en lista · 03/11/2026
+
+Lint/build frontend correctos. Medición de captura previa: izquierda y filas #17191e, franja #22252b. Nuevo color perceptual pendiente de aprobación visual del usuario; no probado en navegador.
+
+## Bordes de lista de clientes · 03/11/2026
+
+Lint/build frontend correctos. Ajuste CSS sin nuevas pruebas; revisión visual en navegador pendiente. Aviso de bundle grande preexistente.
+
+## Email opcional · 03/11/2026
+
+npm run check correcto (contexto, backend, lint/build). Frontend 116 pruebas aprobadas. Prueba nueva acredita altas sin email y eliminación explícita al editar. Sin cambios de datos ni migraciones. Advertencia previa de bundle grande.
+
+## Corte de entrega en rama · 03/11/2026
+
+Reejecutados npm run check y suite frontend:246 backend aprobadas,5 integraciones opt-in omitidas;116 frontend aprobadas; contexto/sintaxis/lint/build correctos. Warning de bundle grande previo. No se repitió integración MySQL ni recorrido manual en este cierre.
