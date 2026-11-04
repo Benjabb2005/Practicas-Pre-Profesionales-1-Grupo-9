@@ -1,5 +1,9 @@
 # B01 — Pantalla y API de asignación manual
 
+## Aclaración vigente · 28/10/2026
+
+Benjamín ratifica el comportamiento existente: un pedido EN STOCK puede pasar a EN PREPARACIÓN aunque la dirección no esté confirmada. “Bloqueado” impide asignar chofer y despachar; preparar sólo registra la preparación interna. Para asignar exigimos dirección CONFIRMADA; para despachar exigimos además EN PREPARACIÓN y chofer activo. El servidor vuelve a validar cada operación. No se modifica código por esta aclaración. Reasignar/quitar sigue permitido sólo antes del despacho. La coordinación global Q01 permanece pendiente.
+
 Autorizada por Benjamín el 25/10/2026 sobre MVP-1 f87f6e1. Se revisa y completa el borrador previo. La asignación guarda chofer_id sin adelantar el estado: no es despacho y no saltea EN PREPARACIÓN. La regla final de despacho/reasignación queda en B02/Q01; no se modifica la máquina de estados.
 
 ## Flujo y aceptación

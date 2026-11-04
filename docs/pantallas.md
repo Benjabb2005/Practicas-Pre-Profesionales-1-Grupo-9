@@ -165,3 +165,6 @@ La lista de clientes frecuentes mantiene su forma en flujo y tipografía; el fon
 El selector de clientes oculta resultados al pasar a otra casilla, hacer clic fuera o pulsar Escape; permite pasar a sus botones con teclado sin ocultarlos antes de seleccionar. Clic/foco en buscador reabre la lista.
 
 Email de cliente opcional desde 03/11/2026; sin asterisco ni bloqueo por campo vacío. DNI, teléfono y código postal siguen obligatorios.
+
+## Integración nueva experiencia · 03/11/2026
+En la copia MVP-1 se traslada la experiencia visual de la rama de diseño sobre la base funcional reciente. Navegación superior, tablero/actividad, detalle /pedidos/:id y detalle del chofer conservan las operaciones existentes. Nuevo pedido combina mapa tentativo, candidatos, estimación manual/automática y direcciones por cliente con el recorrido de guardado/confirmación/preparación. PDF disponible también en los detalles nuevos; no cambia su contenido acordado. Historial mantiene ciclo h23. Carga revisada con fixtures en1440x900/360x800 y ambos temas, incluyendo cliente frecuente y dirección guardada. El recorrido persistido completo queda pendiente por entorno detenido; evidencia en tareas.md.

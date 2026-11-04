@@ -1,6 +1,6 @@
 import Paginacion from '../components/Paginacion.jsx'
 import usePagination from '../components/usePagination.js'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import ClienteSelector from '../components/ClienteSelector.jsx'
@@ -25,6 +25,10 @@ import { useImporteDuranteCarga } from '../components/useImporteDuranteCarga.js'
 import { importeDuranteCarga } from '../components/importeSugerido.js'
 import SugerenciaImporteCarga from '../components/SugerenciaImporteCarga.jsx'
 import './Pedidos.css'
+import ProcesoCarga from '../components/ProcesoCarga.jsx'
+import { conCargaMinima } from '../components/cargaMinima.js'
+import { cambiarEstadoPedido } from '../api/asignaciones'
+import PedidoGuardado from '../components/PedidoGuardado.jsx'
 
 const RESULTADOS = {
   OK: 'El proveedor encontró una coincidencia precisa.',
@@ -85,6 +89,8 @@ function PedidosCargaPage() {
   const [guardando, setGuardando] = useState(false)
   const [geocodificando, setGeocodificando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
+  const [preparando, setPreparando] = useState(false)
+  const [guardadoVisible, setGuardadoVisible] = useState(null)
   const [versionFormulario, setVersionFormulario] = useState(0)
   const [elegidoPrevio, setElegidoPrevio] = useState({ datos: null, indice: null })
 
@@ -100,8 +106,38 @@ function PedidosCargaPage() {
 
   const consultaImporte = useImporteDuranteCarga(puntoPrevio, claveBusqueda(direccion), previsualizacion.datos, !pedido)
   const importeBase = pedido ? String(pedido.importe_base ?? '') : importeDuranteCarga(importeManual, consultaImporte.datos)
+  const prepararRef = useRef(null)
+  const pedidoDestacadoRef = useRef(null)
 
-  const ocupado = guardando || geocodificando || confirmando
+  const ocupado = guardando || geocodificando || confirmando || preparando
+  const puedePreparar = !ocupado && pedido?.estado === 'EN STOCK' && pedido.estado_validacion === 'CONFIRMADA'
+  const pedidoListoId = puedePreparar && pedido.importe_base != null && !guardadoVisible ? pedido.id : null
+  useEffect(() => {
+    if (!pedidoListoId || pedidoDestacadoRef.current === pedidoListoId) return
+    const frame = requestAnimationFrame(() => {
+      const boton = prepararRef.current
+      if (!boton) return
+      pedidoDestacadoRef.current = pedidoListoId
+      const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      boton.scrollIntoView({ behavior: reducir ? 'instant' : 'smooth', block: 'center' })
+      const resaltado = { outline: '3px solid #93b4ff', outlineOffset: '5px', boxShadow: '0 0 0 8px #739ee945' }
+      boton.animate(reducir ? [resaltado, resaltado] : [
+        resaltado,
+        { outline: '3px solid transparent', outlineOffset: '5px', boxShadow: '0 0 0 8px transparent' },
+      ], { duration: 3200, easing: 'ease-in', iterations: 1 })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [pedidoListoId])
+  async function preparar() {
+    if (ocupado || pedido?.estado !== 'EN STOCK' || pedido.estado_validacion !== 'CONFIRMADA') return
+    setPreparando(true); setError(''); setAviso('')
+    try {
+      const actualizado = await cambiarEstadoPedido(pedido.id, 'EN PREPARACIÓN')
+      setPedido(actual => ({ ...actual, ...actualizado }))
+      setAviso('Pedido en preparación. Asigná un chofer en Asignación y despacho para continuar.')
+    } catch (e) { setError(mensajeError(e)) }
+    finally { setPreparando(false) }
+  }
   const puedeGeocodificar = Boolean(pedido) && pedido.estado_validacion === 'VALIDA'
   const puedeConfirmar = puedeGeocodificar && tieneCoordenadas(pedido)
   const motivoGeo = motivoGeocodificar(pedido, ocupado)
@@ -182,8 +218,9 @@ function PedidosCargaPage() {
       const cuerpo = { cliente_id: clienteId, canal_origen: canalOrigen, observaciones: observaciones || null, direccion }
       if (importeBase.trim()) cuerpo.importe_base = importeBase.trim().replace(',', '.')
       if (confirmarDuplicado) cuerpo.confirmar_duplicado = true
-      const data = await crearPedido(cuerpo)
+      const data = await conCargaMinima(crearPedido(cuerpo))
       setPedido(data.pedido)
+      setGuardadoVisible(data.pedido)
       setProblemas(data.problemas || [])
       setResultado(null)
       setDuplicados([])
@@ -209,7 +246,8 @@ function PedidosCargaPage() {
         setError('')
         return
       }
-      setError(mensajeError(fallo))
+      const campos = fallo.response?.data?.error?.campos
+      setError(campos ? Object.values(campos).flat().join(' ') : mensajeError(fallo))
     } finally {
       setGuardando(false)
     }
@@ -270,6 +308,7 @@ function PedidosCargaPage() {
 
   function nuevaCarga() {
     setClaveGuardada('')
+    pedidoDestacadoRef.current = null
     setCliente(null)
     setDatosCliente({ ...CLIENTE_VACIO })
     setDireccion({ ...DIRECCION_VACIA })
@@ -291,14 +330,24 @@ function PedidosCargaPage() {
   const candidatosPaginados = usePagination(resultado?.candidatos ?? [], pedido?.id, 5)
   return <main className="main-content form-page">
     <header className="page-header">
-      <div><p className="eyebrow">Nuevo envío</p><h1>Carga Manual de Pedido</h1><p className="subtitle">Buscá al cliente frecuente por DNI, nombre o teléfono, o cargá sus datos como cliente nuevo. Después completá la dirección y confirmá la ubicación antes de despachar.</p></div>
+      <div><p className="eyebrow">Pedidos / Nuevo pedido</p><h1>Un envío empieza con una buena dirección.</h1><p className="subtitle">Elegí al cliente, completá los datos y revisá el destino antes de despachar.</p></div>
       <button className="button button-outline header-action" onClick={() => navegar('/pedidos/revision')}>Bandeja de revisión</button>
     </header>
+
+    <ol className="order-journey" aria-label="Progreso del pedido">
+      <li className={!pedido ? 'current' : 'complete'} aria-current={!pedido ? 'step' : undefined}><span>{pedido ? '✓' : '1'}</span>Cliente y pedido</li>
+      <li className={pedido?.estado_validacion === 'CONFIRMADA' ? 'complete' : pedido ? 'current' : ''} aria-current={pedido && pedido.estado_validacion !== 'CONFIRMADA' ? 'step' : undefined}><span>{pedido?.estado_validacion === 'CONFIRMADA' ? '✓' : '2'}</span>Revisar ubicación</li>
+      <li className={pedido?.estado === 'EN PREPARACIÓN' ? 'complete' : ''}><button ref={prepararRef} type="button" className="journey-action" onClick={preparar} disabled={!puedePreparar}><span>{pedido?.estado === 'EN PREPARACIÓN' ? '✓' : '3'}</span>{preparando ? 'Preparando…' : pedido?.estado === 'EN PREPARACIÓN' ? 'En preparación' : puedePreparar ? 'Preparar pedido →' : 'Listo para preparar'}</button></li>
+      {pedido?.estado === 'EN PREPARACIÓN' && <li className="journey-next"><Link className="button button-primary" to="/asignaciones"><Icon name="truck" size={18}/>Asignar chofer →</Link></li>}
+    </ol>
+    {guardando && <ProcesoCarga pantalla titulo="Un momento. Ya estamos en camino." detalle="Estamos guardando los datos del pedido."/>}
+    {!guardando && guardadoVisible && <PedidoGuardado pedido={guardadoVisible} onContinuar={() => setGuardadoVisible(null)}/>}
+    {!guardando && (geocodificando || confirmando) && <ProcesoCarga titulo={confirmando ? 'Confirmando la ubicación…' : 'Buscando el destino…'} detalle={confirmando ? 'Registrando tu confirmación en el historial.' : 'Consultando el mapa. La revisión final sigue en tus manos.'}/>}
 
     {error && <p className="users-alert" role="alert">{error}</p>}
     {aviso && <p className="users-ok" role="status">{aviso}</p>}
 
-    <div className="order-layout">
+    <div className="order-layout" aria-busy={ocupado}>
       <section className="panel order-panel">
         <div className="section-heading"><span className="step-number">1</span><div><h2>Cliente y dirección de entrega</h2><p>Los campos marcados con * son obligatorios.</p></div></div>
         <ClienteSelector key={versionFormulario} cliente={cliente} onSeleccionar={seleccionarCliente} bloqueado={Boolean(pedido) || ocupado}/>
