@@ -1,8 +1,9 @@
+name: mandatodo-mvp1-aislado
+
 services:
 
   mysql:
     image: mysql:8.4
-    container_name: mandatodo_mysql
 
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -11,7 +12,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
     ports:
-      - "3306:3306"
+      - "${MYSQL_HOST_PORT:-3308}:3306"
 
     volumes:
       - mysql_data:/var/lib/mysql
@@ -27,7 +28,6 @@ services:
     build:
       context: ./backend
 
-    container_name: mandatodo_backend
 
     environment:
       DB_HOST: mysql
@@ -35,13 +35,24 @@ services:
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      GEOCODER_PROVIDER: ${GEOCODER_PROVIDER:-georef}
+      GEOCODE_TIMEOUT_MS: ${GEOCODE_TIMEOUT_MS:-5000}
+      GEOREF_BASE_URL: ${GEOREF_BASE_URL:-https://apis.datos.gob.ar/georef/api}
+      GEOREF_TIMEOUT_MS: ${GEOREF_TIMEOUT_MS:-3000}
+      DUPLICADOS_VENTANA_HORAS: ${DUPLICADOS_VENTANA_HORAS}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SEED_OPERADOR_PASSWORD: ${SEED_OPERADOR_PASSWORD}
+      SEED_CHOFER_PASSWORD: ${SEED_CHOFER_PASSWORD}
       PORT: 3000
 
     ports:
-      - "3000:3000"
+      - "${BACKEND_HOST_PORT:-3001}:3000"
 
     volumes:
       - ./backend:/app
+      - ./database:/database:ro
       - /app/node_modules
 
     depends_on:
@@ -53,10 +64,14 @@ services:
     build:
       context: ./frontend
 
-    container_name: mandatodo_frontend
+
+    environment:
+      VITE_API_PROXY: http://backend:3000
+      VITE_USE_POLLING: "true"
+      VITE_PORT: "5173"
 
     ports:
-      - "5173:5173"
+      - "${FRONTEND_HOST_PORT:-5174}:5173"
 
     volumes:
       - ./frontend:/app

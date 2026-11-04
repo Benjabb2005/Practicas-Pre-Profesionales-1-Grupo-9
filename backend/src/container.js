@@ -1,0 +1,67 @@
+const { createUsuarioRepository } = require("./repositories/UsuarioRepository");
+const { createEstadoPedidoRepository } = require("./repositories/EstadoPedidoRepository");
+const { createClienteRepository } = require("./repositories/ClienteRepository");
+const { createPedidoRepository } = require("./repositories/PedidoRepository");
+const { createAuthService } = require("./services/AuthService");
+const { createUsuarioService } = require("./services/UsuarioService");
+const { createEstadoPedidoService } = require("./services/EstadoPedidoService");
+const { createClienteService } = require("./services/ClienteService");
+const { createPedidoService } = require("./services/PedidoService");
+const { createGeocodeService } = require("./services/GeocodeService");
+const { createLocalidadService } = require("./services/LocalidadService");
+const { createGeocodeAdapter } = require("./geocode");
+const { createGeorefClient } = require("./georef/localidades");
+const { createAuthMiddleware } = require("./middleware/auth");
+const { createAsignacionRepository } = require('./repositories/AsignacionRepository');
+const { createAsignacionService } = require('./services/AsignacionService');
+const { createEntregaRepository } = require('./repositories/EntregaRepository');
+const { createEntregaService } = require('./services/EntregaService');
+const { createTarifaRepository } = require('./repositories/TarifaRepository');
+const { createTarifaService } = require('./services/TarifaService');
+const { crearSugerenciaImporteService } = require('./services/SugerenciaImporteService');
+const { createComprobanteService } = require('./services/ComprobanteService');
+const { createComprobanteRepository } = require('./repositories/ComprobanteRepository');
+const { createExportacionRepository } = require('./repositories/ExportacionRepository');
+
+// Construye los servicios a partir de la base inyectada. Sin base (pruebas HTTP)
+// devuelve un objeto vacío y las rutas responden 503 en vez de romper.
+// `georef` se puede inyectar para probar sin internet.
+function createContainer({ db, config, georef } = {}) {
+    if (!db || !config) return {};
+
+    const usuarios = createUsuarioRepository(db);
+    const clientes = createClienteRepository(db);
+    const pedidos = createPedidoRepository(db);
+    const tarifas = createTarifaRepository(db);
+    const geocodeAdapter = createGeocodeAdapter(config.geocode);
+    const georefClient = georef || createGeorefClient(config.georef);
+    const localidadService = createLocalidadService({ cliente: georefClient });
+
+    return {
+        exportacionRepository: createExportacionRepository(db),
+        comprobanteService:createComprobanteService({repositorio:createComprobanteRepository(db)}),
+        tarifaService: createTarifaService({
+            repositorio: tarifas,
+            geocodeAdapter,
+        }),
+        sugerenciaImporteService: crearSugerenciaImporteService({ pedidos, tarifas }),
+        entregaService: createEntregaService({ repositorio: createEntregaRepository(db) }),
+        asignacionService: createAsignacionService({ repositorio: createAsignacionRepository(db) }),
+        config,
+        auth: createAuthMiddleware({ config }),
+        authService: createAuthService({ usuarios, jwt: config.jwt }),
+        usuarioService: createUsuarioService({ usuarios }),
+        estadoPedidoService: createEstadoPedidoService({ repositorio: createEstadoPedidoRepository(db) }),
+        clienteService: createClienteService({ clientes }),
+        pedidoService: createPedidoService({
+            pedidos,
+            clientes,
+            localidades: localidadService,
+            ventanaDuplicadosHoras: config.duplicados?.ventanaHoras,
+        }),
+        geocodeService: createGeocodeService({ pedidos, adapter: geocodeAdapter }),
+        localidadService,
+    };
+}
+
+module.exports = { createContainer };

@@ -1,0 +1,556 @@
+{
+  "date": "2026-10-25",
+  "project": "KAN",
+  "board": "https://benjabb2005.atlassian.net/jira/software/projects/KAN/boards/1",
+  "source": "https://github.com/users/Benjabb2005/projects/1",
+  "tasks": [
+    {
+      "id": "S01",
+      "jiraKey": "KAN-4",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-4",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/8",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": []
+    },
+    {
+      "id": "S02",
+      "jiraKey": "KAN-5",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-5",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/9",
+      "owner": "Santiago",
+      "status": "Hecho",
+      "dependencies": []
+    },
+    {
+      "id": "S03",
+      "jiraKey": "KAN-6",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-6",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/10",
+      "owner": "Santiago",
+      "status": "Hecho",
+      "dependencies": [
+        "S02"
+      ]
+    },
+    {
+      "id": "S04",
+      "jiraKey": "KAN-7",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-7",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/11",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": [
+        "S03"
+      ]
+    },
+    {
+      "id": "S05",
+      "jiraKey": "KAN-8",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-8",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/12",
+      "owner": "Santiago",
+      "status": "Hecho",
+      "dependencies": [
+        "S03",
+        "S04"
+      ]
+    },
+    {
+      "id": "S06",
+      "jiraKey": "KAN-9",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-9",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/13",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": [
+        "S02"
+      ]
+    },
+    {
+      "id": "S07",
+      "jiraKey": "KAN-10",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-10",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/14",
+      "owner": "Santiago",
+      "status": "Hecho",
+      "dependencies": [
+        "S02"
+      ]
+    },
+    {
+      "id": "J01",
+      "jiraKey": "KAN-11",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-11",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/15",
+      "owner": "Julián",
+      "status": "Hecho",
+      "dependencies": [
+        "S02",
+        "S03"
+      ]
+    },
+    {
+      "id": "J02",
+      "jiraKey": "KAN-12",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-12",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/16",
+      "owner": "Julián",
+      "status": "Hecho",
+      "dependencies": [
+        "J01"
+      ]
+    },
+    {
+      "id": "J03",
+      "jiraKey": "KAN-13",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-13",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/17",
+      "owner": "Julián",
+      "status": "Hecho",
+      "dependencies": [
+        "J01"
+      ]
+    },
+    {
+      "id": "J04",
+      "jiraKey": "KAN-14",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-14",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/18",
+      "owner": "Julián",
+      "status": "Hecho",
+      "dependencies": [
+        "J02",
+        "S06",
+        "T01",
+        "T05"
+      ]
+    },
+    {
+      "id": "J05",
+      "jiraKey": "KAN-15",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-15",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/19",
+      "owner": "Julián",
+      "status": "Hecho",
+      "dependencies": [
+        "J04",
+        "T02"
+      ]
+    },
+    {
+      "id": "J06",
+      "jiraKey": "KAN-16",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-16",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/20",
+      "owner": "Julián",
+      "status": "Hecho",
+      "dependencies": [
+        "J04"
+      ]
+    },
+    {
+      "id": "T01",
+      "jiraKey": "KAN-17",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-17",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/21",
+      "owner": "Tomás",
+      "status": "Hecho",
+      "dependencies": [
+        "S03"
+      ]
+    },
+    {
+      "id": "T02",
+      "jiraKey": "KAN-18",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-18",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/22",
+      "owner": "Tomás",
+      "status": "Hecho",
+      "dependencies": []
+    },
+    {
+      "id": "T03",
+      "jiraKey": "KAN-19",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-19",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/23",
+      "owner": "Tomás",
+      "status": "Hecho",
+      "dependencies": [
+        "T02"
+      ]
+    },
+    {
+      "id": "T04",
+      "jiraKey": "KAN-20",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-20",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/24",
+      "owner": "Tomás",
+      "status": "Hecho",
+      "dependencies": [
+        "T01",
+        "T03"
+      ]
+    },
+    {
+      "id": "T05",
+      "jiraKey": "KAN-21",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-21",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/25",
+      "owner": "Tomás",
+      "status": "Hecho",
+      "dependencies": [
+        "T02",
+        "T03"
+      ]
+    },
+    {
+      "id": "T06",
+      "jiraKey": "KAN-22",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-22",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/26",
+      "owner": "Tomás",
+      "status": "Hecho",
+      "dependencies": [
+        "T02",
+        "T03"
+      ]
+    },
+    {
+      "id": "R01",
+      "jiraKey": "KAN-23",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-23",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/27",
+      "owner": "Sabrina",
+      "status": "Hecho",
+      "dependencies": [
+        "T05"
+      ]
+    },
+    {
+      "id": "R02",
+      "jiraKey": "KAN-24",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-24",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/28",
+      "owner": "Sabrina",
+      "status": "Hecho",
+      "dependencies": [
+        "J04",
+        "R01"
+      ]
+    },
+    {
+      "id": "R03",
+      "jiraKey": "KAN-25",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-25",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/29",
+      "owner": "Sabrina",
+      "status": "Pendiente",
+      "dependencies": [
+        "R02"
+      ]
+    },
+    {
+      "id": "R04",
+      "jiraKey": "KAN-26",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-26",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/30",
+      "owner": "Sabrina",
+      "status": "Hecho",
+      "dependencies": [
+        "R02",
+        "R03"
+      ]
+    },
+    {
+      "id": "R05",
+      "jiraKey": "KAN-27",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-27",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/31",
+      "owner": "Sabrina",
+      "status": "Hecho",
+      "dependencies": [
+        "R02",
+        "T04"
+      ]
+    },
+    {
+      "id": "R06",
+      "jiraKey": "KAN-28",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-28",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/32",
+      "owner": "Sabrina",
+      "status": "Hecho",
+      "dependencies": [
+        "R04",
+        "R05"
+      ]
+    },
+    {
+      "id": "R07",
+      "jiraKey": "KAN-29",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-29",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/33",
+      "owner": "Sabrina",
+      "status": "Hecho",
+      "dependencies": [
+        "R02",
+        "R04"
+      ]
+    },
+    {
+      "id": "R08",
+      "jiraKey": "KAN-30",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-30",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/34",
+      "owner": "Sabrina",
+      "status": "Pendiente",
+      "dependencies": [
+        "R04",
+        "S06"
+      ]
+    },
+    {
+      "id": "B01",
+      "jiraKey": "KAN-31",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-31",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/35",
+      "owner": "Benjamín",
+      "status": "Hecho",
+      "dependencies": [
+        "J06",
+        "S04",
+        "R08"
+      ]
+    },
+    {
+      "id": "B02",
+      "jiraKey": "KAN-32",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-32",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/36",
+      "owner": "Benjamín",
+      "status": "Hecho",
+      "dependencies": [
+        "B01",
+        "S06",
+        "Q01"
+      ]
+    },
+    {
+      "id": "B03",
+      "jiraKey": "KAN-33",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-33",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/37",
+      "owner": "Benjamín",
+      "status": "Hecho",
+      "dependencies": [
+        "B02",
+        "S04"
+      ]
+    },
+    {
+      "id": "B04",
+      "jiraKey": "KAN-34",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-34",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/38",
+      "owner": "Benjamín",
+      "status": "Hecho",
+      "dependencies": [
+        "B03",
+        "S06"
+      ]
+    },
+    {
+      "id": "B05",
+      "jiraKey": "KAN-35",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-35",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/39",
+      "owner": "Benjamín",
+      "status": "En progreso",
+      "dependencies": [
+        "B04",
+        "Q02",
+        "B07"
+      ]
+    },
+    {
+      "id": "B06",
+      "jiraKey": "KAN-36",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-36",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/40",
+      "owner": "Benjamín",
+      "status": "Pendiente",
+      "dependencies": [
+        "B03",
+        "B04",
+        "B05"
+      ]
+    },
+    {
+      "id": "Q01",
+      "jiraKey": "KAN-37",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-37",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/41",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": [
+        "S06"
+      ]
+    },
+    {
+      "id": "Q02",
+      "jiraKey": "KAN-38",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-38",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/42",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": []
+    },
+    {
+      "id": "Q03",
+      "jiraKey": "KAN-39",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-39",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/43",
+      "owner": "Sabrina",
+      "status": "Pendiente",
+      "dependencies": [
+        "R06",
+        "S02"
+      ]
+    },
+    {
+      "id": "Q04",
+      "jiraKey": "KAN-40",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-40",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/44",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": []
+    },
+    {
+      "id": "X01",
+      "jiraKey": "KAN-41",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-41",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/45",
+      "owner": "Julián",
+      "status": "Pendiente",
+      "dependencies": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06"
+      ]
+    },
+    {
+      "id": "X02",
+      "jiraKey": "KAN-42",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-42",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/46",
+      "owner": "Tomás",
+      "status": "Pendiente",
+      "dependencies": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R05",
+        "R06",
+        "R07",
+        "R08"
+      ]
+    },
+    {
+      "id": "X03",
+      "jiraKey": "KAN-43",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-43",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/47",
+      "owner": "Sabrina",
+      "status": "Pendiente",
+      "dependencies": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06"
+      ]
+    },
+    {
+      "id": "X04",
+      "jiraKey": "KAN-44",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-44",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/48",
+      "owner": "Benjamín",
+      "status": "Pendiente",
+      "dependencies": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07"
+      ]
+    },
+    {
+      "id": "X05",
+      "jiraKey": "KAN-45",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-45",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/49",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": [
+        "J01",
+        "J02",
+        "J03",
+        "J04",
+        "J05",
+        "J06"
+      ]
+    },
+    {
+      "id": "X06",
+      "jiraKey": "KAN-46",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-46",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/50",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": [
+        "X01",
+        "X02",
+        "X03",
+        "X04",
+        "X05",
+        "Q03",
+        "Q04"
+      ]
+    },
+    {
+      "id": "X07",
+      "jiraKey": "KAN-47",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-47",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/51",
+      "owner": "Santiago",
+      "status": "Pendiente",
+      "dependencies": [
+        "X06"
+      ]
+    },
+    {
+      "id": "B07",
+      "jiraKey": "KAN-48",
+      "jiraUrl": "https://benjabb2005.atlassian.net/browse/KAN-48",
+      "github": "https://github.com/Benjabb2005/Practicas-Pre-Profesionales-1-Grupo-9/issues/53",
+      "owner": "Benjamín",
+      "status": "Hecho",
+      "dependencies": [
+        "J04",
+        "S02"
+      ]
+    }
+  ],
+  "linksCreated": 101,
+  "verification": "Importador: 44 creadas; segunda importación: 44 actualizadas, 0 creadas, 98 Created link Blocks, sin WARN/ERROR. KAN-1, KAN-2 y subtarea KAN-3 preservadas."
+}

@@ -1,0 +1,161 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.route-loading {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  color: #334155;
+  font-size: 15px;
+}
+
+.users-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.users-alert,
+.users-ok {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.users-alert {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.users-ok {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.users-form-panel {
+  padding: 22px;
+}
+
+.users-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin-top: 8px;
+}
+
+.users-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.users-form input,
+.users-form select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.users-form input:focus,
+.users-form select:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.users-check {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.users-check input {
+  width: auto;
+}
+
+.users-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.users-table-wrap {
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.users-table th,
+.users-table td {
+  text-align: left;
+  padding: 11px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.users-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+
+.users-self {
+  color: #94a3b8;
+}
+
+.users-status {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.users-status.activo {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.users-status.inactivo {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.users-edit {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.users-state {
+  padding: 24px 4px;
+  color: #64748b;
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .users-form {
+    grid-template-columns: 1fr;
+  }
+}

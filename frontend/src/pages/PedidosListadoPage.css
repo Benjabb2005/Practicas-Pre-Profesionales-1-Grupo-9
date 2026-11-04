@@ -1,0 +1,73 @@
+/* Listado real del tablero. Reutiliza .shipments-card, .stats-grid, .filters,
+   .users-table y .empty-state; acá sólo se ajustan los controles nuevos. */
+
+.listado-filtros {
+  flex-wrap: wrap;
+}
+
+.listado-filtros label {
+  flex-wrap: wrap;
+}
+
+.listado-filtros input {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid #d6deea;
+  border-radius: 5px;
+  background: #fff;
+  color: #26364e;
+  font: inherit;
+  font-size: 8px;
+}
+
+.listado-filtros input[type="search"] {
+  width: 190px;
+}
+
+.listado-filtros input[type="date"] {
+  width: 132px;
+}
+
+.listado-limpiar {
+  min-height: 24px;
+  margin-left: auto;
+  padding: 0 9px;
+  font-size: 8px;
+}
+
+.listado-pedidos-table td {
+  vertical-align: top;
+}
+
+.pedido-id {
+  color: #20324c;
+  font-size: 12px;
+}
+
+.pedido-dato {
+  display: block;
+  margin-top: 2px;
+  color: #8e9bb0;
+  font-size: 11px;
+}
+
+@media (max-width: 680px) {
+  .listado-filtros {
+    align-items: stretch;
+  }
+
+  .listado-filtros label {
+    justify-content: space-between;
+  }
+
+  .listado-filtros input[type="search"],
+  .listado-filtros input[type="date"] {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .listado-limpiar {
+    margin-left: 0;
+  }
+}

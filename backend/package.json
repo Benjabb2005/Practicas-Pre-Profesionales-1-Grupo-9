@@ -7,16 +7,25 @@
     "start": "node index.js",
     "dev": "nodemon --legacy-watch index.js",
     "check": "node ../scripts/check-backend.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate": "node scripts/migrate.mjs",
+    "migrate:dry": "node scripts/migrate.mjs --dry-run",
+    "seed": "node scripts/seed.mjs",
+    "import": "node scripts/import-excel.mjs",
+    "import:dry": "node scripts/import-excel.mjs --dry-run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mysql2": "^3.24.3"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.24.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

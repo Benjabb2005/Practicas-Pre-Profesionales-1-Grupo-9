@@ -16,6 +16,6 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+body { margin: 0; min-width: min(320px, 100%); min-height: 100vh; }
 button, input { font: inherit; }
 button:focus-visible, input:focus-visible { outline: 3px solid #7fa5ff; outline-offset: 2px; }

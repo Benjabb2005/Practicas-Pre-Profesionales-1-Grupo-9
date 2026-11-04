@@ -1,0 +1,10 @@
+.chofer-mapa-modal { width:min(760px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:auto; padding:0; border:1px solid var(--theme-border); border-radius:12px; background:var(--theme-surface); color:var(--theme-text); box-shadow:0 24px 80px #0005; }
+.chofer-mapa-modal::backdrop { background:#0c1b30b8; }
+.chofer-mapa-modal header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--theme-border); background:var(--theme-raised); }
+.chofer-mapa-modal h2 { margin:4px 0 0; font-size:17px; }
+.chofer-mapa-modal small { color:var(--theme-muted); }
+.chofer-mapa-modal button { padding:8px 12px; background:var(--theme-surface); color:var(--theme-text); border:1px solid var(--theme-border); border-radius:6px; cursor:pointer; font:inherit; font-size:12px; }
+.chofer-mapa-contenido { padding:16px 20px; font-size:14px; }
+.chofer-mapa-contenido .map-preview { height:min(420px,55dvh); min-height:220px; border-radius:8px; overflow:hidden; }
+.chofer-mapa-contenido .driver-map-button { display:block; margin-top:16px; text-align:center; text-decoration:none; }
+.chofer-mapa-modal :focus-visible { outline:2px solid var(--theme-link); outline-offset:3px; }

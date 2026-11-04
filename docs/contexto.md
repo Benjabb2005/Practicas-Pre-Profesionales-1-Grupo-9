@@ -46,4 +46,4 @@ Criterios técnicos propuestos para el próximo flujo: invalidar confirmación a
 
 ## Implementación actual
 
-No hay carga persistida, búsqueda de clientes, servicio geográfico, mapa real, autenticación de servidor, despacho ni pagos. Hay maqueta React, servidor básico y esquema SQL inicial. Detalle en [arquitectura](arquitectura.md).
+No hay carga persistida de pedidos, búsqueda de clientes, servicio geográfico, mapa real, despacho ni pagos. Hay autenticación de servidor (JWT), ABM de usuarios, migraciones con seed e importación histórica; el tablero, la carga manual y la ruta del chofer siguen siendo maqueta React. Detalle en [arquitectura](arquitectura.md).

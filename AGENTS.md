@@ -14,8 +14,8 @@
 | `AGENTS.md` | Estas reglas permanentes, siempre activas |
 | `CLAUDE.md`, `frontend/CLAUDE.md`, `backend/CLAUDE.md` | Puentes para Claude Code: importan el `AGENTS.md` local, no duplican reglas |
 | `docs/` | Contexto, arquitectura, pantallas, decisiones, tareas, verificación, fuentes y desarrollo con IA |
-| `.agents/skills/` | Fuente única de las 6 skills; las copias de Claude se generan con `npm run skills:sync` |
-| `frontend/` | React 19 + Vite 8. Hoy es maqueta: no llama al backend ni persiste |
+| `.agents/skills/` | Fuente única de las 7 skills; las copias de Claude se generan con `npm run skills:sync` |
+| `frontend/` | React 19 + Vite 8. Login real con JWT, guardas por rol y ABM de Usuarios contra el backend; el tablero, la carga manual y la ruta del chofer siguen siendo maqueta |
 | `backend/` | Node 24 + Express 5 CommonJS. `index.js` arranca y conecta MySQL; `app.js` es solo Express y permite probar HTTP sin base |
 | `database/init.sql` | DDL inicial de 6 tablas. No es migración y no se reaplica sobre datos |
 | `scripts/`, `package.json` raíz | Verificación coordinada, sin dependencias |

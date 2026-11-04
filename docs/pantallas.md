@@ -68,3 +68,103 @@ frontend/src/App.jsx reproduce login, tablero vacío y formulario. La navegació
 ## Revisión pendiente por decisión del usuario
 
 El 30/09/2026 el usuario indicó dejar pendiente el acceso de prueba. No había sesión autenticada disponible y no se recibió repositorio del prototipo. No se probaron pedidos poblados, validación exitosa, entregas ni pagos. Para retomar T08, habilitar sesión de prueba desde el navegador o aportar código autorizado, capturas/exportación sin credenciales ni datos personales. Nunca pedir contraseñas por chat. Registrar por flujo: rol, datos sintéticos, estado inicial, acción, resultado visible y evidencia; distinguir interfaz de persistencia y autorización real.
+
+## Cambios locales implementados · 13/10/2026
+
+Estos cambios son locales y no modifican el relevamiento remoto; la referencia visual sigue siendo la demo.
+
+- **Login real** (`frontend/src/pages/LoginPage.jsx`): conserva el diseño del login de la maqueta, pero ahora valida contra el backend y guarda un token. Se retiraron las cuentas y la contraseña de demostración del código; para probar se usan las cuentas de `seed` definidas por variables de entorno, nunca credenciales versionadas.
+- **Usuarios** (`frontend/src/pages/UsersPage.jsx`): pantalla nueva solo para ADMINISTRADOR, con tabla (nombre, email, rol, estado) y formulario de alta/edición. No aparece en el relevamiento remoto de operador y es una pieza propia del MVP.
+- El tablero, la carga manual, la barra lateral y la ruta del chofer conservan su aspecto de maqueta; sólo cambiaron de navegación por `useState` a React Router y el cierre de sesión.
+
+No se probó visualmente en navegador ni en viewport móvil en esta sesión; ver límites en [verificación](verificacion.md).
+
+## Carga y revisión implementadas · 15/10/2026; actualizado 21/10/2026 (validación geográfica)
+
+Reemplazan a la maqueta de carga manual; conservan el lenguaje visual observado (dos columnas, tarjetas, acentos azules). Detalle funcional en `frontend/specs/pedidos-carga-revision.md`.
+
+- **Carga Manual de Pedido** (`frontend/src/pages/PedidosCargaPage.jsx`, ruta `/form`): columna 1 con selector de cliente frecuente contra `GET /api/clientes`. La búsqueda es por DNI con o sin puntos, nombre o teléfono; el backend también acepta email o código. La ayuda visible, el placeholder y cada resultado muestran DNI y teléfono para identificar al cliente. Al elegir uno, sus datos se precargan y quedan bloqueados; el pedido usa su id y no se crea un cliente nuevo. Si no se elige un frecuente, Guardar da de alta el cliente con `POST /api/clientes` y recién después crea el pedido; el DNI duplicado se rechaza aunque cambie el formato de puntos, espacios o guiones, y un teléfono/email parecido sólo se avisa con el nombre y DNI del otro cliente. Campos del cliente: nombre obligatorio, DNI, teléfono y email. Formulario de dirección estructurada (calle obligatoria; altura opcional: sin altura queda borrador). Provincia es un `<select>` con las 24 jurisdicciones de `GET /api/provincias`; localidad ofrece hasta 10 sugerencias de Georef vía `GET /api/localidades` en un `<datalist>`, pero sigue admitiendo texto libre. Los `problemas` que devuelve el backend se listan debajo de la dirección y resaltan el campo afectado; si quedan problemas después de guardar, aparece «Corregir dirección» hacia el detalle de revisión. Datos del pedido: canal de origen y observaciones. Columna 2 con mapa Leaflet, estado, resultados/confianza y controles «Buscar dirección en el mapa» y «Confirmar ubicación». El backend consulta Georef y la búsqueda se inicia al crear una dirección `VALIDA`; si hay varios candidatos, el operador elige uno antes de confirmar. Las coordenadas son aproximadas, no se abre el mapa en (0,0), y Confirmar exige dirección `VALIDA` con coordenadas. La confirmación humana es el paso que permite pasar a despacho. «Cargar otro pedido» limpia el formulario. Si el mismo cliente ya tiene un pedido con la misma dirección normalizada dentro de `DUPLICADOS_VENTANA_HORAS`, se exige confirmación explícita antes de crear otro.
+- **Revisión de direcciones** (`frontend/src/pages/PedidosRevisionPage.jsx`, ruta `/pedidos/revision`): tabla de pedidos con filtro por estado de validación (por defecto, sin confirmar) y enlace Revisar. Acceso nuevo en la barra lateral ("Revisión de Direcciones").
+- **Detalle de revisión** (`frontend/src/pages/PedidoRevisionDetallePage.jsx`, ruta `/pedidos/:id/revision`): datos del cliente, dirección editable, mapa, historial de intentos y acciones «Geocodificar dirección», «No es correcta» y «Confirmar ubicación». Si hay varios candidatos, el operador elige uno antes de continuar. Guardar un cambio de dirección invalida la confirmación y exige revisar de nuevo. Geocodificar exige `VALIDA`; Confirmar exige `VALIDA` y coordenadas. El historial muestra búsquedas, rechazo y confirmación.
+- El mapa es de sólo lectura sobre teselas de OpenStreetMap; la corrección se hace en el formulario y la confirmación siempre la realiza una persona. Cuando cambian las coordenadas, el mapa se recentra en el nuevo punto.
+
+Estas pantallas no se probaron visualmente en navegador contra el backend en esta sesión; se acreditan con lint, build, pruebas unitarias y smoke de API (ver [verificación](verificacion.md)).
+
+## ABM de clientes implementado · 20/10/2026
+
+Pantalla local nueva, no observada en la demo remota. Detalle funcional en `frontend/specs/abm-clientes.md`.
+
+- **Clientes** (`frontend/src/pages/ClientesPage.jsx`, ruta `/clientes`): accesible para ADMINISTRADOR y OPERADOR desde la barra lateral; reemplaza el ítem «Clientes PRÓX.».
+- Listado con búsqueda por nombre, DNI, teléfono o email; el backend también busca por los dígitos del texto para que «20.123.456» encuentre «20123456».
+- Alta y edición en un panel con nombre obligatorio, DNI, teléfono, email, tipo (particular/empresa) y domicilio. El servidor normaliza el DNI quitando puntos, espacios y guiones (rechaza otros caracteres) y el teléfono, valida email y nombre, rechaza DNI repetido y avisa coincidencias de teléfono/email con nombre y DNI del otro cliente, sin fusionar.
+- Baja con confirmación en pantalla. Sólo se permite si el cliente no tiene pedidos; si los tiene, se muestra el conflicto y no se borra. La confirmación no es un modal: queda visible arriba de la tabla.
+- No se probó visualmente en navegador ni contra MySQL/Docker en esta sesión; se acredita con lint, build y pruebas unitarias de la API y del servicio.
+
+## Listado de pedidos implementado · 21/10/2026
+
+El tablero dejó de ser una maqueta de contadores en cero y pasó a listar pedidos reales. Detalle funcional en `frontend/specs/listado-pedidos.md`.
+
+- **Tablero General de Despacho** (`frontend/src/pages/PedidosListadoPage.jsx`, ruta `/`): conserva el encabezado, los cuatro indicadores y la tarjeta de envíos. Los contadores se calculan sobre todos los pedidos cargados: registrados, en preparación, en ruta de envío y entregados o pagados (esta última etiqueta no afirma que entrega y pago sean equivalentes).
+- Filtros reales por estado, cliente (nombre, DNI, teléfono o email) y rango de fechas inclusivo. Se aplican en el backend sobre `GET /api/pedidos`; la tabla muestra pedido, fecha, cliente, dirección, estado, validación y acceso a «Ver»/«Revisar». La búsqueda de DNI tolera puntos, espacios y guiones.
+- Estados de interfaz: carga, error con mensaje, vacío sin pedidos y vacío con filtros sin coincidencias. «Limpiar filtros» reinicia los controles.
+- Se retiraron de la pantalla el filtro de chofer y el botón «Agrupar envíos lejanos automáticamente» de la maqueta: la asignación de choferes pertenece a otro módulo y el agrupamiento a MVP 2. No se agregó paginación ni exportación.
+- La bandeja de revisión (`/pedidos/revision`) sigue existiendo para las direcciones sin confirmar; el tablero es el listado general y no reemplaza el detalle de revisión.
+- No se probó visualmente en navegador ni en viewport móvil en esta sesión; se acredita con pruebas de backend/frontend, lint, build y smoke de API.
+
+## Sugerencia de importe y sucursal · KAN-49
+
+- **Configuración de envíos** (`frontend/src/pages/TarifasPage.jsx`, solo ADMINISTRADOR): permite cargar calle, altura, localidad y provincia de la sucursal, además del precio por km para sugerir el costo de cada envío. El servidor valida y geocodifica con Georef; si responde con un error, se muestra el motivo sin reemplazar los datos guardados. Cuando hay una sucursal ubicada, se muestra el texto devuelto por Georef y su punto en el mapa. El acceso aparece en el menú lateral con un ícono de engranaje.
+- En la carga de pedidos el importe es opcional. Si se deja vacío, el alta no envía ese campo. La ayuda indica que el sistema sugiere un importe al confirmar la ubicación.
+- **Completar importe** permite guardar el valor pendiente mientras el pedido no esté pagado, incluso si es un pedido antiguo sin dirección confirmada. La sugerencia se consulta solo si la dirección está confirmada, en carga, revisión y el detalle de Asignaciones; si no lo está, se explica que la sugerencia aparece al confirmar la ubicación. Si la consulta no está disponible, se muestra el motivo y se mantiene la carga manual. Un importe sugerido igual a cero no se precarga.
+- Las pruebas de interfaz/API usan datos y respuestas simuladas; no llaman a Georef ni prueban el mapa contra una sesión autenticada. No se verificó visualmente en navegador ni en móvil en esta tarea.
+
+## Exportación de pedido e historial · KAN-51/KAN-52
+
+- Historial del pedido presenta fecha/hora Buenos Aires en24h; consulta/entrega del chofer presentan24h en zona del dispositivo. Fecha inválida o ausente tiene texto de reemplazo. No cambia ningún timestamp del servidor.
+- Revisión de pedido, detalle/mapa de Asignaciones y panel de historial del chofer ofrecen Descargar pedido PDF y Descargar mapa PDF. Se consulta información actualizada al descargar; acciones bloqueadas durante generación y reintento tras error. La exportación incluye historial completo independientemente de la página de UI.
+- Falta de ubicación o fallo de imagen se informa; el PDF completo conserva los datos disponibles. Mapa independiente requiere imagen disponible. No se confirma dirección ni se incluyen adjuntos privados al exportar.
+- Implementación verificada con pruebas automatizadas y API real de lectura; descarga/teselas y presentación en escritorio/móvil pendientes de prueba conjunta por decisión del usuario.
+
+Corrección KAN-52 (02/11/2026): el PDF de información queda limitado al contenido
+de Más información; no incluye mapa ni auditoría geográfica/metadatos adicionales.
+El PDF de mapa contiene sólo dirección e imagen (atribución dentro del mapa).
+Descargar información no consulta teselas; conserva permisos y lectura del servidor.
+
+## KAN-56 · casilla de importe durante carga
+
+La ayuda de Importe base deja de exigir guardar/confirmar antes de sugerir: con un punto tentativo vigente precarga importe positivo, explica distancia en línea recta y precio por km y permite editar. Con varios candidatos espera selección. Edición manual/vacío explícito no se sobrescriben; Usar importe sugerido vuelve al modo automático. Cambiar dirección/candidato quita automáticamente la sugerencia anterior; error/configuración faltante permite reintento y carga manual o alta sin importe. Confirmación humana sigue después de guardar. Esta actualización supera la descripción histórica de KAN-49 para el alta; no cambia completar importes de pedidos ya guardados.
+
+## KAN-54 · direcciones del cliente en Cargar pedido
+
+Al seleccionar un cliente aparece Direcciones del cliente con opciones de pedidos previos y libreta, o Sin direcciones guardadas. Elegir precarga campos editables; Otra dirección los limpia. Cambiar cliente limpia dirección/selección/importe manual; errores de consulta no impiden ingreso manual. Guardar un pedido recuerda una nueva dirección o conserva la ya existente, distinguiendo piso/depto/referencias. No confirma ubicación por reutilizarla ni modifica pedidos anteriores. Interfaz compacta; revisión visual/móvil conjunta pendiente.
+
+## Selector frecuente compacto · referencia branch-benjamin-1
+
+Cliente frecuente queda reducido al buscador cuando no hay término. Al escribir aparecen filas compactas con nombre/contacto y Seleccionar, hasta20 coincidencias dentro de un área con scroll; más resultados requieren afinar búsqueda. No pagina ni lista todos los clientes al abrir. Seleccionar muestra resumen y Cambiar vuelve a búsqueda vacía. API/permisos/datos y selector de direcciones KAN-54 se conservan. Diseño adaptado de Orders.jsx/Orders.css de branch-benjamin-1, sin copiar su contrato antiguo.
+
+Ajuste posterior del selector frecuente: foco/clic sin término abre5 sugerencias
+iniciales; escribir filtra hasta20. Panel flotante con fondo translúcido/desenfoque,
+tipografía y tamaños del formulario. Cierra con Escape/clic externo/salida de foco
+sin perder selección por botones internos. Sólo consulta al estar abierto.
+
+KAN-57, criterio vigente final: réplica de Orders.jsx/Orders.css de branch-benjamin-1,
+con búsqueda al escribir, texto/placeholder/estado originales y filas en flujo13/14/
+12px. Sin sugerencias iniciales, popup ni blur. Esto supera las adaptaciones previas.
+Aviso seleccionado de referencia y Cambiar para liberar campos bloqueados de MVP-1.
+
+KAN-57 aclaración final: tipografía discreta a escala del formulario actual, filas
+simples sin panel flotante y primeros5 clientes al enfocar/clicar. Se retiran las
+reglas13/14px trasladadas de Orders; escribir conserva filtrado hasta20.
+
+### Campos obligatorios de contacto y dirección (02/11/2026)
+
+DNI, teléfono, email y código postal llevan `*` y se requieren al guardar. Un cliente frecuente incompleto se corrige desde Clientes antes de cargar un nuevo pedido. Se mantiene la tipografía del selector y sus primeras cinco opciones al abrir.
+
+La lista de clientes frecuentes mantiene su forma en flujo y tipografía; el fondo usa desenfoque de 12px y degradado translúcido según tema. Los textos y controles no se desenfocan.
+
+El selector de clientes oculta resultados al pasar a otra casilla, hacer clic fuera o pulsar Escape; permite pasar a sus botones con teclado sin ocultarlos antes de seleccionar. Clic/foco en buscador reabre la lista.
+
+Email de cliente opcional desde 03/11/2026; sin asterisco ni bloqueo por campo vacío. DNI, teléfono y código postal siguen obligatorios.
+
+## Integración nueva experiencia · 03/11/2026
+En la copia MVP-1 se traslada la experiencia visual de la rama de diseño sobre la base funcional reciente. Navegación superior, tablero/actividad, detalle /pedidos/:id y detalle del chofer conservan las operaciones existentes. Nuevo pedido combina mapa tentativo, candidatos, estimación manual/automática y direcciones por cliente con el recorrido de guardado/confirmación/preparación. PDF disponible también en los detalles nuevos; no cambia su contenido acordado. Historial mantiene ciclo h23. Carga revisada con fixtures en1440x900/360x800 y ambos temas, incluyendo cliente frecuente y dirección guardada. El recorrido persistido completo queda pendiente por entorno detenido; evidencia en tareas.md.

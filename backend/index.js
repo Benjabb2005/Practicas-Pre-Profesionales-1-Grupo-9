@@ -1,28 +1,38 @@
 require("dotenv").config();
 
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
 
-const app = require("./app");
-const PORT = process.env.PORT || 3000;
+const createApp = require("./app");
+const { loadEnv } = require("./src/config/env");
 
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+let config;
+try {
+    config = loadEnv();
+} catch (error) {
+    console.error(`Configuración inválida: ${error.message}`);
+    process.exit(1);
+}
+
+const pool = mysql.createPool({
+    host: config.db.host,
+    port: config.db.port,
+    user: config.db.user,
+    password: config.db.password,
+    database: config.db.database,
+    waitForConnections: true,
+    connectionLimit: 10,
 });
 
-db.connect((error) => {
-    if (error) {
-        console.error("Error al conectar con MySQL:");
-        console.error(error.message);
-        return;
-    }
+const app = createApp({ db: pool, config });
 
-    console.log("Conexión a MySQL exitosa");
+app.listen(config.puerto, () => {
+    console.log(`Servidor funcionando en http://localhost:${config.puerto}`);
 });
 
-app.listen(PORT, () => {
-    console.log(`Servidor funcionando en http://localhost:${PORT}`);
-});
+// La prueba de conexión no bloquea el arranque: el servidor responde HTTP
+// aunque MySQL todavía no esté listo (lo refleja /api/health).
+pool.query("SELECT 1")
+    .then(() => console.log("Conexión a MySQL exitosa"))
+    .catch((error) => {
+        console.error(`No se pudo conectar con MySQL: ${error.code || error.message}`);
+    });
