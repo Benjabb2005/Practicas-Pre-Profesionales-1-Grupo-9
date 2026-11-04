@@ -7,6 +7,7 @@ const { normalizarProvincia } = require("../constants/provincias");
 
 const VENTANA_DUPLICADOS_HORAS = 24;
 const { normalizarImporte } = require('../lib/importes');
+const { validarContactoObligatorio } = require('../lib/contactoCliente');
 
 const MENSAJES_LOCALIDAD = Object.freeze({
     LOCALIDAD_NO_ENCONTRADA: "La localidad no figura en el listado oficial de esa provincia. Revisá la escritura o la provincia.",
@@ -166,6 +167,8 @@ function createPedidoService({
             const importeBase = importeVacio ? null : normalizarImporte(importe_base);
             const cliente = await clientes.buscarPorId(cliente_id);
             if (!cliente) throw errorValidacion({ cliente_id: "El cliente indicado no existe." });
+            validarContactoObligatorio(cliente);
+            if (!String(direccion?.codigo_postal ?? '').trim()) throw errorValidacion({ codigo_postal: 'El código postal es obligatorio.' });
 
             const preparada = prepararDireccion(direccion);
             const { estado, problemas } = validarDireccion(preparada);
@@ -207,6 +210,7 @@ function createPedidoService({
             const detalle = await pedidos.obtenerDetalle(pedidoId);
             if (!detalle) throw noEncontrado("El pedido no existe.");
             if (!detalle.direccion_id) throw noEncontrado("El pedido no tiene dirección registrada.");
+            if (!String(direccion?.codigo_postal ?? '').trim()) throw errorValidacion({ codigo_postal: 'El código postal es obligatorio.' });
 
             const preparada = prepararDireccion(direccion);
             const { estado, problemas } = validarDireccion(preparada);

@@ -11,6 +11,7 @@ import Icon from '../components/Icon.jsx'
 import AccionChofer from '../components/AccionChofer.jsx'
 import ImportePedido from '../components/ImportePedido.jsx'
 import EstadoComprobante from '../components/EstadoComprobante.jsx'
+import { fechaHora, hora } from '../components/fechas.js'
 
 const MapaChofer = lazy(() => import('../components/MapaChofer.jsx'))
 
@@ -53,7 +54,7 @@ export default function ChoferPedidosPage({ onLogout }) {
     {recienEntregado && <div className="driver-result-actions"><button type="button" onClick={() => setAccion({ tipo: 'pago', pedido: recienEntregado })}>Registrar pago del pedido {recienEntregado.codigo || `#${recienEntregado.id}`}</button><button type="button" onClick={() => setRecienEntregado(null)}>Más tarde</button></div>}
     <div className="driver-list-tools"><span role="status">{pedidos ? `${deVista.length} entrega(s) ${vista === 'pendientes' ? 'en envío' : vista === 'historial' ? 'completada(s)' : 'con pendientes'}` : 'Consultando entregas'}</span>
     <button type="button" className="button button-outline" disabled={!pedidos && !error} onClick={() => { setPedidos(null); setError(''); setVersion(v => v + 1) }}>{error ? 'Reintentar' : 'Actualizar'}</button></div>
-    {actualizado && pedidos && <p className="driver-updated">Última consulta: {actualizado.toLocaleTimeString('es-AR')}</p>}
+    {actualizado && pedidos && <p className="driver-updated">Última consulta: {hora(actualizado)}</p>}
     <label className="driver-search">Buscar una entrega<input type="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Pedido, cliente o dirección"/></label>
     {error && <p role="alert" className="users-alert">{error}</p>}
     {!pedidos && !error && <p role="status">Cargando tus pedidos…</p>}
@@ -69,7 +70,7 @@ export default function ChoferPedidosPage({ onLogout }) {
       {p.observaciones && <p>Indicaciones: {p.observaciones}</p>}
       <ImportePedido pedido={p}/>
       {vista === 'pendientes' && (mapa(p) ? <div className="driver-location-actions"><button type="button" className="driver-map-button" onClick={() => setMapaId(p.id)}>Ver mapa</button><a className="driver-map-button" href={mapa(p)} target="_blank" rel="noreferrer">Ver ubicación en Google Maps</a></div> : <p>Ubicación no disponible.</p>)}
-      {vista !== 'pendientes' && <p className="driver-pago-nota">{p.entregado_fecha && <>Entrega: {new Date(p.entregado_fecha).toLocaleString('es-AR')}. </>}{p.pago_metodo ? `Pago registrado: ${p.pago_metodo === 'EFECTIVO' ? 'Efectivo' : 'Transferencia'} · $${Number(p.pago_monto).toLocaleString('es-AR', { minimumFractionDigits: 2 })}. ${p.estado === 'PAGADO' ? 'Pago confirmado.' : 'Pendiente de acreditación por administración.'}` : 'Sin pago registrado.'}</p>}
+      {vista !== 'pendientes' && <p className="driver-pago-nota">{p.entregado_fecha && <>Entrega: {fechaHora(p.entregado_fecha)}. </>}{p.pago_metodo ? `Pago registrado: ${p.pago_metodo === 'EFECTIVO' ? 'Efectivo' : 'Transferencia'} · $${Number(p.pago_monto).toLocaleString('es-AR', { minimumFractionDigits: 2 })}. ${p.estado === 'PAGADO' ? 'Pago confirmado.' : 'Pendiente de acreditación por administración.'}` : 'Sin pago registrado.'}</p>}
       <div className="driver-result-actions">{vista === 'pendientes' ? <><button type="button" className="entrega-exito" onClick={() => setAccion({ tipo: 'entrega', pedido: p })}>Confirmar entrega</button><button type="button" className="entrega-fallo" onClick={() => setAccion({ tipo: 'fallo', pedido: p })}>No se pudo entregar</button></> : !p.pago_metodo && <button type="button" onClick={() => setAccion({ tipo: 'pago', pedido: p })}>Registrar pago</button>}
         {p.pago_metodo==='TRANSFERENCIA'&&<button type="button" onClick={()=>setAccion({tipo:'comprobantes',pedido:p})}>Adjuntar / ver comprobante</button>}
         <button type="button" onClick={() => setAccion({ tipo: 'historial', pedido: p })}>Ver historial</button></div>

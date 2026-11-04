@@ -1,71 +1,57 @@
-import { useEffect, useState } from 'react'
-import Icon from './Icon.jsx'
-import Paginacion from './Paginacion.jsx'
-import usePagination from './usePagination.js'
-import { contactoDeCliente } from './cliente.js'
+import { useEffect, useRef, useState } from 'react'
 import { mensajeError } from '../api/client'
 import { listarClientes } from '../api/clientes'
 
-// Selector de cliente frecuente contra el backend. No inventa clientes: si no
-// hay coincidencias lo dice, y el alta depende de los datos ya existentes.
+// Presentación de Orders.jsx en branch-benjamin-1, con la API de MVP-1.
 function ClienteSelector({ cliente, onSeleccionar, bloqueado = false }) {
+  const contenedor = useRef(null)
   const [busqueda, setBusqueda] = useState('')
-  const [resultados, setResultados] = useState([])
-  const [cargando, setCargando] = useState(false)
-  const [error, setError] = useState('')
-
+  const [activo, setActivo] = useState(false)
+  const [consulta, setConsulta] = useState({ termino: null, resultados: [], error: '' })
+  const termino = busqueda.trim()
   useEffect(() => {
-    if (cliente) return undefined
-    let vigente = true
+    if (!activo) return undefined
+    function cerrarFuera(event) {
+      if (!contenedor.current?.contains(event.target)) setActivo(false)
+    }
+    document.addEventListener('pointerdown', cerrarFuera)
+    return () => document.removeEventListener('pointerdown', cerrarFuera)
+  }, [activo])
+  useEffect(() => {
+    if (!activo || bloqueado) return undefined
+    const controlador = new AbortController()
     const temporizador = setTimeout(() => {
-      setCargando(true)
-      listarClientes(busqueda.trim() || undefined)
-        .then((lista) => { if (vigente) { setResultados(lista); setError('') } })
-        .catch((fallo) => { if (vigente) { setResultados([]); setError(mensajeError(fallo)) } })
-        .finally(() => { if (vigente) setCargando(false) })
-    }, 300)
-    return () => { vigente = false; clearTimeout(temporizador) }
-  }, [busqueda, cliente])
+      listarClientes(termino || undefined, controlador.signal)
+        .then(resultados => { if (!controlador.signal.aborted) setConsulta({ termino, resultados, error: '' }) })
+        .catch(e => { if (!controlador.signal.aborted) setConsulta({ termino, resultados: [], error: mensajeError(e) }) })
+    }, termino ? 250 : 0)
+    return () => { clearTimeout(temporizador); controlador.abort() }
+  }, [termino, activo, bloqueado])
 
-  const paginado = usePagination(resultados, busqueda, 5)
-  if (cliente) {
-    return <div className="cliente-selector">
-      <span className="form-field-label">Cliente</span>
-      <div className="cliente-elegido">
-        <span><b>{cliente.nombre}</b><small>{contactoDeCliente(cliente) || 'Sin datos de contacto'}</small></span>
-        <button type="button" className="button button-outline" onClick={() => onSeleccionar(null)} disabled={bloqueado}>Cambiar</button>
-      </div>
+  const buscando = activo && consulta.termino !== termino
+  const error = activo && consulta.termino === termino ? consulta.error : ''
+  const visibles = activo && !buscando && !bloqueado ? consulta.resultados.slice(0, termino ? 20 : 5) : []
+  function limpiar() { setActivo(false); setBusqueda(''); setConsulta({ termino: null, resultados: [], error: '' }) }
+  return <div ref={contenedor} className="cliente-selector cliente-selector-referencia"
+    onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setActivo(false) }}>
+    <div className="frequent-search">
+      <label htmlFor="cliente-busqueda">Buscar cliente frecuente por DNI, email o teléfono</label>
+      <input id="cliente-busqueda" type="search" autoComplete="off" placeholder="Escribí para filtrar clientes…" value={busqueda} maxLength={100} disabled={bloqueado}
+        onFocus={() => setActivo(true)} onClick={() => setActivo(true)}
+        aria-controls="cliente-resultados" aria-expanded={activo && !bloqueado} aria-describedby="cliente-busqueda-ayuda"
+        onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); if (e.key === 'Escape') setActivo(false) }}
+        onChange={e => { setActivo(true); setBusqueda(e.target.value); setConsulta({ termino: null, resultados: [], error: '' }) }}/>
     </div>
-  }
-
-  return <div className="cliente-selector">
-    <label htmlFor="cliente-busqueda">Cliente frecuente</label>
-    <small id="cliente-busqueda-ayuda" className="cliente-ayuda">Buscá por DNI, nombre o teléfono. El DNI puede llevar puntos o guiones.</small>
-    <div className="search-input">
-      <Icon name="search" size={15}/>
-      <input
-        id="cliente-busqueda"
-        value={busqueda}
-        onChange={(event) => setBusqueda(event.target.value)}
-        placeholder="Ej. 20.123.456, Juan Pérez o 11 5555-5555"
-        autoComplete="off"
-        maxLength={100}
-        aria-describedby="cliente-busqueda-ayuda"
-        disabled={bloqueado}
-      />
-    </div>
+    <p id="cliente-busqueda-ayuda" className="frequent-status" role="status">{buscando ? 'Buscando clientes…'
+      : activo && !error ? visibles.length
+        ? `${visibles.length} ${visibles.length === 1 ? 'cliente coincidente' : 'clientes coincidentes'}${visibles.length === 20 ? ' (primeros 20; completá más datos para afinar)' : ''}.`
+        : 'No se encontraron clientes con esos datos.' : 'La lista se actualiza mientras escribís.'}</p>
     {error && <p className="users-alert" role="alert">{error}</p>}
-    <ul className="cliente-lista">
-      {cargando && <li className="cliente-vacio" role="status">Buscando…</li>}
-      {!cargando && !error && resultados.length === 0 && <li className="cliente-vacio">Sin coincidencias. Completá los datos para dar de alta un cliente nuevo.</li>}
-      {!cargando && paginado.items.map((opcion) => <li key={opcion.id}>
-        <button type="button" onClick={() => onSeleccionar(opcion)}>
-          <b>{opcion.nombre}</b>
-          <small>{contactoDeCliente(opcion) || 'Sin datos de contacto'}</small>
-        </button>
-      </li>)}
-    </ul>
-    {!cargando && !error && <Paginacion datos={paginado} nombre="clientes frecuentes" disabled={bloqueado}/>}
+    <ul id="cliente-resultados" className="candidate-list">{visibles.map(c => <li key={c.id}>
+      <span><strong>{c.nombre}</strong><small>DNI: {c.dni || 'Pendiente'} · {c.email || 'Email pendiente'} · {c.telefono || 'Teléfono pendiente'}</small></span>
+      <button type="button" disabled={bloqueado} className="button button-outline" onClick={() => { limpiar(); onSeleccionar(c) }}>Seleccionar</button>
+    </li>)}</ul>
+    {cliente && <div className="frequent-selected"><p role="status">Cliente frecuente seleccionado. Sus datos no se modificarán.</p><button type="button" disabled={bloqueado} className="button button-outline" onClick={() => { limpiar(); onSeleccionar(null) }}>Cambiar</button></div>}
   </div>
 }
 

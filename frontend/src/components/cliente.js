@@ -9,9 +9,9 @@ export const CLIENTE_VACIO = {
 
 export const CAMPOS_CLIENTE = [
   { clave: 'nombre', etiqueta: 'Nombre y apellido', placeholder: 'Ej. Juan Pérez', requerido: true, clase: 'span-2' },
-  { clave: 'dni', etiqueta: 'DNI', placeholder: 'Con o sin puntos', clase: '' },
-  { clave: 'telefono', etiqueta: 'Teléfono', placeholder: 'Ej. 11 5555-5555', clase: '' },
-  { clave: 'email', etiqueta: 'Email', placeholder: 'Ej. nombre@correo.com', clase: 'span-2' },
+  { clave: 'dni', etiqueta: 'DNI', placeholder: 'Con o sin puntos', requerido: true, clase: '' },
+  { clave: 'telefono', etiqueta: 'Teléfono', placeholder: 'Ej. 11 5555-5555', requerido: true, clase: '' },
+  { clave: 'email', etiqueta: 'Email', placeholder: 'Ej. nombre@correo.com', requerido: false, clase: 'span-2' },
 ]
 
 // Formulario del ABM: incluye tipo y domicilio además de los datos de contacto.

@@ -29,3 +29,8 @@ export function importeParaPrecargar(sugerencia) {
   const importe = Number(sugerencia.importe_sugerido)
   return Number.isFinite(importe) && importe > 0 ? String(sugerencia.importe_sugerido) : ''
 }
+
+// null significa modo automático; una cadena (también vacía) es edición manual.
+export function importeDuranteCarga(manual, sugerencia) {
+  return manual === null ? importeParaPrecargar(sugerencia) : manual
+}

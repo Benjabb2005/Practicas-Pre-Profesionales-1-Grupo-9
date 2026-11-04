@@ -766,3 +766,170 @@ Estado: implementada en backend y frontend; sin commit, push ni deploy. Motivo: 
 - Pruebas: `backend/test/previsualizar-ubicacion.test.js` (7) y `backend/test/georef-provider.test.js` (5) y `frontend/src/components/buscadorTentativo.test.js` (8 con temporizadores falsos).
 
 Límites: no se probó en navegador (escritorio ni móvil), contra Georef real ni la recarga tras guardar. Con varios candidatos, al guardar el flujo existente vuelve a pedir la elección. Verificado con Georef real: Belisario Roldan 2875, Claypole, se encuentra como "B ROLDAN" con confianza BAJO; la variante abreviada es una sola, otras abreviaturas podrían no encontrarse. Observación ajena: `backend/test/geocode.test.js` importa `../src/geocode/nominatim`, que ya no existe.
+
+## Copia aislada de MVP-1 (31/10/2026)
+
+Pedido: clonar la rama remota MVP-1 en un checkout independiente y configurar sin interferir con otra copia. HEAD inicial d9c9108. Sin cambios de negocio ni dependencias nuevas. Proyecto Compose mandatodo-mvp1-aislado, contenedores/red propios, volumen nuevo mandatodo-mvp1-aislado_mysql_data, base mandatodo_mvp1_aislado, puertos host MySQL3308/API3001/web5174. Eliminados container_name fijos para evitar colisiones. Configuración local ignorada con secretos propios, más backend/.env y frontend/.env para modo nativo. Vite carga VITE_* del archivo local y rechaza puerto ocupado; Docker fija puerto interno5173. README documenta uso.
+
+Verificado: npm ci en ambos paquetes; skills:sync; npm run check completo pasa (backend215:211 aprobadas/4 integraciones opt-in omitidas; contexto, sintaxis, lint y build OK); frontend76/76 pasan. Aviso heredado de bundle mayor a500kB. Primer check detectó process sin importar en config Vite; corregido usando cwd de node:process y check repetido exitosamente. docker compose config --quiet y up -d --build; MySQL healthy; inspección confirma montaje exclusivo del volumen nuevo. Migraciones001–004 y seed de tres roles aplicados únicamente a la base nueva. HTTP health confirma http/db ok; frontend200; login ADMINISTRADOR por proxy web válido. No se prueba flujo integral de pedidos, móvil ni proveedor Georef. No se borraron datos/volúmenes ni se modificó la copia vecina; sin commit/push.
+
+## KAN-44 / X04 · verificación inicial y actualización MVP-1 (02/11/2026)
+
+Pedido de Benjamín: traer cambios pendientes y comenzar la prueba cruzada del núcleo de Santiago. Pull fast-forward d9c9108 → 1d5f12f (7 commits). Se resguardaron y restauraron los cinco archivos locales de configuración; conflicto de docs/tareas.md resuelto conservando ambos apartados. El stash resguardo-config-local-antes-pull-kan44 se conserva. Sin commit/push ni cambios de tickets.
+
+Evidencia ejecutada en este corte: npm run check pasa (227 pruebas backend: 223 aprobadas, 4 integraciones MySQL opt-in omitidas; contexto, sintaxis, lint y build aprobados). npm --prefix frontend test -- --run: 84/84, 19 archivos. Aviso preexistente de chunk mayor a 500 kB. Contra Docker y proxy web: 19 comprobaciones HTTP aprobadas de health con DB, ausencia/token inválido, credenciales incorrectas, login y restauración de sesión de los tres roles, ABM usuarios sólo administrador, asignaciones administrador/operador y pedidos de chofer sólo CHOFER. No se imprimieron credenciales ni se mutaron pedidos. Matriz independiente de reglas: 51 casos aprobados (25 pares de estados con/sin confirmación y estado desconocido). Scripts y logs temporales ignorados: temp/kan44-http.cjs, temp/kan44-estados.cjs, temp/kan44-check.log y temp/kan44-frontend.log.
+
+Resultado: sin fallos detectados en lo ejecutado; KAN-44 iniciada, no declarada cerrada. Falta recorrido visual por rol, transiciones con persistencia e historial sobre fixtures en base de pruebas independiente, y verificación específica de importación/migraciones para acreditar S02/S07 contra MySQL. No se ejecutaron SQL, migraciones ni integraciones de escritura sobre la base local con datos. Nominatim sí está presente y versionado; la observación heredada que afirma su ausencia no se reprodujo. Docker aislado conserva web5174/API3001/MySQL3308 y su volumen. No se implementó negocio ni se modificaron permisos.
+
+## KAN-51 / KAN-52 · horarios y exportación PDF (02/11/2026)
+
+Benjamín pide conservar KAN-44 pendiente y sumar funcionalidades para probar el conjunto después. KAN-44 permanece pendiente; el flujo manual previo informado por el usuario no se presenta como validación de roles/migraciones/importación. No se cambiaron estados ni asignaciones en Jira.
+
+KAN-51 implementada: helper fechas.js fija hourCycle h23 para HistorialPedido y ChoferPedidosPage (última consulta/entrega). Conserva Buenos Aires en historial y zona del dispositivo en chofer. Ausentes/inválidas muestran Fecha no disponible. Ocho casos automatizados cubren 18:41, medianoche, mediodía, ausencia/invalidez y preservación de zona. Relevamiento adicional: PedidosCargaPage.jsx, pedidoListado.js e historial geográfico PedidoRevisionDetallePage.jsx mantienen formato anterior; la parte geográfica de Sabrina no se declara cerrada.
+
+KAN-52 implementada: GET /api/exportaciones/pedidos/:id devuelve datos autorizados e historiales completos, en una misma transacción de lectura REPEATABLE READ, sin paginación. SQL parametrizado verifica usuario activo/rol vigente y pertenencia del chofer antes de leer historiales; inexistente/no accesible devuelve404. Cache-Control no-store. No incluye adjuntos privados ni credenciales. Rutas/repo y conexión con container/app nuevos, sin esquema ni mutaciones de negocio. El PDF incluye cliente, dirección original/normalizada, estado, chofer, importes/recargos, pago y todos los movimientos de estado/asignación/entrega/geolocalización cronológicos con responsable disponible. No filtra asignaciones por tener estado repetido.
+
+Acciones Descargar pedido PDF y Descargar mapa PDF en revisión, detalle/mapa de Asignaciones e historial del chofer. jsPDF4.2.1 es la única dependencia directa agregada, justificada por generar descargas reales con texto/paginación e imagen; se carga dinámicamente. Mapa generado en canvas sólo al descargar con teselas de la vista OSM, caché normal/Referer y atribución; no modifica proveedor ni confirma ubicación. Sin coordenadas/fallo de imagen, pedido completo descarga datos con aviso; mapa independiente informa el impedimento. No se exportan adjuntos automáticamente. Specs frontend/specs/horarios-24h.md y exportacion-pedido.md.
+
+Verificado: npm run check pasa (232 backend:228 aprobadas,4 opt-in omitidas; contexto/sintaxis/lint/build OK). Pruebas frontend agregadas de PDF real sin ubicación/historial,150 movimientos, imagen PNG, campo mayor a una página, cronología completa/nombre Buenos Aires y límites de teselas. Ver conteo final en docs/verificacion.md. HTTP contra Docker/MySQL: sesión ausente401, ID inválido400 e inexistente404 en tres roles, exportación admin/operador200 con igual cantidad de movimientos que endpoints originales y chofer ajeno404. Sin escrituras sobre pedidos del usuario ni SQL manual. Docker frontend reconstruido con dependencia y volumen anónimo renovado sólo de frontend; MySQL/volumen de datos conservados.
+
+Límites: regresión visual y descarga real en navegador/escritorio/móvil, mapa OSM/CORS/red y flujo conjunto quedan pendientes para revisión del usuario. Pruebas PNG usan imagen sintética; no acreditan imagen real de teselas. KAN-51/KAN-52 no se declaran cerradas. El check conserva aviso de bundle mayor a500kB. npm audit frontend informa11 hallazgos (6moderados/5altos) en dependencias preexistentes, ninguno en jspdf/nuevas dependencias; no se ejecutó audit fix ni actualización fuera de alcance. Logs/scripts temporales temp/funcionalidades-*,temp/kan52-http.cjs. Próximos tickets funcionales: KAN-53 rediseño y KAN-54 direcciones por cliente. Sin commit/push.
+
+## KAN-52 · contenido de las descargas corregido por Benjamín (02/11/2026)
+
+Pedido explícito: información sólo lo que aparece en Más información; mapa únicamente dirección e imagen. Este ajuste supera el PDF integral propuesto en el apartado anterior. La descarga de información usa los mismos doce campos que el panel (datosMasInformacion.js compartido), importes/pago y movimientos visibles de HistorialPedido mediante historialEntregas; conserva todos esos movimientos sin limitarse al paginado. Excluye mapa, historial geográfico y metadatos que ese panel no muestra. Descargar información no carga ni consulta el mapa. El mapa sólo contiene dirección e imagen, con atribución OSM dentro de la imagen, sin ID/código, fecha, coordenadas, estados ni pie. Nombre de archivo mantiene ID/fecha.
+
+Se conserva endpoint/permisos; añade sólo conteo de comprobantes para reproducir el estado visible de pago, sin adjuntos. Botón renombrado Descargar información PDF; fallo o ausencia de mapa no genera un PDF vacío. Spec exportacion-pedido.md actualizada y pruebas de contenido excluido, contenido compartido, paginado y mapa de sólo dirección/imagen. Frontend102/102 pasan en21 archivos. No se tocaron pedidos ni se cerraron tickets. Prueba visual conjunta sigue pendiente.
+
+## Jira KAN-52 actualizado (02/11/2026)
+
+A pedido explícito de Benjamín se actualizó KAN-52: título, descripción y criterios reemplazan el PDF integral por información limitada a Más información y mapa sólo dirección/imagen. Evidencia técnica y validación visual conjunta pendiente registradas. Asignada a Benjamín según su pedido previo de realizar estas funcionalidades; estado En revisión, sin finalizar. KAN-44 permanece pendiente y no se modificaron otros tickets ni el issue GitHub de referencia.
+
+## Jira KAN-51 actualizado (02/11/2026)
+
+Benjamín solicita también actualizar el ticket de horas. KAN-51 conserva responsable Benjamín; descripción actualizada con implementación h23, preservación de zonas, ocho casos específicos y check/frontend del último corte. Estado En revisión, pendiente de validación visual conjunta; no Finalizado. Parte geográfica de Sabrina permanece fuera del cierre. KAN-44 no se modificó. Sin cambios de código ni nuevas pruebas en esta actualización de Jira.
+
+## KAN-56 · sugerencia de importe durante Cargar pedido (02/11/2026)
+
+Pedido explícito de Benjamín: crear ticket y resolver la caja de importe aprovechando la geolocalización dinámica. Jira KAN-56 creada y asignada a Benjamín, inicialmente En curso. Spec frontend/specs/importe-durante-carga.md. No se agregaron dependencias ni cambios de esquema.
+
+POST /api/pedidos/importe-sugerido acepta únicamente latitud/longitud numéricas finitas en rango; permisos administrador/operador, Cache-Control no-store. SugerenciaImporteService reutiliza fórmula de KAN-49: Haversine, distancia redondeada a décimas antes de multiplicar, centavos enteros y medio centavo hacia arriba. Precio/sucursal leídos del servidor; no consulta ni escribe pedidos, no confirma dirección. Controla máximo persistible; sucursal/tarifa faltante tiene motivo. GET de sugerencia de pedido confirmado mantiene su regla y comparte cálculo.
+
+En carga, el punto único o candidato elegido vigente alimenta useImporteDuranteCarga. Reutiliza cancelación/descartes del buscador tentativo; la clave incluye dirección y coordenadas y se valida también el objeto de resultado geográfico. Importe automático se deriva únicamente de una sugerencia vigente positiva, por lo que desaparece en el mismo render al cambiar dirección/candidato, sin esperar a un efecto. Edición manual, incluso vaciar el campo, se conserva; Usar importe sugerido vuelve al modo automático. Botones actualizar/reintentar, explicación de estimación tentativa, candidatos ambiguos y tarifa/sucursal faltante. No bloquea guardar sin importe. Nueva carga restablece modo automático y pedido guardado muestra el importe persistido, conservando completar faltantes después de confirmar. Se actualizó ayuda anterior de esperar a confirmar.
+
+Pruebas: siete backend nuevas (fórmula/redondeo, cero km, configuración faltante, máximo, coordenadas, roles y cuerpo estricto) más seis frontend (automático/manual/vacío, selección de candidato vigente, API con cancelación, respuesta vieja, cancelar al guardar/limpiar, presentación de estados). Se ejecutaron16 pruebas enfocadas backend sin fallos; frontend108/108 en22 archivos; npm run check completo pasa (backend239:235 aprobadas/4 opt-in omitidas, contexto/sintaxis/lint/build). Aviso heredado de chunk mayor a500kB. git diff --check pasa.
+
+HTTP real por proxy web5174/API/MySQL:401 sin sesión, administrador/operador200 con motivo de configuración faltante, chofer403, coordenadas null y precio enviado por navegador400. Configuración real no se alteró: falta sucursal o tarifa en esta copia; por eso el cálculo positivo se acreditó con datos sintéticos/pruebas, no contra una configuración real completa. No se crearon clientes/pedidos, ejecutaron SQL manual, migraciones ni cambios de tarifa. Scripts/logs ignorados temp/kan56-*. Visual escritorio/móvil, proveedor real y prueba conjunta pendientes; al terminar queda En revisión, no Finalizado. Cambios previos de KAN-51/52 y configuración local conservados. Sin commit/push.
+
+## KAN-56 · ayuda compacta bajo el importe (02/11/2026)
+
+Benjamín pide menos detalle debajo de la casilla. Se reduce a ayuda breve «Se sugiere con el mapa. Podés editarlo.» y una línea con el importe estimado; Usar sugerido sólo cuando hay edición manual. Se retiran fórmula/distancia/precio, explicaciones repetidas y botón de actualización permanente. Se conservan cálculo/cancelación/manual y avisos breves de selección/error/configuración; Reintentar sólo en error. Frontend108/108 y lint pasan; sin cambios de API ni negocio. Visual conjunto pendiente.
+
+## Georef · alias Capital dentro de CABA (02/11/2026)
+
+Benjamín reporta sucursal sin coordenadas para Avenida Corrientes3247, localidad capital, provincia CABA. Causa reproducida con proveedor real: localidad=Capital y localidad=Ciudad Autónoma de Buenos Aires devuelven0 resultados; misma calle/altura y provincia sin filtro de localidad devuelve1 candidato AV CORRIENTES3247, Comuna3, CABA. Documentación oficial de direcciones Georef describe localidad/provincia como filtros opcionales para restringir búsqueda: https://www.argentina.gob.ar/node/473623.
+
+Corrección acotada en backend/src/geocode/georef.js: sólo cuando provincia normalizada es CABA y localidad es alias Capital/Capital Federal/CABA/Ciudad Autónoma de Buenos Aires/Ciudad de Buenos Aires, omitir el filtro de localidad al consultar, manteniendo provincia. Texto original no cambia; barrio específico de CABA y localidad Capital de Córdoba/Buenos Aires siguen filtrándose. No se generaliza fallback sin localidad a otras provincias ni se inventan coordenadas. Skill aplicada ppp1-direcciones junto con verificación.
+
+Dos regresiones nuevas con proveedor simulado cubren alias/input inmutable y conservación de barrios/otras provincias. API real Docker por proxy web, endpoint de previsualización sin escritura: misma dirección retorna APPROXIMATE con un candidato válido. No se pulsó Guardar sucursal ni se modificó configuración/pedidos. Evidencias temporales temp/diagnostico-sucursal.cjs,temp/caba-georef-http.cjs,temp/caba-georef-check.log. Sin commit/push; ubicación sigue siendo aproximada y revisión humana vigente.
+
+## KAN-54 · varias direcciones reutilizables por cliente (02/11/2026)
+
+Pedido explícito de Benjamín: implementar KAN-54 ahora; supera la precedencia de KAN-53 escrita en la planificación, sin autorizar un rediseño general. Ticket asignado a Benjamín. Skills funcionalidad/datos aplicadas; cambios previos y configuración aislada preservados.
+
+Migración005 crea direcciones_cliente con FK cliente y unique(cliente_id,clave SHA256). Normalización compartida incluye calle/altura/piso-depto/entre calles/localidad/provincia/CP; comparación ignora caja y espacios normalizados, conserva diferencias de piso y referencias. Repetir no sobrescribe el original de la libreta. Alta de pedido y registro de dirección dentro de una misma transacción: fallo revierte ambos. Cada pedido sigue teniendo su snapshot e historial independientes; no se modifica ninguna dirección previa. No se agregaron dependencias ni se tocó init.sql.
+
+GET /api/clientes/:id/direcciones, sólo administrador/operador, valida cliente/ID y responde sin caché. Devuelve campos reutilizables normalizados de libreta y direcciones de pedidos históricos, deduplicados, sin coordenadas/estado de confirmación. Sin backfill ni inferencias desde clientes.domicilio. Cliente sin historial tiene lista vacía. Selección en Cargar pedido precarga los siete campos; Otra dirección limpia, cambio de cliente limpia dirección/selección/importe manual. Edición manual despega selección; formulario nunca recibe confirmación ni coordenadas antiguas. Geolocalización dinámica y estimación vuelven a calcularse normalmente. Error de lista permite reintentar o escribir manualmente. UI compacta sin texto adicional extenso. Spec frontend/specs/direcciones-cliente.md.
+
+Verificado: respaldo privado y restauración real en dos copias separadas; conteos de tablas previas conservados;005 aplicada dos veces en copia, sin alterar datos. Base tercera nueva con001–005 para integración MySQL opt-in: persistencia entre conexiones, histórico, repetidas, piso/referencias distintos, separación clientes, alta concurrente con una sola dirección, rollback simulado sin pedido parcial y snapshot previo intacto;1/1 aprobada. Se corrigió en desarrollo una ubicación errónea del método del servicio detectada por la prueba de cliente inexistente y se repitió con éxito. Migración aplicada finalmente a la base local aislada, con respaldo/restauración previos y comprobación de todos los conteos; segunda ejecución del runner sin pendientes. Runbook docs/migracion-direcciones-cliente.md, metadatos/respaldo privados ignorados en temp/kan54-aplicacion.json y temp/kan54-entorno.json. No se borraron bases/volúmenes ni pedidos del usuario.
+
+npm run check pasa: backend246 (241 aprobadas/5 opt-in omitidas por defecto), contexto/sintaxis/lint/build; frontend113/113 en23 archivos. Opt-in nueva acreditada por separado. API real por proxy5174:401 sin sesión, admin/operador200 con histórico real disponible y sin duplicados/datos geográficos, chofer403, ID inválido400 y cliente inexistente404. Sólo lecturas sobre datos del usuario. git diff --check pasa; aviso heredado de chunk mayor a500kB. Logs/scripts temporales temp/kan54-*. Prueba visual escritorio/móvil y recorrido conjunto quedan pendientes; KAN-54 En revisión, no Finalizado. Sin commit/push.
+
+## Aviso de pedido duplicado en modo oscuro (02/11/2026)
+
+Captura del usuario muestra texto claro sobre fondo blanco/crema. Se agregan estilos acotados en Theme.css para duplicate-alert: fondo ámbar oscuro, título/advertencia cálidos legibles, tarjeta de pedido oscura, detalle/texto con contraste y paginación con separador coherente y deshabilitados sin opacidad lavada. No cambia tema claro, lógica de duplicados ni acciones de creación/cancelación.
+
+Lint/build frontend pasan; aviso heredado de chunk grande. Verificación visual en navegador IAB con tarjeta/paginación/acciones sintéticas y CSS reales: contraste corregido en escritorio. Evidencia ignorada temp/duplicados-oscuro-corregido.png. Harness HTML temporal eliminado y pestaña cerrada; sin sesión ni llamadas de negocio, no se crearon pedidos. No se acredita prueba visual del flujo autenticado ni móvil. git diff --check pasa; sin commit/push.
+
+## Selector compacto de cliente frecuente · referencia branch-benjamin-1 (02/11/2026)
+
+Pedido de Benjamín: reducir espacio y aplicar el criterio de branch-benjamin-1. Se trajo esa referencia remota (sin checkout/merge) y se leyeron Orders.jsx/Orders.css: búsqueda bajo demanda, filas con nombre/contacto y botón Seleccionar, lista con scroll y hasta20 coincidencias. Se adapta sólo ClienteSelector al contrato real de MVP-1; no se copia formulario, validación de clientes completos ni API antigua.
+
+Al abrir no consulta/lista todos los clientes. Búsqueda por nombre/DNI/teléfono/email con debounce250ms, cancelación y descarte de resultados previos por término. Coincidencias en filas compactas, scroll máximo240px y hasta20; si hay más, muestra cantidad y pide afinar. Se retira paginación de este selector, sin tocar usePagination ni otros listados. Seleccionar conserva callback y flujo KAN-54; Cambiar limpia búsqueda/resultados y vuelve al buscador. Respeta bloqueo de controles, tema claro/oscuro y campos reales actuales. API listarClientes admite signal opcional sin cambiar llamadas existentes.
+
+Pruebas frontend116/116 en24 archivos, lint/build aprobados; aviso heredado de bundle grande. Verificación con componente real y API simulada en navegador: inicialmente sin lista, búsqueda muestra3 coincidencias sintéticas, seleccionar reduce a resumen y Cambiar restablece buscador vacío. Escritorio y contenedor360px; no se crearon ni modificaron clientes/pedidos reales. Evidencias ignoradas temp/selector-compacto-*. Harness temporal retirado al finalizar. No se ejecutó commit/push ni se modificaron tickets.
+
+## Selector frecuente · tipografía, vidrio y cinco sugerencias al foco (02/11/2026)
+
+Benjamín ajusta el diseño: misma tipografía/tamaño del formulario, fondo borroso y primeros5 al hacer clic. ClienteSelector abre panel anclado al buscador al enfocar/clicar; consulta API sin término únicamente entonces, mostrando hasta5 en el orden del servidor. Escribir conserva búsqueda y hasta20 coincidencias. No lista ni consulta al montar cerrado. Panel flotante no desplaza el formulario, usa fondo translúcido y backdrop-filter blur14px; fallback opaco. Fuente heredada DM Sans y tamaños8px nombre/campo,7px ayuda/contacto y9px botón, coincidentes con clases actuales de formulario. No se encontró filtro blur en Orders.css de la referencia remota; el efecto se aplica por este pedido explícito.
+
+Cierra con Escape, clic externo, salida de foco o selección; conserva Tab a botones internos, selección real, bloqueo y cancelación de consultas. Cambiar limpia el buscador. No hay cambios API/backend ni datos. Lint/build frontend y116/116 pruebas pasan. Navegador con API sintética de7clientes confirmó exactamente5 al hacer clic vacío, fuente/tamaño coincidentes por estilos calculados, blur14px, Escape, clic en otro campo y selección que cierra/resume. Evidencia ignorada temp/selector-cinco-desenfoque.png. Harness retirado y pestaña cerrada. Sin clientes/pedidos reales creados, commit/push ni modificación de tickets. Visual móvil/auth real no reensayados en este corte.
+
+## Jira KAN-57 · arreglo del selector frecuente (02/11/2026)
+
+A pedido de Benjamín se creó KAN-57 como arreglo UI: selector compacto, tipografía/tamaño del formulario, fondo translúcido borroso y5sugerencias iniciales al foco. Asignado a Benjamín, En revisión; implementación/evidencia116pruebas/lint/build y validación sintética documentadas, prueba autenticada/móvil pendiente. No se modificaron otros tickets ni se hizo commit/push.
+
+## KAN-57 · réplica del selector de branch-benjamin-1 (02/11/2026)
+
+Benjamín rechaza adaptaciones y pide el selector tal cual en la rama. Se reemplaza dropdown/blur/foco/5 sugerencias por marcado/textos/estilos de Orders.jsx y Orders.css de esa referencia: etiqueta13px, input/nombre14px, contacto12px; filas en flujo, botón Seleccionar, scroll240px, estado inicial y consulta al escribir250ms, hasta20. Buscador permanece tras seleccionar con aviso de la rama; Cambiar se conserva para liberar los campos bloqueados del MVP actual. No copia contrato/API/roles/validación antigua de clientes completos. Esta decisión supera los apartados previos de5 y desenfoque.
+
+Frontend116/116, lint/build pasan; navegador aislado confirma3 resultados, selección limpia y aviso; estilos calculados13/14/14/12px y sin panel flotante. Captura sintética temp/selector-branch-benjamin-1.png; harness/pestaña retirados. API real no alterada, sin datos reales modificados. KAN-57 título/criterios/evidencia actualizados, permanece En revisión. Sin commit/push. Prueba visual autenticada/móvil pendiente de aceptación final.
+
+## Asteriscos de campos obligatorios (02/11/2026)
+
+Benjamín pide marcar con* los obligatorios sin indicador. En DireccionForm se agregan Altura/Localidad/Provincia, según ValidadorDireccion (Calle ya estaba); el guardado de borradores incompletos se conserva, sin agregar validación HTML que lo bloquee. Nombre del cliente ya estaba marcado; DNI/teléfono/email, piso/depto, CP e importe de alta siguen opcionales según contrato vigente y no se marcan artificialmente. También se marcan nombre/email/rol y contraseña sólo al crear usuario, credenciales login, precio por km, completar importe pendiente, motivo de fallo y método de pago. Sucursal ya tenía indicadores. Sólo presentación; sin cambios de backend/datos/negocio.
+
+Lint/build frontend pasan; aviso heredado de chunk grande. No se agregan pruebas nuevas para cambio de etiquetas. Evidencia temporal temp/campos-obligatorios-*. Sin commit/push.
+
+## KAN-57 · escala mínima y primeros5 conservados (02/11/2026)
+
+Benjamín aclara que busca tipografía discreta y mantener los primeros5, no las reglas13/14px copiadas del bloque Orders. Se conserva familia heredada y filas simples en flujo; tamaños alineados al formulario8px y contacto/ayuda7px, pesos500, espaciado reducido y sin popup/blur. Foco/clic activa consulta vacía y hasta5 clientes; escribir filtra hasta20. No consulta al montar, cancela peticiones anteriores y conserva selección/Cambiar. Esto supera los tamaños grandes y la eliminación de primeros5 del apartado anterior. Frontend116/116 y lint pasan; build ejecutado en temp/selector-minimal-build.log. Sin cambios de backend, datos ni commit/push.
+
+## Contacto y código postal obligatorios · 02/11/2026
+
+- DNI, teléfono y email requeridos en alta/edición de clientes y carga manual de pedidos; código postal requerido al guardar/editar dirección. Asteriscos y atributos required en formularios.
+- Validación del servidor y pruebas de rechazo sin escrituras; clientes antiguos incompletos requieren completar contacto antes de un nuevo pedido. No se alteran datos históricos.
+
+## KAN-57 · fondo difuminado en lista (02/11/2026)
+
+Pedido de Benjamín: fondo translúcido con backdrop-filter y degradado suave adaptado al tema, conservando ancho, flujo, filas, tipografía mínima y primeros cinco al abrir. Sólo CSS del selector; contenido nítido.
+
+## KAN-57 · cerrar lista al salir (02/11/2026)
+
+La lista se abre al enfocar/clicar el buscador y se oculta al mover el foco fuera del selector, clicar fuera o pulsar Escape. Mover foco a Seleccionar conserva la opción hasta confirmar. Mantiene fondo difuminado, tipografía y primeros cinco; cerrar cancela consulta pendiente sin perder texto.
+
+## KAN-57 · fondo más oscuro (02/11/2026)
+
+Se oscurece el mismo tono del tema en el fondo de la lista para distinguirla del formulario. Conserva degradado, transparencia, blur, forma, tipografía y comportamiento.
+
+## KAN-57 · casillas de clientes con fondo de página (02/11/2026)
+
+Según captura, se cambia únicamente el fondo del listado de clientes a theme-background, el mismo color de la página. Se conserva forma, bordes, texto y comportamiento; no cambia el fondo general. Esta corrección reemplaza el degradado oscuro anterior.
+
+## KAN-57 · igualar al formulario contenedor (03/11/2026)
+
+Corrección solicitada: las casillas de la lista usan theme-surface, exactamente el fondo del panel que las rodea, en lugar de theme-background (fondo exterior más oscuro). Sólo cambia el color del listado.
+
+## KAN-57 · color exacto de captura (03/11/2026)
+
+Se midió el píxel de la segunda imagen provista: #17191e. La lista usa theme-background, que en oscuro tiene exactamente ese valor. Sustituye la interpretación anterior de igualar al panel; sólo fondo del listado.
+
+## KAN-57 · fondo plano uniforme (03/11/2026)
+
+Para igualar apariencia con el fondo izquierdo, se quita sombra exterior y backdrop-filter del listado y se fija el mismo fondo de página en cada fila. Conserva separadores, tamaño, texto y selección. Supera el difuminado anterior por pedido del usuario.
+
+## KAN-57 · ajuste perceptual del fondo (03/11/2026)
+
+Nueva captura confirma píxeles idénticos (#17191e) entre izquierda y filas, pero el usuario sigue percibiendo diferencia. Se aclara levemente sólo el fondo del listado mezclando 75% fondo con 25% superficie; filas heredan ese color. Ajuste perceptual pendiente de revisión del usuario, sin afirmar equivalencia visual verificada.
+
+## KAN-57 · borde del listado (03/11/2026)
+
+Se agrega borde exterior de 1px con contraste según tema, conservando fondo y separadores entre clientes. Última fila sin borde inferior duplicado. No cambia tipografía ni comportamiento.
+
+## Email opcional (03/11/2026)
+
+Se retiran required/asterisco y chequeo de presencia del email en alta/edición y carga. Servidor permite contacto sin email, manteniendo DNI/teléfono obligatorios. Prueba de alta sin email y borrado al editar. Sin cambios en datos existentes.
+
+## Entrega en rama de funcionalidades · 03/11/2026
+
+Por pedido explícito se crea feature/mvp1-pedidos-clientes-exportacion y se versionan todos los cambios pendientes del checkout, incluyendo configuración local aislada. Detalle final y guía para compañeros en entrega-features-mvp1.md. Check completo:246 backend aprobadas/5 opt-in omitidas,116 frontend, lint/build correctos. Se solicita cierre de KAN-51/52/54/56/57; KAN-44 mantiene prueba conjunta pendiente. Publicación en origin para compartir, sin merge a MVP-1/main.

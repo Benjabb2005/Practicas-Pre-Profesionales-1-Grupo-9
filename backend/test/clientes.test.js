@@ -7,6 +7,8 @@ const { createClienteService, normalizarDni } = require("../src/services/Cliente
 const { createClienteRepository } = require("../src/repositories/ClienteRepository");
 const { conflicto } = require("../src/lib/errors");
 
+const CONTACTO_VALIDO = { dni: "20123456", telefono: "1155555555", email: "fixture@example.test" };
+
 function reposClientesFalsos({
     porDni = null,
     coincidencias = [],
@@ -28,7 +30,7 @@ function reposClientesFalsos({
         },
         async buscarPorId(id) {
             if (porId === null) return null;
-            return { id, ...porId };
+            return { id, dni: "20123456", telefono: "1155555555", email: "fixture@example.test", ...porId };
         },
         async buscarPorDni(dni) {
             capturado.dniBuscado = dni;
@@ -79,7 +81,7 @@ test("crear cliente normaliza el DNI a solo dígitos y devuelve el registro", as
     const clientes = reposClientesFalsos();
     const servicio = createClienteService({ clientes });
 
-    const resultado = await servicio.crear({ nombre: "Juan Pérez", dni: "20.123.456", telefono: "11 5555-5555" });
+    const resultado = await servicio.crear({ ...CONTACTO_VALIDO, nombre: "Juan Pérez", dni: "20.123.456", telefono: "11 5555-5555" });
 
     assert.equal(clientes.capturado.crear.dni, "20123456");
     assert.equal(clientes.capturado.crear.telefono, "1155555555");
@@ -93,7 +95,7 @@ test("crear cliente con DNI ya existente se rechaza como conflicto", async () =>
     const servicio = createClienteService({ clientes });
 
     await assert.rejects(
-        () => servicio.crear({ nombre: "Juan", dni: "20123456" }),
+        () => servicio.crear({ ...CONTACTO_VALIDO, nombre: "Juan", dni: "20123456" }),
         (error) => error.codigo === "CONFLICTO"
     );
     assert.equal(clientes.capturado.crear, null);
@@ -105,7 +107,7 @@ test("el DNI repetido se detecta aunque cambien puntos, espacios o guiones", asy
 
     for (const dni of ["20.123.456", "20 123 456", "20-123-456"]) {
         await assert.rejects(
-            () => servicio.crear({ nombre: "Juan", dni }),
+            () => servicio.crear({ ...CONTACTO_VALIDO, nombre: "Juan", dni }),
             (error) => error.codigo === "CONFLICTO"
         );
         assert.equal(clientes.capturado.dniBuscado, "20123456");
@@ -118,7 +120,7 @@ test("un DNI con letras u otros separadores no se recorta silenciosamente", asyn
     const servicio = createClienteService({ clientes });
 
     await assert.rejects(
-        () => servicio.crear({ nombre: "Juan", dni: "20A123456" }),
+        () => servicio.crear({ ...CONTACTO_VALIDO, nombre: "Juan", dni: "20A123456" }),
         (error) => error.codigo === "DATOS_INVALIDOS"
     );
     assert.equal(clientes.capturado.crear, null);
@@ -129,7 +131,7 @@ test("un teléfono o email repetido se avisa sin fusionar ni bloquear el alta", 
     const clientes = reposClientesFalsos({ coincidencias: [coincidencia] });
     const servicio = createClienteService({ clientes });
 
-    const resultado = await servicio.crear({ nombre: "Juan", telefono: "1155555555" });
+    const resultado = await servicio.crear({ ...CONTACTO_VALIDO, nombre: "Juan", telefono: "1155555555" });
 
     assert.equal(resultado.cliente.id, 42);
     assert.deepEqual(resultado.posiblesDuplicados, [coincidencia]);
@@ -139,7 +141,7 @@ test("un DNI sin dígitos se rechaza como dato inválido", async () => {
     const servicio = createClienteService({ clientes: reposClientesFalsos() });
 
     await assert.rejects(
-        () => servicio.crear({ nombre: "Juan", dni: "sin-numeros" }),
+        () => servicio.crear({ ...CONTACTO_VALIDO, nombre: "Juan", dni: "sin-numeros" }),
         (error) => error.codigo === "DATOS_INVALIDOS"
     );
 });
@@ -409,4 +411,30 @@ test("clientes: editar y eliminar exigen rol y validan el id", async () => {
             server.closeAllConnections();
         });
     }
+});
+
+for (const campo of ['dni', 'telefono']) {
+    test('alta y edición rechazan ' + campo + ' vacío sin escribir', async () => {
+        const clientes = reposClientesFalsos();
+        const servicio = createClienteService({ clientes });
+        for (const valor of [undefined, null, '', '   ']) {
+            await assert.rejects(() => servicio.crear({ ...CONTACTO_VALIDO, nombre: 'Fixture', [campo]: valor }),
+                error => error.codigo === 'DATOS_INVALIDOS' && Boolean(error.campos[campo]));
+        }
+        await assert.rejects(() => servicio.actualizar(1, { [campo]: '' }),
+            error => error.codigo === 'DATOS_INVALIDOS' && Boolean(error.campos[campo]));
+        assert.equal(clientes.capturado.crear, null);
+        assert.equal(clientes.capturado.actualizar, null);
+    });
+}
+
+test('email opcional en alta y edición se conserva como null cuando falta', async () => {
+    const clientes = reposClientesFalsos();
+    const servicio = createClienteService({ clientes });
+    for (const email of [undefined, null, '', '   ']) {
+        await servicio.crear({ ...CONTACTO_VALIDO, nombre: 'Fixture', email });
+        assert.equal(clientes.capturado.crear.email, null);
+    }
+    await servicio.actualizar(1, { email: '' });
+    assert.equal(clientes.capturado.actualizar.datos.email, null);
 });

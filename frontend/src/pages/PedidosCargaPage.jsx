@@ -5,9 +5,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon.jsx'
 import ClienteSelector from '../components/ClienteSelector.jsx'
 import ClienteCampos from '../components/ClienteCampos.jsx'
+import DireccionesCliente from '../components/DireccionesCliente.jsx'
+import { camposDeDireccionGuardada } from '../components/direccionesCliente.js'
 import DireccionForm from '../components/DireccionForm.jsx'
 import ProblemasDireccion from '../components/ProblemasDireccion.jsx'
-import { DIRECCION_VACIA, motivoConfirmar, motivoGeocodificar, tieneCoordenadas } from '../components/direccion.js'
+import { DIRECCION_VACIA, claveBusqueda, motivoConfirmar, motivoGeocodificar, tieneCoordenadas, puntoPrevisualizado } from '../components/direccion.js'
 import { CLIENTE_VACIO, datosDeCliente, describirCoincidenciasClientes } from '../components/cliente.js'
 import { CANALES_ORIGEN, CANAL_PREDETERMINADO, etiquetaCanal } from '../components/canal.js'
 import MapPreview from '../components/MapPreview.jsx'
@@ -19,6 +21,9 @@ import { crearCliente } from '../api/clientes'
 import { confirmarDireccion, crearPedido, geocodificarPedido, pedidosDuplicadosDeError } from '../api/pedidos'
 import ImportePedido from '../components/ImportePedido.jsx'
 import CompletarImporte from '../components/CompletarImporte.jsx'
+import { useImporteDuranteCarga } from '../components/useImporteDuranteCarga.js'
+import { importeDuranteCarga } from '../components/importeSugerido.js'
+import SugerenciaImporteCarga from '../components/SugerenciaImporteCarga.jsx'
 import './Pedidos.css'
 
 const RESULTADOS = {
@@ -66,9 +71,10 @@ function PedidosCargaPage() {
   const [cliente, setCliente] = useState(null)
   const [datosCliente, setDatosCliente] = useState({ ...CLIENTE_VACIO })
   const [direccion, setDireccion] = useState({ ...DIRECCION_VACIA })
+  const [claveGuardada, setClaveGuardada] = useState('')
   const [canalOrigen, setCanalOrigen] = useState(CANAL_PREDETERMINADO)
   const [observaciones, setObservaciones] = useState('')
-  const [importeBase, setImporteBase] = useState('')
+  const [importeManual, setImporteManual] = useState(null)
   const [pedido, setPedido] = useState(null)
   const [problemas, setProblemas] = useState([])
   const [resultado, setResultado] = useState(null)
@@ -87,12 +93,13 @@ function PedidosCargaPage() {
   // La elección vale sólo para el resultado que la originó: uno nuevo la descarta.
   const indiceElegido = elegidoPrevio.datos === previsualizacion.datos ? elegidoPrevio.indice : null
   const candidatosPrevios = previsualizacion.fase === 'lista' ? previsualizacion.datos?.candidatos ?? [] : []
-  const puntoPrevio = candidatosPrevios.length === 1
-    ? candidatosPrevios[0]
-    : candidatosPrevios.find((candidato) => candidato.indice === indiceElegido) ?? null
+  const puntoPrevio = puntoPrevisualizado(previsualizacion, elegidoPrevio)
   const mensajeMapaPrevio = previsualizacion.fase === 'lista' && candidatosPrevios.length > 1 && !puntoPrevio
     ? 'Elegí una de las ubicaciones posibles para verla en el mapa.'
     : 'Completá la dirección y el mapa mostrará una ubicación tentativa.'
+
+  const consultaImporte = useImporteDuranteCarga(puntoPrevio, claveBusqueda(direccion), previsualizacion.datos, !pedido)
+  const importeBase = pedido ? String(pedido.importe_base ?? '') : importeDuranteCarga(importeManual, consultaImporte.datos)
 
   const ocupado = guardando || geocodificando || confirmando
   const puedeGeocodificar = Boolean(pedido) && pedido.estado_validacion === 'VALIDA'
@@ -105,6 +112,7 @@ function PedidosCargaPage() {
   }
 
   function cambiarDireccion(campo, valor) {
+    setClaveGuardada('')
     setDireccion((actual) => ({ ...actual, [campo]: valor }))
     descartarDuplicados()
   }
@@ -115,8 +123,24 @@ function PedidosCargaPage() {
   }
 
   function seleccionarCliente(opcion) {
+    if (opcion?.id !== cliente?.id) {
+      setDireccion({ ...DIRECCION_VACIA })
+      setClaveGuardada('')
+      setImporteManual(null)
+      setElegidoPrevio({ datos: null, indice: null })
+      setProblemas([])
+    }
     setCliente(opcion)
     setDatosCliente(datosDeCliente(opcion))
+    descartarDuplicados()
+  }
+
+  function usarDireccionGuardada(opcion) {
+    setDireccion(camposDeDireccionGuardada(opcion))
+    setClaveGuardada(opcion?.clave ?? '')
+    setImporteManual(null)
+    setElegidoPrevio({ datos: null, indice: null })
+    setProblemas([])
     descartarDuplicados()
   }
 
@@ -125,6 +149,13 @@ function PedidosCargaPage() {
     const nombre = datosCliente.nombre.trim()
     if (!cliente && !nombre) {
       setError('Elegí un cliente de la lista o completá el nombre para dar de alta uno nuevo.')
+      return
+    }
+    const faltantes = [['dni', 'DNI'], ['telefono', 'teléfono']]
+      .filter(([campo]) => !datosCliente[campo].trim()).map(([, etiqueta]) => etiqueta)
+    if (faltantes.length || !direccion.codigo_postal.trim()) {
+      if (!direccion.codigo_postal.trim()) faltantes.push('código postal')
+      setError(`Completá los campos obligatorios: ${faltantes.join(', ')}.${cliente ? ' Los datos del cliente se corrigen desde Clientes.' : ''}`)
       return
     }
     setGuardando(true)
@@ -238,12 +269,13 @@ function PedidosCargaPage() {
   }
 
   function nuevaCarga() {
+    setClaveGuardada('')
     setCliente(null)
     setDatosCliente({ ...CLIENTE_VACIO })
     setDireccion({ ...DIRECCION_VACIA })
     setCanalOrigen(CANAL_PREDETERMINADO)
     setObservaciones('')
-    setImporteBase('')
+    setImporteManual(null)
     setPedido(null)
     setProblemas([])
     setResultado(null)
@@ -273,6 +305,7 @@ function PedidosCargaPage() {
         <div className="form-divider cliente-divider"><span>{cliente ? 'Datos del cliente elegido' : 'o cargá los datos de un cliente nuevo'}</span></div>
         <ClienteCampos valor={datosCliente} onChange={cambiarCliente} bloqueado={Boolean(pedido) || ocupado || Boolean(cliente)}/>
         <div className="form-divider address-divider"><span>Dirección de entrega</span></div>
+        {cliente && !pedido && <DireccionesCliente key={`${cliente.id}-${versionFormulario}`} clienteId={cliente.id} valor={claveGuardada} onChange={usarDireccionGuardada} disabled={ocupado}/>}
         <DireccionForm valor={direccion} onChange={cambiarDireccion} bloqueado={Boolean(pedido) || ocupado} problemas={problemas}/>
         <ProblemasDireccion problemas={problemas}/>
         {pedido && problemas.length > 0 && <div className="order-actions">
@@ -285,9 +318,10 @@ function PedidosCargaPage() {
           </select>
         </label>
         <label className="form-field" htmlFor="pedido-importe"><span>Importe base del envío (ARS)</span>
-          <input id="pedido-importe" inputMode="decimal" pattern="[0-9]{1,10}([.,][0-9]{1,2})?" placeholder="Ingresá el importe" value={importeBase} disabled={Boolean(pedido) || ocupado} onChange={e => { setImporteBase(e.target.value); descartarDuplicados() }} aria-describedby="importe-sugerido"/>
-          <small id="importe-sugerido" style={{ color: 'var(--theme-muted)' }}>Si no lo sabés, el sistema te sugiere uno al confirmar la ubicación.</small>
+          <input id="pedido-importe" inputMode="decimal" pattern="[0-9]{1,10}([.,][0-9]{1,2})?" placeholder="Sugerido por distancia o importe manual" value={importeBase} disabled={Boolean(pedido) || ocupado} onChange={e => { setImporteManual(e.target.value); descartarDuplicados() }} aria-describedby="importe-sugerido"/>
+          <small id="importe-sugerido" style={{ color: 'var(--theme-muted)' }}>Se sugiere con el mapa. Podés editarlo.</small>
         </label>
+        {!pedido && <SugerenciaImporteCarga consulta={consultaImporte} ambiguo={candidatosPrevios.length > 1 && !puntoPrevio} manual={importeManual !== null} disabled={ocupado} onUsar={() => { setImporteManual(null); descartarDuplicados() }}/>}
         <label className="form-field span-2 pedido-observaciones" htmlFor="pedido-observaciones"><span>Notas / Instrucciones de entrega</span>
           <textarea id="pedido-observaciones" rows="3" value={observaciones} onChange={(event) => { setObservaciones(event.target.value); descartarDuplicados() }} placeholder="Ej. Tocar timbre B, dejar en recepción..." disabled={Boolean(pedido) || ocupado}/>
         </label>

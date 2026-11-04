@@ -117,3 +117,51 @@ El tablero dejó de ser una maqueta de contadores en cero y pasó a listar pedid
 - En la carga de pedidos el importe es opcional. Si se deja vacío, el alta no envía ese campo. La ayuda indica que el sistema sugiere un importe al confirmar la ubicación.
 - **Completar importe** permite guardar el valor pendiente mientras el pedido no esté pagado, incluso si es un pedido antiguo sin dirección confirmada. La sugerencia se consulta solo si la dirección está confirmada, en carga, revisión y el detalle de Asignaciones; si no lo está, se explica que la sugerencia aparece al confirmar la ubicación. Si la consulta no está disponible, se muestra el motivo y se mantiene la carga manual. Un importe sugerido igual a cero no se precarga.
 - Las pruebas de interfaz/API usan datos y respuestas simuladas; no llaman a Georef ni prueban el mapa contra una sesión autenticada. No se verificó visualmente en navegador ni en móvil en esta tarea.
+
+## Exportación de pedido e historial · KAN-51/KAN-52
+
+- Historial del pedido presenta fecha/hora Buenos Aires en24h; consulta/entrega del chofer presentan24h en zona del dispositivo. Fecha inválida o ausente tiene texto de reemplazo. No cambia ningún timestamp del servidor.
+- Revisión de pedido, detalle/mapa de Asignaciones y panel de historial del chofer ofrecen Descargar pedido PDF y Descargar mapa PDF. Se consulta información actualizada al descargar; acciones bloqueadas durante generación y reintento tras error. La exportación incluye historial completo independientemente de la página de UI.
+- Falta de ubicación o fallo de imagen se informa; el PDF completo conserva los datos disponibles. Mapa independiente requiere imagen disponible. No se confirma dirección ni se incluyen adjuntos privados al exportar.
+- Implementación verificada con pruebas automatizadas y API real de lectura; descarga/teselas y presentación en escritorio/móvil pendientes de prueba conjunta por decisión del usuario.
+
+Corrección KAN-52 (02/11/2026): el PDF de información queda limitado al contenido
+de Más información; no incluye mapa ni auditoría geográfica/metadatos adicionales.
+El PDF de mapa contiene sólo dirección e imagen (atribución dentro del mapa).
+Descargar información no consulta teselas; conserva permisos y lectura del servidor.
+
+## KAN-56 · casilla de importe durante carga
+
+La ayuda de Importe base deja de exigir guardar/confirmar antes de sugerir: con un punto tentativo vigente precarga importe positivo, explica distancia en línea recta y precio por km y permite editar. Con varios candidatos espera selección. Edición manual/vacío explícito no se sobrescriben; Usar importe sugerido vuelve al modo automático. Cambiar dirección/candidato quita automáticamente la sugerencia anterior; error/configuración faltante permite reintento y carga manual o alta sin importe. Confirmación humana sigue después de guardar. Esta actualización supera la descripción histórica de KAN-49 para el alta; no cambia completar importes de pedidos ya guardados.
+
+## KAN-54 · direcciones del cliente en Cargar pedido
+
+Al seleccionar un cliente aparece Direcciones del cliente con opciones de pedidos previos y libreta, o Sin direcciones guardadas. Elegir precarga campos editables; Otra dirección los limpia. Cambiar cliente limpia dirección/selección/importe manual; errores de consulta no impiden ingreso manual. Guardar un pedido recuerda una nueva dirección o conserva la ya existente, distinguiendo piso/depto/referencias. No confirma ubicación por reutilizarla ni modifica pedidos anteriores. Interfaz compacta; revisión visual/móvil conjunta pendiente.
+
+## Selector frecuente compacto · referencia branch-benjamin-1
+
+Cliente frecuente queda reducido al buscador cuando no hay término. Al escribir aparecen filas compactas con nombre/contacto y Seleccionar, hasta20 coincidencias dentro de un área con scroll; más resultados requieren afinar búsqueda. No pagina ni lista todos los clientes al abrir. Seleccionar muestra resumen y Cambiar vuelve a búsqueda vacía. API/permisos/datos y selector de direcciones KAN-54 se conservan. Diseño adaptado de Orders.jsx/Orders.css de branch-benjamin-1, sin copiar su contrato antiguo.
+
+Ajuste posterior del selector frecuente: foco/clic sin término abre5 sugerencias
+iniciales; escribir filtra hasta20. Panel flotante con fondo translúcido/desenfoque,
+tipografía y tamaños del formulario. Cierra con Escape/clic externo/salida de foco
+sin perder selección por botones internos. Sólo consulta al estar abierto.
+
+KAN-57, criterio vigente final: réplica de Orders.jsx/Orders.css de branch-benjamin-1,
+con búsqueda al escribir, texto/placeholder/estado originales y filas en flujo13/14/
+12px. Sin sugerencias iniciales, popup ni blur. Esto supera las adaptaciones previas.
+Aviso seleccionado de referencia y Cambiar para liberar campos bloqueados de MVP-1.
+
+KAN-57 aclaración final: tipografía discreta a escala del formulario actual, filas
+simples sin panel flotante y primeros5 clientes al enfocar/clicar. Se retiran las
+reglas13/14px trasladadas de Orders; escribir conserva filtrado hasta20.
+
+### Campos obligatorios de contacto y dirección (02/11/2026)
+
+DNI, teléfono, email y código postal llevan `*` y se requieren al guardar. Un cliente frecuente incompleto se corrige desde Clientes antes de cargar un nuevo pedido. Se mantiene la tipografía del selector y sus primeras cinco opciones al abrir.
+
+La lista de clientes frecuentes mantiene su forma en flujo y tipografía; el fondo usa desenfoque de 12px y degradado translúcido según tema. Los textos y controles no se desenfocan.
+
+El selector de clientes oculta resultados al pasar a otra casilla, hacer clic fuera o pulsar Escape; permite pasar a sus botones con teclado sin ocultarlos antes de seleccionar. Clic/foco en buscador reabre la lista.
+
+Email de cliente opcional desde 03/11/2026; sin asterisco ni bloqueo por campo vacío. DNI, teléfono y código postal siguen obligatorios.

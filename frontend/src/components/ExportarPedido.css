@@ -1,0 +1,6 @@
+.exportar-pedido { margin: 1rem 0; }
+.exportar-acciones { display: flex; flex-wrap: wrap; gap: .5rem; }
+.exportar-pedido p { overflow-wrap: anywhere; margin: .5rem 0; }
+@media (max-width: 480px) {
+  .exportar-acciones > button { flex: 1 1 100%; white-space: normal; }
+}

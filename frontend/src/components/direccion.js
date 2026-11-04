@@ -23,6 +23,13 @@ export function claveBusqueda(direccion) {
     .map((campo) => String(direccion?.[campo] ?? '').trim().toLowerCase()))
 }
 
+export function puntoPrevisualizado(previsualizacion, eleccion) {
+  const candidatos = previsualizacion.fase === 'lista' ? previsualizacion.datos?.candidatos ?? [] : []
+  if (candidatos.length === 1) return candidatos[0]
+  if (eleccion.datos !== previsualizacion.datos) return null
+  return candidatos.find(candidato => candidato.indice === eleccion.indice) ?? null
+}
+
 // Las coordenadas sólo existen si el proveedor las encontró. Un null o un
 // valor ausente no alcanza para confirmar la ubicación.
 export function tieneCoordenadas(pedido) {

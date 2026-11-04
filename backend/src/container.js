@@ -21,6 +21,7 @@ const { createTarifaService } = require('./services/TarifaService');
 const { crearSugerenciaImporteService } = require('./services/SugerenciaImporteService');
 const { createComprobanteService } = require('./services/ComprobanteService');
 const { createComprobanteRepository } = require('./repositories/ComprobanteRepository');
+const { createExportacionRepository } = require('./repositories/ExportacionRepository');
 
 // Construye los servicios a partir de la base inyectada. Sin base (pruebas HTTP)
 // devuelve un objeto vacío y las rutas responden 503 en vez de romper.
@@ -37,6 +38,7 @@ function createContainer({ db, config, georef } = {}) {
     const localidadService = createLocalidadService({ cliente: georefClient });
 
     return {
+        exportacionRepository: createExportacionRepository(db),
         comprobanteService:createComprobanteService({repositorio:createComprobanteRepository(db)}),
         tarifaService: createTarifaService({
             repositorio: tarifas,

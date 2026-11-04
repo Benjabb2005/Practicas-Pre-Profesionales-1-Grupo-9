@@ -1,4 +1,15 @@
 const { crearCache, normalizarDireccion } = require("./cache");
+const { normalizarProvincia } = require('../constants/provincias');
+
+function localidadParaConsulta(direccion) {
+    const localidad = String(direccion.localidad ?? '').trim();
+    const clave = localidad.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    // CABA es provincia en Georef; sus localidades no se llaman Capital/CABA.
+    // Sólo estos alias de ciudad omiten ese filtro, siempre conservando provincia.
+    const aliasCiudad = ['capital', 'capital federal', 'caba', 'ciudad autonoma de buenos aires', 'ciudad de buenos aires'];
+    return normalizarProvincia(direccion.provincia) === 'Ciudad Autónoma de Buenos Aires' && aliasCiudad.includes(clave)
+        ? '' : localidad;
+}
 
 function textoDireccion(direccion = {}) {
     return [direccion.calle, direccion.altura, direccion.piso_depto,
@@ -42,7 +53,8 @@ function createGeorefProvider({ fetchImpl = fetch, baseUrl = "https://apis.datos
         url.searchParams.set("direccion", texto);
         url.searchParams.set("max", "10");
         if (direccion.provincia) url.searchParams.set("provincia", direccion.provincia);
-        if (direccion.localidad) url.searchParams.set("localidad", direccion.localidad);
+        const localidad = localidadParaConsulta(direccion);
+        if (localidad) url.searchParams.set("localidad", localidad);
         const controlador = new AbortController();
         const temporizador = setTimeout(() => controlador.abort(), timeoutMs);
         try {

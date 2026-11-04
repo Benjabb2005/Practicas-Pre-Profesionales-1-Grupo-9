@@ -3,6 +3,27 @@
 
 .cliente-selector { display: grid; gap: 7px; margin-bottom: 4px; }
 
+/* Selector de Orders.jsx/Orders.css de branch-benjamin-1. */
+.cliente-selector-referencia { gap: 5px; font-family: inherit; font-size: 8px; }
+.frequent-search { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 5px; }
+.frequent-search > label { grid-column: 1 / -1; font: inherit; font-weight: 500; }
+.frequent-search input { min-width: 0; width: 100%; height: 29px; padding: 0 9px; font: inherit; border: 1px solid #d1dbe8; border-radius: 5px; }
+.candidate-list { padding: 0; margin: 0; list-style: none; max-height: 240px; overflow-y: auto; }
+.cliente-selector-referencia .candidate-list:not(:empty) {
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--theme-background) 75%, var(--theme-surface));
+  border: 1px solid color-mix(in srgb, var(--theme-border) 70%, var(--theme-muted));
+}
+.cliente-selector-referencia .candidate-list li { background: inherit; }
+.cliente-selector-referencia .candidate-list li:last-child { border-bottom: 0; }
+.candidate-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 7px; border-bottom: 1px solid #e3e9f1; }
+.candidate-list li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; font: inherit; }
+.candidate-list strong { font-weight: 500; }
+.candidate-list small { display: block; margin-top: 2px; color: #526078; font: inherit; font-size: 7px; }
+.cliente-selector-referencia .button { font: inherit; font-weight: 500; }
+.cliente-selector-referencia :is(.frequent-status, .frequent-selected p) { margin: 0; font: inherit; font-size: 7px; line-height: 1.45; overflow-wrap: anywhere; }
+.frequent-selected { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+
 .form-field-label { color: #24334a; font-size: 8px; font-weight: 600; }
 
 .cliente-ayuda { margin: -3px 0 0; color: #7d8a9e; font-size: 7px; line-height: 1.4; }

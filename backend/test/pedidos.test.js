@@ -59,7 +59,7 @@ function reposPedidosFalsos({ detalle } = {}) {
 
 const clientesFalsos = {
     async buscarPorId(id) {
-        return id === 1 ? { id: 1, nombre: "Cliente" } : null;
+        return id === 1 ? { id: 1, nombre: "Cliente", dni: "20123456", telefono: "1155555555", email: "fixture@example.test" } : null;
     },
 };
 
@@ -68,7 +68,7 @@ test("crear pedido guarda el estado que decide el validador y avisa los problema
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
     const resultado = await servicio.crear(
-        { cliente_id: 1, importe_base: '100.00', direccion: { calle: "Av. Corrientes", altura: "1234", localidad: "CABA" } },
+        { cliente_id: 1, importe_base: '100.00', direccion: { codigo_postal: "1043", calle: "Av. Corrientes", altura: "1234", localidad: "CABA" } },
         7
     );
 
@@ -117,7 +117,7 @@ test("crear pedido sin importe o con importe vacío lo guarda como NULL", async 
         const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
         const datos = {
             cliente_id: 1,
-            direccion: { calle: "Av. Corrientes" },
+            direccion: { codigo_postal: "1043", calle: "Av. Corrientes" },
         };
         if (importe !== undefined) datos.importe_base = importe;
 
@@ -135,7 +135,7 @@ test("crear pedido sigue rechazando importes cero, negativos y mal escritos", as
             () => servicio.crear({
                 cliente_id: 1,
                 importe_base: importe,
-                direccion: { calle: "Av. Corrientes" },
+                direccion: { codigo_postal: "1043", calle: "Av. Corrientes" },
             }, 7),
             (error) => error.codigo === "DATOS_INVALIDOS"
         );
@@ -167,7 +167,7 @@ test("obtener devuelve problemas vacíos cuando la dirección guardada es válid
 test("crear pedido con cliente inexistente se rechaza", async () => {
     const servicio = createPedidoService({ pedidos: reposPedidosFalsos(), clientes: clientesFalsos });
     await assert.rejects(
-        () => servicio.crear({ cliente_id: 99, importe_base: '100.00', direccion: { calle: "X" } }, 1),
+        () => servicio.crear({ cliente_id: 99, importe_base: '100.00', direccion: { codigo_postal: "1043", calle: "X" } }, 1),
         (error) => error.codigo === "DATOS_INVALIDOS"
     );
 });
@@ -184,7 +184,7 @@ test("cambiar la dirección de un pedido confirmado invalida y descarta las coor
     const pedidos = reposPedidosFalsos({ detalle: detalleFixture({ estado_validacion: "CONFIRMADA", direccion_validada: 1 }) });
     const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
 
-    const resultado = await servicio.actualizarDireccion(10, { calle: "Av. de Mayo", altura: "450" });
+    const resultado = await servicio.actualizarDireccion(10, { codigo_postal: "1043", calle: "Av. de Mayo", altura: "450" });
 
     assert.equal(resultado.invalidada, true);
     assert.equal(pedidos.capturado.actualizarDireccion.opciones.invalidar, true);
@@ -414,4 +414,26 @@ test("pedidos: sin token 401, chofer 403, administrador 200", async () => {
             server.closeAllConnections();
         });
     }
+});
+
+test('no guarda pedidos ni direcciones sin código postal', async () => {
+    const pedidos = reposPedidosFalsos();
+    const servicio = createPedidoService({ pedidos, clientes: clientesFalsos });
+    for (const codigo_postal of [undefined, null, '', '   ']) {
+        const direccion = { ...DIRECCION_COMPLETA, codigo_postal };
+        await assert.rejects(() => servicio.crear({ cliente_id: 1, direccion }, 1),
+            error => error.codigo === 'DATOS_INVALIDOS' && Boolean(error.campos.codigo_postal));
+        await assert.rejects(() => servicio.actualizarDireccion(10, direccion),
+            error => error.codigo === 'DATOS_INVALIDOS' && Boolean(error.campos.codigo_postal));
+    }
+    assert.equal(pedidos.capturado.crear, null);
+    assert.equal(pedidos.capturado.actualizarDireccion, null);
+});
+
+test('un cliente histórico incompleto debe completarse antes de crear otro pedido', async () => {
+    const pedidos = reposPedidosFalsos();
+    const servicio = createPedidoService({ pedidos, clientes: { async buscarPorId() { return { id: 1, nombre: 'Histórico' }; } } });
+    await assert.rejects(() => servicio.crear({ cliente_id: 1, direccion: DIRECCION_COMPLETA }, 1),
+        error => error.codigo === 'DATOS_INVALIDOS' && Boolean(error.campos.dni && error.campos.telefono));
+    assert.equal(pedidos.capturado.crear, null);
 });

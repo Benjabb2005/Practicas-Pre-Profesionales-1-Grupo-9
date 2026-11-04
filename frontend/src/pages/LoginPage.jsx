@@ -51,9 +51,9 @@ function LoginPage() {
         <h2 id="login-heading">Iniciar sesión</h2>
         <p className="login-intro">Ingresá tus datos para acceder al sistema.</p>
         <form className="access-form" onSubmit={handleSubmit}>
-          <label htmlFor="access-email">Usuario o email</label>
+          <label htmlFor="access-email">Usuario o email *</label>
           <input id="access-email" type="email" autoComplete="username" placeholder="nombre@empresa.com" value={email} onChange={(event) => { setEmail(event.target.value); setError('') }} required/>
-          <label htmlFor="access-password">Contraseña</label>
+          <label htmlFor="access-password">Contraseña *</label>
           <div className="login-password-wrap"><input id="access-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Ingresá tu contraseña" value={password} onChange={(event) => { setPassword(event.target.value); setError('') }} required/><button type="button" className="show-password" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}><Icon name="eye" size={16}/></button></div>
           <button className="login-submit" type="submit" disabled={enviando}><span>{enviando ? 'Ingresando…' : 'Iniciar sesión'}</span><span>→</span></button>
           {error && <p className="login-error" role="alert">{error}</p>}

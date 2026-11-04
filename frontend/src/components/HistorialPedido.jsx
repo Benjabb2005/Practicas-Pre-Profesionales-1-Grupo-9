@@ -5,6 +5,7 @@ import Paginacion from './Paginacion.jsx'
 import usePagination from './usePagination.js'
 import { historialEntregas } from './chofer.js'
 import './HistorialPedido.css'
+import { fechaHora } from './fechas.js'
 
 export default function HistorialPedido({ pedidoId, operador = false }) {
   const [filas, setFilas] = useState(null)
@@ -23,7 +24,7 @@ export default function HistorialPedido({ pedidoId, operador = false }) {
     {!filas && !error && <p role="status">Cargando historial…</p>}
     {filas && cambios.length === 0 && <p>Todavía no se registraron cambios de estado ni intentos.</p>}
     {pagina.items.map(h => <article key={h.id}><strong>{h.titulo}</strong>
-      <small>{new Date(h.fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })} · {h.usuario_nombre || 'Usuario no disponible'}</small>
+      <small>{fechaHora(h.fecha, { timeZone: 'America/Argentina/Buenos_Aires' })} · {h.usuario_nombre || 'Usuario no disponible'}</small>
       {h.motivo && <p>Motivo: {h.motivo}</p>}</article>)}
     <Paginacion datos={pagina} nombre="movimientos del pedido"/>
   </section>

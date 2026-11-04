@@ -28,6 +28,12 @@ const esquemaCliente = z.object({
 
 function createClientesController({ clienteService }) {
     return {
+        async direcciones(req, res) {
+            if (!clienteService) throw servicioNoDisponible();
+            const { id } = validar(esquemaId, req.params);
+            res.set('Cache-Control', 'no-store');
+            res.json({ direcciones: await clienteService.direcciones(id) });
+        },
         async listar(req, res) {
             if (!clienteService) throw servicioNoDisponible();
             const filtros = validar(esquemaListar, req.query ?? {});

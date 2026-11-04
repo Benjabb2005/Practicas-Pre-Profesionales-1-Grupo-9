@@ -8,6 +8,7 @@ import SelectorComprobante from './SelectorComprobante.jsx'
 import ComprobantesPedido from './ComprobantesPedido.jsx'
 import {subirComprobante,errorArchivo} from '../api/comprobantes.js'
 import { crearIdOperacion } from './operacionEntrega.js'
+import ExportarPedido from './ExportarPedido.jsx'
 
 export default function AccionChofer({ pedido, tipo, onClose, onGuardado,onComprobanteSubido }) {
   const dialogo = useRef(null)
@@ -53,12 +54,12 @@ export default function AccionChofer({ pedido, tipo, onClose, onGuardado,onCompr
     onClose={() => { if (!dialogo.current?.open) onClose() }}>
     <header><h2 id="entrega-titulo">{titulo}</h2><button type="button" disabled={ocupado} onClick={() => dialogo.current.close()} aria-label="Cerrar panel">Cerrar</button></header>
     <p><strong>{pedido.codigo || `Pedido #${pedido.id}`}</strong> · {pedido.cliente_nombre}</p>
-    {tipo === 'historial' ? <HistorialPedido pedidoId={pedido.id}/> : tipo==='comprobantes'?<ComprobantesPedido pedidoId={pedido.id} puedeSubir={['ENTREGADO','PAGADO'].includes(pedido.estado)&&pedido.pago_metodo==='TRANSFERENCIA'} onSubido={onComprobanteSubido}/>:<form onSubmit={guardar}>
+    {tipo === 'historial' ? <><ExportarPedido pedidoId={pedido.id}/><HistorialPedido pedidoId={pedido.id}/></> : tipo==='comprobantes'?<ComprobantesPedido pedidoId={pedido.id} puedeSubir={['ENTREGADO','PAGADO'].includes(pedido.estado)&&pedido.pago_metodo==='TRANSFERENCIA'} onSubido={onComprobanteSubido}/>:<form onSubmit={guardar}>
       {tipo === 'entrega' && <p>Confirmá que el cliente recibió el pedido. Se guardarán la fecha, la hora y tu usuario.</p>}
       {tipo === 'fallo' && <><p>El pedido volverá a preparación y se reprogramará para la próxima jornada. Se sumará un recargo del 50% del envío base, facturable al emisor.</p>
-        <label htmlFor="entrega-motivo">Motivo del intento fallido<textarea id="entrega-motivo" required minLength={3} maxLength={500} value={motivo} disabled={ocupado} onChange={e => setMotivo(e.target.value)}/></label></>}
+        <label htmlFor="entrega-motivo">Motivo del intento fallido *<textarea id="entrega-motivo" required minLength={3} maxLength={500} value={motivo} disabled={ocupado} onChange={e => setMotivo(e.target.value)}/></label></>}
       {tipo === 'pago' && <><p>La entrega ya está confirmada.</p>
-        <label htmlFor="pago-metodo">Método de pago<select id="pago-metodo" value={metodo} disabled={ocupado||pagoGuardado} onChange={e => setMetodo(e.target.value)}><option value="EFECTIVO">Efectivo</option><option value="TRANSFERENCIA">Transferencia</option></select></label>
+        <label htmlFor="pago-metodo">Método de pago *<select id="pago-metodo" value={metodo} disabled={ocupado||pagoGuardado} onChange={e => setMetodo(e.target.value)}><option value="EFECTIVO">Efectivo</option><option value="TRANSFERENCIA">Transferencia</option></select></label>
         <p role="status">{pedido.importe_total == null ? 'Este pedido todavía no tiene importe. Pedile al operador que lo complete desde el detalle del pedido; después actualizá la lista y volvé a registrar el pago.' : `Importe a registrar: ${moneda(pedido.importe_total)}.`}</p>
         <p>{metodo === 'EFECTIVO' ? 'Confirmá sólo si recibiste el efectivo. El pedido pasará a PAGADO.' : 'Informá la transferencia. El pedido seguirá ENTREGADO hasta que administración confirme la acreditación.'}</p></>}
       {tipo==='pago'&&metodo==='TRANSFERENCIA'&&<SelectorComprobante archivo={archivo} error={archivoError} disabled={ocupado} onChange={f=>{setArchivo(f);setArchivoError(errorArchivo(f))}}/>}

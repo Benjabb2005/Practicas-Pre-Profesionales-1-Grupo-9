@@ -48,3 +48,19 @@ Tras propuesta al usuario y pedido de avanzar con B05, se implementa efectivo co
 
 ## Recuperar importe de entregado antiguo sin pago (26/10/2026)
 Diagnóstico del bloqueo reportado por Benjamín: pedido3 sin importe no registra pago y regla anterior tampoco dejaba completar base luego de entregar. Se permite completar sólo baseNULL, estado distinto PAGADO y sin ningún pago registrado, bajo bloqueo transaccional e historial; roles admin/operador existentes. Chofer no fija monto. Mantiene estado entregado y recalcula recargos de intentos existentes, sin modificar valores previos ni pagos. Asignaciones conserva entregados pendientes para que operador acceda a Más información y complete el faltante. Supera para este caso la restricción anterior a completar antes de entrega.
+
+## KAN-56 · importe tentativo previo al alta (02/11/2026)
+
+Pedido explícito de Benjamín: aprovechar geolocalización dinámica para sugerir importe durante carga, sin esperar alta/confirmación. Se admite estimación sobre coordenadas tentativas, identificada como tal, con sucursal/precio del servidor y misma fórmula vigente. Sigue siendo importe opcional editable; el usuario puede conservar monto manual. Estimar no confirma dirección ni habilita despacho; el pedido guardado conserva la confirmación humana posterior. Supera únicamente el aplazamiento de sugerencia en el alta registrado en KAN-49/D23.
+
+## KAN-54 · direcciones reutilizables (02/11/2026)
+
+Benjamín solicita ejecutar KAN-54 antes del rediseño KAN-53. Se conserva interfaz actual y se agrega selección en carga. Libreta por cliente con snapshots normalizados, separados de direcciones del pedido; duplicado compara siete campos incluyendo piso/depto y referencias, sin fusionar clientes ni envíos. El alta de pedido recuerda dirección atómicamente; reutilizar no copia coordenadas/confirmación. Históricos se ofrecen desde sus datos persistidos en lectura, sin inventar domicilio ni reescribir pedidos. Migración005 aditiva con respaldo/restauración ensayados.
+
+## Contacto y código postal obligatorios (02/11/2026)
+
+Benjamín declara obligatorios DNI, teléfono, email y código postal. Esta instrucción supera la opcionalidad anterior (D08) para carga/edición manual. Se muestran asteriscos y se valida en cliente y servidor. Clientes históricos incompletos se completan desde Clientes antes de nuevos pedidos; no se modifican registros existentes ni el flujo de importación histórica. La previsualización dinámica admite dirección parcial; el código postal se exige al guardar. Sin migración de datos.
+
+## Email opcional por pedido explícito (03/11/2026)
+
+Benjamín cambia email a opcional. Supera únicamente su obligatoriedad registrada antes: nombre, DNI, teléfono y código postal continúan obligatorios. Alta/edición manual y pedidos aceptan cliente sin email; se conserva validación de formato cuando se informa.

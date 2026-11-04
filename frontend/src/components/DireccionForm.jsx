@@ -4,11 +4,11 @@ import { buscarLocalidades, listarProvincias } from '../api/localidades'
 
 const CAMPOS = [
   { clave: 'calle', etiqueta: 'Calle', placeholder: 'Ej. Av. Corrientes', requerido: true, clase: 'street-field' },
-  { clave: 'altura', etiqueta: 'Altura', placeholder: '1234', clase: '' },
+  { clave: 'altura', etiqueta: 'Altura', placeholder: '1234', requerido: true, clase: '' },
   { clave: 'piso_depto', etiqueta: 'Piso/Depto', placeholder: 'Ej. 4° B', clase: '' },
-  { clave: 'localidad', etiqueta: 'Localidad', placeholder: 'Ej. Rosario', clase: '' },
-  { clave: 'provincia', etiqueta: 'Provincia', clase: '' },
-  { clave: 'codigo_postal', etiqueta: 'Código Postal', placeholder: 'Ej. C1043', clase: '' },
+  { clave: 'localidad', etiqueta: 'Localidad', placeholder: 'Ej. Rosario', requerido: true, clase: '' },
+  { clave: 'provincia', etiqueta: 'Provincia', requerido: true, clase: '' },
+  { clave: 'codigo_postal', etiqueta: 'Código Postal', placeholder: 'Ej. C1043', requerido: true, clase: '' },
   { clave: 'entre_calles', etiqueta: 'Entre calles', placeholder: 'Opcional', clase: 'span-2' },
 ]
 
@@ -22,8 +22,8 @@ function gravedadCampo(problemas, clave) {
   return delCampo.length ? 'ADVERTENCIA' : ''
 }
 
-// Formulario de dirección estructurada. La altura es opcional: una dirección sin
-// altura se guarda como borrador a revisar, nunca habilita el despacho sola.
+// Los campos marcados son obligatorios para validar la dirección. Se conserva
+// el guardado de borradores incompletos, que nunca habilitan el despacho.
 // Provincia es una lista fija del backend; localidad sugiere con Georef a través
 // de /api/localidades, pero se puede escribir un valor que no esté en la lista.
 function DireccionForm({ valor = DIRECCION_VACIA, onChange, bloqueado = false, problemas = [] }) {
@@ -87,6 +87,7 @@ function DireccionForm({ valor = DIRECCION_VACIA, onChange, bloqueado = false, p
         value: valor[campo.clave] ?? '',
         onChange: (event) => onChange(campo.clave, event.target.value),
         disabled: bloqueado,
+        required: campo.clave === 'codigo_postal',
         'aria-invalid': gravedad === 'ERROR' || undefined,
         'aria-describedby': gravedad ? 'problemas-direccion' : undefined,
       }

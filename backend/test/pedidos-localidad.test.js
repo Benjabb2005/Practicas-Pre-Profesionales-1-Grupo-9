@@ -56,7 +56,7 @@ function reposPedidosFalsos({ detalle = detalleFixture() } = {}) {
 
 const clientesFalsos = {
     async buscarPorId(id) {
-        return id === 1 ? { id: 1, nombre: "Cliente" } : null;
+        return id === 1 ? { id: 1, nombre: "Cliente", dni: "20123456", telefono: "1155555555", email: "fixture@example.test" } : null;
     },
 };
 
