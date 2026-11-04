@@ -705,3 +705,6 @@ npm run check correcto (contexto, backend, lint/build). Frontend 116 pruebas apr
 ## Corte de entrega en rama · 03/11/2026
 
 Reejecutados npm run check y suite frontend:246 backend aprobadas,5 integraciones opt-in omitidas;116 frontend aprobadas; contexto/sintaxis/lint/build correctos. Warning de bundle grande previo. No se repitió integración MySQL ni recorrido manual en este cierre.
+
+## Integración de diseño y funcionalidades · 03/11/2026
+npm run check: OK (contexto, sintaxis, backend251:246 aprobadas/5 MySQL opt-in omitidas, lint/build). npm --prefix frontend test -- --run:131 aprobadas/28 archivos. git diff --check: OK. Conserva aviso de chunk mayor a500kB. QA visual aislada con fixtures en carga, cliente frecuente y libreta de direcciones;1440x900 y360x800, claro/oscuro sin desborde horizontal de página. No acredita MySQL/proveedor/PDF real ni regresión visual de todas las pantallas. Docker sin contenedores activos;5174 sin servicio. Logs/captura privados ignorados en temp/integracion-diseno. Sin migraciones ni escrituras de negocio.

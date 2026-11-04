@@ -13,15 +13,23 @@ export function entregasDeVista(pedidos, vista) {
   if(vista === 'pendientes')return pedidos.filter(p=>p.estado === 'EN ENVÍO')
   return pedidos.filter(p=>['ENTREGADO','PAGADO'].includes(p.estado) && entregaFinalizada(p) === (vista === 'historial'))
 }
-export function historialEntregas(filas) {
+export function historialEntregas(filas, pedido = null) {
   const etiquetas = { 'EN STOCK': 'En stock', 'EN PREPARACIÓN': 'En preparación', 'EN ENVÍO': 'Despachado', ENTREGADO: 'Entregado', PAGADO: 'Pagado' }
-  return filas.filter(h => h.estado_anterior !== h.estado_nuevo)
+  const cambios = filas.filter(h => h.estado_anterior !== h.estado_nuevo)
     .map(h => {
       const fallida = h.estado_anterior === 'EN ENVÍO' && h.estado_nuevo === 'EN PREPARACIÓN'
       return { ...h,
         titulo: fallida ? 'En preparación · Intento fallido' : etiquetas[h.estado_nuevo] || h.estado_nuevo,
         motivo: fallida ? h.observaciones?.replace(/^Entrega \[[^\]]+\] FALLIDA: /, '') : null }
     })
+  if (!pedido) return cambios
+  const eventos = cambios.map(h => ({ ...h, id: `estado-${h.id}` }))
+  if (pedido.created_at) eventos.push({ id: 'alta', titulo: 'Pedido creado', fecha: pedido.created_at, motivo: 'Datos del cliente y dirección original guardados.' })
+  eventos.push(...(pedido.intentos || []).map(h => ({ id: `geo-${h.id}`, fecha: h.fecha,
+    titulo: h.accion_operador === 'CONFIRMO' ? 'Ubicación confirmada' : h.accion_operador === 'RECHAZO' ? 'Ubicación rechazada' : `Búsqueda de ubicación · ${h.resultado || 'Registrada'}`,
+    motivo: h.direccion_enviada || null,
+  })))
+  return eventos.sort((a, b) => (Date.parse(b.fecha) || 0) - (Date.parse(a.fecha) || 0))
 }
 export function filtrarEntregas(pedidos, busqueda) {
   const texto = normalizar(busqueda).trim()

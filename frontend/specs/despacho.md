@@ -1,5 +1,9 @@
 # B02 — Preparación, despacho y cambios de chofer
 
+## Aclaración vigente · 28/10/2026
+
+Benjamín ratifica el comportamiento existente: un pedido EN STOCK puede pasar a EN PREPARACIÓN aunque la dirección no esté confirmada. “Bloqueado” impide asignar chofer y despachar; preparar sólo registra la preparación interna. Para asignar exigimos dirección CONFIRMADA; para despachar exigimos además EN PREPARACIÓN y chofer activo. El servidor vuelve a validar cada operación. No se modifica código por esta aclaración. Reasignar/quitar sigue permitido sólo antes del despacho. La coordinación global Q01 permanece pendiente.
+
 Autorizado por Benjamín el 25/10/2026. Sobre B01 y la máquina de estados existente de Santiago, no se redefine el catálogo ni se implementan entrega/pago (B04/B05).
 
 - Estados visibles: EN STOCK, EN PREPARACIÓN, EN ENVÍO, ENTREGADO, PAGADO.
